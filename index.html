@@ -435,7 +435,9 @@ const STAGES = [
   {lv:8, size:7, name:'ハイテクな勉強部屋'},
   {lv:12, size:8, name:'豪華な書斎'},
   {lv:18, size:9, name:'特別な空間'},
-  {lv:25, size:10, name:'伝説の書斎'}
+  {lv:25, size:10, name:'伝説の書斎'},
+  {lv:32, size:11, name:'天空の書斎'},
+  {lv:40, size:12, name:'宇宙の研究所'}
 ];
 const xpForLevel = n => 50 * n * (n - 1);
 const levelFromXp = xp => Math.max(1, Math.floor((1 + Math.sqrt(1 + 0.08 * xp)) / 2));
@@ -536,14 +538,42 @@ const F = {
   hologram:{n:'ホログラム投影機', lv:25, cost:1500, W:1, D:1, glow:'#22e4ff', colors:['#22e4ff','#a46bff','#3ee6a0'], parts:[[.18,.18,0,.64,.64,.16,'#151a28'],[.24,.24,.16,.52,.52,.03,'!m'],[.3,.3,.22,.4,.4,1.5,'~m'],[.42,.42,.75,.16,.16,.16,'!#ffffff'],[.38,.38,1.2,.24,.24,.06,'!m']]},
   trophycase:{n:'トロフィーケース', lv:25, cost:1300, W:2, D:1, colors:['#1c2133','#6b4a32'], parts:[[0,0,0,2,1,.5,'m'],[.2,.3,.5,.3,.3,.4,'!#ffc24d'],[.85,.3,.5,.3,.3,.55,'!#d8dde8'],[1.5,.3,.5,.3,.3,.35,'!#cd7f4a'],[.25,.35,1.6,.2,.2,.3,'!#a46bff'],[1.5,.35,1.6,.2,.2,.28,'!#22e4ff'],[0,0,1.5,2,1,.06,'m'],[0,0,.5,2,1,2.2,'~#bcd4ff'],[0,0,2.7,2,1,.1,'m']]}
 };
-const F_ORDER = ['desk_basic','chair_basic','lamp_small','poster','banner','carpet','desk_pro','chair_gaming','bookshelf','plant','window','desklight','pc','monitor','clock','sofa','bed','trophy','neon','aquarium','bigwindow','hologram','trophycase'];
+Object.assign(F, {
+  mug:{n:'マグカップ', lv:1, cost:20, small:true, W:1, D:1, colors:['#eef0f6','#ff6fb0','#3fb8ff','#2b3045'], parts:[[.4,.42,0,.2,.2,.22,'m'],[.6,.48,.06,.05,.08,.1,'m'],[.42,.44,.21,.16,.16,.01,'#4a2c1a']]},
+  books_stack:{n:'参考書の山', lv:2, cost:40, small:true, W:1, D:1, colors:['#6fcf6a','#a98bff','#eef0f6'], parts:[[.2,.25,0,.6,.45,.1,'#d9576e'],[.22,.27,.1,.56,.42,.09,'#3fb8ff'],[.18,.24,.19,.62,.46,.11,'#ffc24d'],[.24,.28,.3,.54,.4,.08,'m']]},
+  cactus:{n:'サボテン', lv:2, cost:50, small:true, W:1, D:1, colors:['#b5653e','#eef0f6','#2b3045'], parts:[[.38,.38,0,.24,.24,.18,'m'],[.44,.44,.18,.12,.12,.4,'#3bb47a'],[.56,.46,.3,.08,.06,.12,'#3bb47a'],[.36,.48,.36,.08,.06,.1,'#3bb47a']]},
+  calendar:{n:'カレンダー', lv:2, cost:40, wall:true, W:1, H:1.1, zb:1.6, colors:['#e85d75','#3d7bff','#3ee6a0']},
+  side_table:{n:'サイドテーブル', lv:3, cost:90, W:1, D:1, surf:.9, colors:['#cdb38c','#2b3045','#eef0f6'], parts:[[.3,.3,0,.4,.4,.04,'md'],[.44,.44,.04,.12,.12,.78,'md'],[.1,.1,.82,.8,.8,.08,'m']]},
+  beanbag:{n:'ビーズクッション', lv:3, cost:110, W:1, D:1, colors:['#ff6fb0','#3d7bff','#3ee6a0','#ffc24d'], parts:[[.12,.1,.3,.76,.26,.34,'m'],[.1,.12,0,.8,.78,.32,'m'],[.16,.3,.32,.68,.52,.12,'ml']]},
+  arclamp:{n:'アークランプ', lv:5, cost:180, W:1, D:1, glow:'#fff1c2', colors:['#d8dde8','#2b3045','#c79a4a'], parts:[[.3,.3,0,.4,.4,.06,'m'],[.47,.47,.06,.06,.06,2,'m'],[.47,.06,2,.06,.47,.06,'m'],[.32,.02,1.76,.36,.3,.26,'m'],[.36,.06,1.74,.28,.22,.02,'!#fff3c4']]},
+  whiteboard:{n:'ホワイトボード／黒板', lv:5, cost:200, W:2, D:1, colors:['#f4f6fb','#1f3a2e'], parts:[[.1,.4,0,.08,.2,1.4,'#8a93a8'],[1.82,.4,0,.08,.2,1.4,'#8a93a8'],[.05,.46,1,1.9,.06,1.3,'m'],[.2,.52,.98,1.6,.08,.04,'#8a93a8']]},
+  shelf_wall:{n:'壁掛け棚', lv:5, cost:140, wall:true, W:2, H:.75, zb:2.2, colors:['#9a7552','#2b3045','#eef0f6']},
+  standing_desk:{n:'スタンディングデスク', lv:8, cost:380, W:2, D:1, surf:1.7, colors:['#eef0f6','#20263a','#9a7552'], parts:[[.05,.1,0,.22,.8,.05,'md'],[1.73,.1,0,.22,.8,.05,'md'],[.1,.35,.05,.12,.3,1.55,'md'],[1.78,.35,.05,.12,.3,1.55,'md'],[0,0,1.6,2,1,.1,'m'],[0,.99,1.58,2,.02,.02,'!#22e4ff']]},
+  fridge:{n:'ミニ冷蔵庫', lv:8, cost:260, W:1, D:1, surf:1.3, colors:['#eef0f6','#3fb8ff','#ff6fb0','#2b3045'], parts:[[.1,.1,0,.8,.8,1.3,'m'],[.12,.9,.85,.76,.01,.02,'md'],[.75,.91,.95,.05,.02,.25,'#c9ccd6']]},
+  speaker:{n:'スピーカー', lv:8, cost:140, small:true, W:1, D:1, accent:'#22e4ff', colors:['#1c2133','#eef0f6','#8a6a4a'], parts:[[.32,.35,0,.36,.3,.55,'m'],[.38,.65,.1,.24,.01,.2,'#0b0d14'],[.44,.65,.36,.12,.01,.1,'#0b0d14'],[.32,.35,0,.36,.3,.02,'!a']]},
+  worldmap:{n:'世界地図', lv:8, cost:160, wall:true, W:2, H:1.2, zb:1.6, colors:['#1d4e89','#2a3358','#c9b79a']},
+  kotatsu:{n:'こたつ', lv:12, cost:480, W:2, D:2, surf:.58, colors:['#c8102e','#3d7bff','#6b5a3a','#2f5c55'], parts:[[0,0,0,2,2,.5,'m'],[.1,.1,.5,1.8,1.8,.08,'#9a7552'],[.8,.8,.58,.12,.12,.12,'#ff9350'],[.95,.86,.58,.12,.12,.12,'#ff9350'],[.86,.98,.58,.12,.12,.12,'#ff9350']]},
+  piano:{n:'電子ピアノ', lv:12, cost:560, W:2, D:1, colors:['#1c2133','#6b4a32','#eef0f6'], parts:[[.05,.2,0,.12,.7,.95,'m'],[1.83,.2,0,.12,.7,.95,'m'],[0,.1,.95,2,.12,.6,'m'],[0,.2,.95,2,.7,.15,'m'],[.1,.62,1.1,1.8,.25,.05,'#f4f6fb'],[.15,.62,1.15,1.7,.1,.02,'#0b0d14']]},
+  bonsai:{n:'盆栽', lv:12, cost:260, small:true, W:1, D:1, colors:['#2b3045','#8a4a32','#3a5a8a'], parts:[[.25,.3,0,.5,.4,.12,'m'],[.46,.47,.12,.08,.08,.3,'#5a4030'],[.22,.3,.36,.4,.36,.14,'#2f7d4f'],[.45,.38,.42,.35,.3,.14,'#3a9a60']]},
+  certificate:{n:'賞状', lv:12, cost:200, wall:true, W:1, H:.8, zb:2.1, colors:['#d6b25e','#9a7552','#2b3045']},
+  arcade:{n:'レトロゲーム機', lv:18, cost:900, W:1, D:1, accent:'#a46bff', colors:['#2a1d55','#c4304a','#1c2133'], parts:[[.15,.15,0,.7,.7,1.9,'m'],[.18,.85,.9,.64,.12,.12,'#0b0d14'],[.3,.92,1.02,.08,.06,.03,'!#ff5c7a'],[.5,.92,1.02,.08,.06,.03,'!#ffc24d'],[.22,.85,1.15,.56,.01,.45,'!#3ee6a0'],[.15,.85,1.7,.7,.02,.18,'!a']]},
+  telescope:{n:'望遠鏡', lv:18, cost:850, W:1, D:1, colors:['#eef0f6','#1d2a6b','#c79a4a'], parts:[[.2,.2,0,.06,.06,1,'#2b3045'],[.74,.2,0,.06,.06,1,'#2b3045'],[.47,.74,0,.06,.06,1,'#2b3045'],[.4,.4,1,.2,.2,.12,'#2b3045'],[.42,.05,1.12,.16,.85,.16,'m'],[.45,.85,1.15,.1,.1,.1,'#0b0d14']]},
+  tv:{n:'壁掛けモニター', lv:18, cost:1100, wall:true, W:2, H:1.15, zb:1.5, colors:['#22e4ff','#a46bff','#3ee6a0']},
+  robot:{n:'お手伝いロボット', lv:25, cost:1600, W:1, D:1, accent:'#22e4ff', colors:['#eef0f6','#ffc24d','#3d7bff'], parts:[[.3,.35,0,.15,.3,.12,'md'],[.55,.35,0,.15,.3,.12,'md'],[.25,.3,.12,.5,.4,.6,'m'],[.4,.7,.4,.2,.01,.12,'!a'],[.3,.32,.75,.4,.36,.35,'m'],[.36,.68,.9,.08,.01,.06,'!a'],[.56,.68,.9,.08,.01,.06,'!a'],[.48,.48,1.1,.04,.04,.2,'md'],[.46,.46,1.3,.08,.08,.08,'!#ff5c7a']]},
+  gold_desk:{n:'黄金の机', lv:32, cost:3000, W:2, D:1, surf:1.26, colors:['#ffc24d','#e8ebf2'], parts:[[.05,.05,0,.12,.9,1.1,'md'],[1.83,.05,0,.12,.9,1.1,'md'],[.17,.42,.2,1.66,.1,.6,'md'],[0,0,1.1,2,1,.16,'!m']]},
+  crystal:{n:'クリスタルタワー', lv:40, cost:5000, W:1, D:1, glow:'#a46bff', colors:['#a46bff','#22e4ff','#ff6fb0'], parts:[[.2,.2,0,.6,.6,.15,'#151a28'],[.22,.5,.15,.18,.18,.8,'~m'],[.6,.24,.15,.16,.16,.7,'~m'],[.43,.43,.4,.14,.14,1,'!m'],[.35,.35,.15,.3,.3,1.6,'~m']]}
+});
+const F_ORDER_OLD = ['desk_basic','chair_basic','lamp_small','poster','banner','carpet','desk_pro','chair_gaming','bookshelf','plant','window','desklight','pc','monitor','clock','sofa','bed','trophy','neon','aquarium','bigwindow','hologram','trophycase'];
+const F_ORDER = Object.keys(F).sort((a, b) => F[a].lv - F[b].lv || F[a].cost - F[b].cost);
 const WALLS = {
   midnight:{n:'ミッドナイト', lv:1, c:'#151b30'}, slate:{n:'スレート', lv:1, c:'#2b303e'}, ivory:{n:'アイボリー', lv:3, c:'#d5d1c8'},
-  wood:{n:'ウッドパネル', lv:5, c:'#5a4030'}, neongrid:{n:'ネオングリッド', lv:8, c:'#0b1020'}, aurora:{n:'オーロラ', lv:18, c:'#2a1d55'}
+  wood:{n:'ウッドパネル', lv:5, c:'#5a4030'}, neongrid:{n:'ネオングリッド', lv:8, c:'#0b1020'}, sakura:{n:'桜', lv:12, c:'#3a2033'}, aurora:{n:'オーロラ', lv:18, c:'#2a1d55'},
+  space:{n:'宇宙', lv:25, c:'#05061a'}, gold:{n:'ゴールド', lv:32, c:'#2a2412'}
 };
 const FLOORS = {
   wood:{n:'フローリング', lv:1, c:'#6e5038'}, darktile:{n:'ダークタイル', lv:1, c:'#1b2030'}, grey:{n:'グレーカーペット', lv:3, c:'#3a3f4e'},
-  tatami:{n:'畳', lv:5, c:'#9fae6b'}, marble:{n:'大理石', lv:12, c:'#dfe2ea'}, neon:{n:'ネオンフロア', lv:18, c:'#070a14'}
+  tatami:{n:'畳', lv:5, c:'#9fae6b'}, checker:{n:'チェッカー', lv:8, c:'#2a2f45'}, marble:{n:'大理石', lv:12, c:'#dfe2ea'}, neon:{n:'ネオンフロア', lv:18, c:'#070a14'},
+  stars:{n:'星空の床', lv:25, c:'#060818'}, goldfloor:{n:'黄金の床', lv:32, c:'#3a3018'}
 };
 
 /* ================= app state ================= */
@@ -591,7 +621,8 @@ function normState(s){
   if (o.group && !o.groups.some(g => g.c === o.group)) o.groups.push({c: o.group, n: o.group}); o.group = '';
   for (const k of ['owned','badges','missions']) if (!o[k] || typeof o[k] !== 'object') o[k] = {};
   // add any new default subject that's missing
-  for (const sd of d.subjects) if (!o.subjects.find(x => x.id === sd.id)) o.subjects.push(sd);
+  if (!Array.isArray(o.removedSubj)) o.removedSubj = [];
+  for (const sd of d.subjects) if (!o.subjects.find(x => x.id === sd.id) && !o.removedSubj.includes(sd.id)) o.subjects.push(sd);
   return o;
 }
 const normMonth = m => ({ sessions: Array.isArray(m?.sessions) ? m.sessions : [], reviews: (m && typeof m.reviews === 'object' && m.reviews) ? m.reviews : {} });
@@ -846,7 +877,7 @@ function todayInfo(){
   return { total: x.today, goal: goalFor(today), maxSession: ss.reduce((a, s) => Math.max(a, s.m), 0), subjCount: new Set(ss.map(s => s.s)).size,
     morning: ss.some(s => new Date(s.t).getHours() < 12), reviewed: !!(rv && (rv.did || rv.tomorrow)), sessions: ss };
 }
-const subjOf = id => S().subjects.find(s => s.id === id) || {id, name: '不明', color: '#9aa3c0'};
+const subjOf = id => S().subjects.find(s => s.id === id) || {id, name: '削除した科目', color: '#6b7390'};
 
 /* ================= checks: badges / missions / stages ================= */
 function checkBadges(silent){
@@ -1085,6 +1116,17 @@ function wallItemSVG(it, pfx){
     for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; ticks += `<line x1="${(.5 + Math.sin(a) * .33).toFixed(3)}" y1="${(.5 + Math.cos(a) * .33).toFixed(3)}" x2="${(.5 + Math.sin(a) * .38).toFixed(3)}" y2="${(.5 + Math.cos(a) * .38).toFixed(3)}" stroke="${dark}" stroke-width="1.4" ${ns}/>`; }
     return `<circle cx=".5" cy=".5" r=".44" fill="${c}" stroke="${mix(c, '#000000', .45)}" stroke-width="3" ${ns}/>${ticks}<line x1=".5" y1=".5" x2="${(.5 + Math.sin(hA) * .2).toFixed(3)}" y2="${(.5 + Math.cos(hA) * .2).toFixed(3)}" stroke="${dark}" stroke-width="2.4" stroke-linecap="round" ${ns}/><line x1=".5" y1=".5" x2="${(.5 + Math.sin(mA) * .31).toFixed(3)}" y2="${(.5 + Math.cos(mA) * .31).toFixed(3)}" stroke="#ff5c7a" stroke-width="1.6" stroke-linecap="round" ${ns}/>`;
   }
+  if (it.t === 'calendar') { const d = new Date(); let cells = '';
+    for (let r = 0; r < 4; r++) for (let k = 0; k < 7; k++) cells += `<rect x="${(.1 + k * .115).toFixed(3)}" y="${(.1 + r * .1).toFixed(2)}" width=".08" height=".06" fill="${r === 1 && k === d.getDay() ? c : '#c9ccd6'}"/>`;
+    return `<rect x=".05" y="0" width=".9" height="${H}" fill="#f4f6fb" stroke="#9aa3c0" stroke-width="1" ${ns}/><rect x=".05" y="${H - .25}" width=".9" height=".25" fill="${c}"/>${cells}<text transform="translate(.5 .6) scale(1 -1)" text-anchor="middle" font-size=".26" fill="#1c2133" font-family="'Chakra Petch',sans-serif" font-weight="700">${d.getDate()}</text><text transform="translate(.5 ${H - .17}) scale(1 -1)" text-anchor="middle" font-size=".11" fill="#fff" font-family="'Chakra Petch',sans-serif">${d.getMonth() + 1}月</text>`; }
+  if (it.t === 'shelf_wall') return `<rect x="0" y="0" width="${W}" height=".07" fill="${c}"/><rect x=".15" y="-.12" width=".06" height=".12" fill="${mix(c, '#000000', .3)}"/><rect x="${W - .21}" y="-.12" width=".06" height=".12" fill="${mix(c, '#000000', .3)}"/>`
+    + [['#d9576e', .2, .42], ['#3fb8ff', .32, .5], ['#ffc24d', .44, .38], ['#a98bff', .56, .46]].map(([bc, x, h]) => `<rect x="${x}" y=".07" width=".1" height="${h}" fill="${bc}"/>`).join('')
+    + `<rect x="1.3" y=".07" width=".22" height=".16" fill="#eef0f6"/><circle cx="1.41" cy=".36" r=".16" fill="#3bb47a"/><rect x="1.65" y=".07" width=".22" height=".3" fill="#2b3045"/><rect x="1.68" y=".12" width=".16" height=".2" fill="#22e4ff" opacity=".8"/>`;
+  if (it.t === 'worldmap') return `<rect x="0" y="0" width="${W}" height="${H}" fill="${c}" stroke="#d6b25e" stroke-width="2" ${ns}/>`
+    + `<ellipse cx=".45" cy=".75" rx=".25" ry=".22" fill="#5fae6e"/><ellipse cx=".55" cy=".35" rx=".12" ry=".22" fill="#5fae6e"/><ellipse cx="1.1" cy=".8" rx=".3" ry=".2" fill="#5fae6e"/><ellipse cx="1.08" cy=".4" rx=".14" ry=".2" fill="#5fae6e"/><ellipse cx="1.55" cy=".7" rx=".28" ry=".22" fill="#5fae6e"/><ellipse cx="1.7" cy=".28" rx=".14" ry=".09" fill="#5fae6e"/><circle cx="1.72" cy=".72" r=".035" fill="#ff5c7a"/>`;
+  if (it.t === 'certificate') return `<rect x="0" y="0" width="${W}" height="${H}" fill="${c}"/><rect x=".07" y=".07" width="${W - .14}" height="${H - .14}" fill="#fbf7ea"/><text transform="translate(.5 .48) scale(1 -1)" text-anchor="middle" font-size=".2" fill="#2b2016" font-family="'Zen Kaku Gothic New',serif" font-weight="700">賞状</text><rect x=".25" y=".18" width=".5" height=".02" fill="#9aa3c0"/><rect x=".25" y=".24" width=".5" height=".02" fill="#9aa3c0"/><circle cx=".78" cy=".15" r=".05" fill="#c8102e"/>`;
+  if (it.t === 'tv') { let bars = ''; [.3, .55, .4, .75, .6, .9].forEach((h, i) => { bars += `<rect x="${(.25 + i * .25).toFixed(2)}" y=".15" width=".14" height="${(h * .6).toFixed(2)}" fill="${c}" opacity=".85"/>`; });
+    return `<rect x="0" y="0" width="${W}" height="${H}" rx=".04" fill="#05070f" stroke="#2b3045" stroke-width="3" ${ns}/><rect x=".06" y=".06" width="${W - .12}" height="${H - .12}" fill="#0b1124"/>${bars}<path d="M.25 .5 L.7 .62 L1.1 .55 L1.5 .85 L1.8 .8" fill="none" stroke="#fff" stroke-width="1.5" ${ns} style="filter:drop-shadow(0 0 3px ${c})"/>`; }
   if (it.t === 'neon') return `<rect x="0" y="0" width="${W}" height="${H}" rx=".12" fill="#070a14" stroke="rgba(255,255,255,.15)" stroke-width="1" ${ns}/><text transform="translate(${W / 2} ${(H * .3).toFixed(2)}) scale(1 -1)" text-anchor="middle" font-size=".44" fill="${c}" font-family="'Chakra Petch',sans-serif" font-weight="700" letter-spacing=".08" style="filter:drop-shadow(0 0 3px ${c}) drop-shadow(0 0 8px ${c})">STUDY HARD</text>`;
   return '';
 }
@@ -1100,6 +1142,9 @@ function floorPattern(fl, N, pfx){
       for (const r of [r1, r2]) g += `<rect x="${r[0]}" y="${r[1]}" width="${r[2]}" height="${r[3]}" fill="#a7b673" stroke="#3d3424" stroke-width="2.2" ${ns}/>`; } }
   else if (fl === 'marble') { for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if ((x + y) % 2) g += `<rect x="${x}" y="${y}" width="1" height="1" fill="#cfd3de"/>`;
     g += `<path d="M0 ${N * .3} C ${N * .3} ${N * .2}, ${N * .5} ${N * .6}, ${N} ${N * .5}" fill="none" stroke="rgba(120,130,150,.35)" ${ns}/>`; }
+  else if (fl === 'checker') { for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if ((x + y) % 2) g += `<rect x="${x}" y="${y}" width="1" height="1" fill="#e9ecf3"/>`; }
+  else if (fl === 'stars') { let s0 = 11; const rnd = () => (s0 = (s0 * 9301 + 49297) % 233280) / 233280; for (let i = 0; i < N * N * 3; i++) g += `<circle cx="${(rnd() * N).toFixed(2)}" cy="${(rnd() * N).toFixed(2)}" r="${(.01 + rnd() * .03).toFixed(3)}" fill="${['#ffffff', '#bcd4ff', '#ffe9a8'][i % 3]}"/>`; }
+  else if (fl === 'goldfloor') { for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) g += `<rect x="${x + .03}" y="${y + .03}" width=".94" height=".94" fill="${(x + y) % 2 ? '#5a4a1e' : '#4a3c16'}" stroke="#d6b25e" stroke-opacity=".5" stroke-width="1" vector-effect="non-scaling-stroke"/>`; }
   else if (fl === 'neon') { for (let i = 0; i <= N; i++) g += `<line x1="${i}" y1="0" x2="${i}" y2="${N}" stroke="#22e4ff" stroke-opacity=".35" stroke-width="1" ${ns}/><line x1="0" y1="${i}" x2="${N}" y2="${i}" stroke="#a46bff" stroke-opacity=".35" stroke-width="1" ${ns}/>`; }
   return g;
 }
@@ -1109,6 +1154,11 @@ function wallPattern(wl, N, side, pfx){
   if (wl === 'midnight') for (let i = 1; i < N; i++) g += `<line x1="${i}" y1=".15" x2="${i}" y2="${WALL_H}" stroke="rgba(140,180,255,.07)" ${ns}/>`;
   if (wl === 'ivory') for (let i = .25; i < N; i += .25) g += `<line x1="${i}" y1=".15" x2="${i}" y2="${WALL_H}" stroke="rgba(0,0,0,.05)" ${ns}/>`;
   if (wl === 'wood') for (let i = .4; i < N; i += .4) g += `<line x1="${i.toFixed(2)}" y1=".15" x2="${i.toFixed(2)}" y2="${WALL_H}" stroke="#46301f" ${ns}/>`;
+  const dots = (n, cols, rmin, rmax, seed) => { let s0 = seed, out = ''; const rnd = () => (s0 = (s0 * 9301 + 49297) % 233280) / 233280;
+    for (let i = 0; i < n; i++) out += `<circle cx="${(rnd() * N).toFixed(2)}" cy="${(.2 + rnd() * (WALL_H - .3)).toFixed(2)}" r="${(rmin + rnd() * (rmax - rmin)).toFixed(3)}" fill="${cols[i % cols.length]}" opacity="${(.4 + rnd() * .6).toFixed(2)}"/>`; return out; };
+  if (wl === 'sakura') g += dots(N * 9, ['#ffb7d0', '#ff8fb8', '#ffd6e6'], .025, .06, side === 'R' ? 7 : 13);
+  if (wl === 'space') g += dots(N * 14, ['#ffffff', '#bcd4ff', '#ffe9a8'], .008, .03, side === 'R' ? 3 : 5) + (side === 'R' ? `<circle cx="${N * .7}" cy="${WALL_H * .7}" r=".35" fill="#a46bff" opacity=".55"/><ellipse cx="${N * .7}" cy="${WALL_H * .7}" rx=".6" ry=".1" fill="none" stroke="#e8d6ff" stroke-opacity=".6" ${ns}/>` : '');
+  if (wl === 'gold') for (let i = .5; i < N; i += .5) g += `<line x1="${i}" y1=".15" x2="${i}" y2="${WALL_H}" stroke="#d6b25e" stroke-opacity=".35" ${ns}/>`;
   if (wl === 'neongrid') { for (let i = .5; i < N; i += .5) g += `<line x1="${i}" y1=".15" x2="${i}" y2="${WALL_H}" stroke="#22e4ff" stroke-opacity=".16" ${ns}/>`; for (let v = .5; v < WALL_H; v += .5) g += `<line x1="0" y1="${v}" x2="${N}" y2="${v}" stroke="#a46bff" stroke-opacity=".14" ${ns}/>`; }
   g += `<rect x="0" y="0" width="${N}" height=".15" fill="rgba(0,0,0,.35)"/>`;
   g += `<rect x="0" y="0" width="${N}" height="${WALL_H}" fill="${side === 'R' ? 'rgba(255,255,255,.035)' : 'rgba(0,0,0,.22)'}"/>`;
@@ -1534,11 +1584,13 @@ VIEWS.room = () => {
   let panel = '';
   if (UI.roomTab === 'inv') panel = inv.length ? `<div class="shop">${inv.map(t => `<div class="item"><div class="thumb">${thumbSVG(t)}</div><b>${esc(F[t].n)}</b><div class="meta"><span>残り ${(st.owned[t] || 0) - placedCount(t)}個</span></div><button class="btn sm primary" data-act="rm-place" data-v="${t}">置く</button></div>`).join('')}</div>`
       : `<div class="empty">しまってある家具はありません。<br>ショップで家具を手に入れるか、部屋の家具をタップして「しまう」とここに戻ります。</div>`;
-  if (UI.roomTab === 'shop') panel = `<p class="note" style="margin:0 0 10px">勉強1分＝1コイン。レベルが上がると新しい家具が解放されます。所持コイン <b class="disp" style="color:var(--warn)">${Math.max(0, x.coins).toLocaleString()}</b></p><div class="shop">${F_ORDER.map(t => { const d = F[t], lock = x.level < d.lv, own = st.owned[t] || 0;
+  if (UI.roomTab === 'shop') panel = `<p class="note" style="margin:0 0 10px">勉強1分＝1コイン。レベルが上がると新しい家具が解放されます。所持コイン <b class="disp" style="color:var(--warn)">${Math.max(0, x.coins).toLocaleString()}</b></p>
+      <div class="seg" style="margin-bottom:12px">${[['all','すべて'],['floor','家具'],['small','机の上の小物'],['wall','壁'],['rug','床']].map(([k, n]) => `<button data-act="shop-cat" data-v="${k}" class="${(UI.shopCat || 'all') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+      <div class="shop">${F_ORDER.filter(t => { const c = UI.shopCat || 'all', d = F[t]; return c === 'all' || (c === 'wall' ? d.wall : c === 'small' ? d.small : c === 'rug' ? d.rug : !d.wall && !d.small && !d.rug); }).map(t => { const d = F[t], lock = x.level < d.lv, own = st.owned[t] || 0;
       return `<div class="item ${lock ? 'locked' : ''}"><div class="thumb">${lock ? icon('lock') : thumbSVG(t)}</div><b>${esc(d.n)}</b><div class="meta"><span>${lock ? `LV${d.lv}で解放` : own ? `所持 ${own}` : '未所持'}</span><span class="disp">${d.cost ? d.cost + 'c' : '無料'}</span></div>
         <button class="btn sm ${lock ? '' : 'primary'}" data-act="rm-buy" data-v="${t}" ${lock || x.coins < d.cost ? 'disabled' : ''}>${lock ? 'ロック中' : x.coins < d.cost ? 'コイン不足' : own ? 'もう1つ買う' : '購入する'}</button></div>`; }).join('')}</div>`;
-  if (UI.roomTab === 'deco') panel = `<h3 style="margin:0 0 8px;font-size:14px">壁紙</h3><div class="themes">${Object.entries(WALLS).map(([k, w]) => `<button class="theme ${st.room.wall === k ? 'on' : ''}" data-act="rm-wall" data-v="${k}" ${x.level < w.lv ? 'disabled' : ''}><i style="--c:${k === 'aurora' ? 'linear-gradient(135deg,#1d2a6b,#3b1f6e,#0f3a4a)' : w.c}"></i>${esc(w.n)}${x.level < w.lv ? ` · LV${w.lv}` : ''}</button>`).join('')}</div>
-      <h3 style="margin:16px 0 8px;font-size:14px">床</h3><div class="themes">${Object.entries(FLOORS).map(([k, f]) => `<button class="theme ${st.room.floor === k ? 'on' : ''}" data-act="rm-floor" data-v="${k}" ${x.level < f.lv ? 'disabled' : ''}><i style="--c:${f.c}"></i>${esc(f.n)}${x.level < f.lv ? ` · LV${f.lv}` : ''}</button>`).join('')}</div>`;
+  if (UI.roomTab === 'deco') panel = `<h3 style="margin:0 0 8px;font-size:14px">壁紙</h3><div class="themes">${Object.entries(WALLS).map(([k, w]) => `<button class="theme ${st.room.wall === k ? 'on' : ''}" data-act="rm-wall" data-v="${k}" ${x.level < w.lv ? 'disabled' : ''}><i style="--c:${k === 'aurora' ? 'linear-gradient(135deg,#1d2a6b,#3b1f6e,#0f3a4a)' : k === 'sakura' ? 'radial-gradient(circle at 30% 40%,#ffb7d0 0 6%,transparent 7%),radial-gradient(circle at 70% 60%,#ff8fb8 0 5%,transparent 6%),#3a2033' : k === 'space' ? 'radial-gradient(circle at 70% 40%,#a46bff 0 12%,transparent 13%),radial-gradient(circle at 20% 30%,#fff 0 2%,transparent 3%),#05061a' : k === 'gold' ? 'repeating-linear-gradient(90deg,#2a2412 0 10px,#d6b25e55 10px 11px)' : w.c}"></i>${esc(w.n)}${x.level < w.lv ? ` · LV${w.lv}` : ''}</button>`).join('')}</div>
+      <h3 style="margin:16px 0 8px;font-size:14px">床</h3><div class="themes">${Object.entries(FLOORS).map(([k, f]) => `<button class="theme ${st.room.floor === k ? 'on' : ''}" data-act="rm-floor" data-v="${k}" ${x.level < f.lv ? 'disabled' : ''}><i style="--c:${k === 'checker' ? 'repeating-conic-gradient(#2a2f45 0 25%,#e9ecf3 0 50%) 0 0/16px 16px' : k === 'goldfloor' ? 'repeating-linear-gradient(45deg,#5a4a1e 0 10px,#4a3c16 10px 20px)' : k === 'stars' ? 'radial-gradient(circle at 30% 50%,#fff 0 3%,transparent 4%),radial-gradient(circle at 70% 30%,#bcd4ff 0 3%,transparent 4%),#060818' : f.c}"></i>${esc(f.n)}${x.level < f.lv ? ` · LV${f.lv}` : ''}</button>`).join('')}</div>`;
   if (UI.roomTab === 'log') panel = `<div class="timeline">${STAGES.map((s, i) => { const log = st.roomLog.find(r => r.stage === i); return `<div class="tl ${i > stg ? 'lock' : ''}"><b>LEVEL ${i + 1}：${esc(s.name)}</b><div class="note">${log ? `${fmtDate(log.date)}に到達` : `プレイヤーLV${s.lv}で解放`} · 広さ ${s.size}×${s.size}</div></div>`; }).join('')}</div>`;
   return `<div class="pagehead"><div><span class="eyebrow">ROOM LEVEL ${stg + 1} / ${STAGES.length}</span><h1>${esc(STAGES[stg].name)}</h1></div>
     <div style="min-width:200px;flex:1;max-width:320px">${nextS ? `<div class="row" style="justify-content:space-between;font-size:12px"><span class="mute">次の部屋まで</span><span class="disp">LV${x.level} → LV${nextS.lv}</span></div><div class="bar" style="margin-top:6px"><i style="width:${clamp((x.xp - xpForLevel(STAGES[stg].lv)) / (xpForLevel(nextS.lv) - xpForLevel(STAGES[stg].lv)) * 100, 0, 100).toFixed(1)}%"></i></div>` : '<span class="pill good">最終段階に到達</span>'}</div></div>
@@ -1719,9 +1771,10 @@ VIEWS.prefs = () => {
       <label class="fld" for="pf-rt">振り返りのお知らせ時刻<input id="pf-rt" type="time" value="${esc(st.prefs.reviewTime)}"></label>
       <button class="btn primary" type="submit">${icon('check')}保存する</button></form>
     <section class="panel"><div class="ph"><h2>科目</h2></div>
-      <div class="list">${st.subjects.map(s => `<div class="li"><span class="dot" style="--c:${s.color}"></span><div class="t"><b>${esc(s.name)}</b></div><button class="tog ${s.hidden ? '' : 'on'}" data-act="subj-tog" data-v="${s.id}" aria-pressed="${!s.hidden}" aria-label="${esc(s.name)}を表示"></button></div>`).join('')}</div>
+      <div class="list">${st.subjects.map(s => `<div class="li"><span class="dot" style="--c:${s.color}"></span><div class="t"><b>${esc(s.name)}</b></div><button class="tog ${s.hidden ? '' : 'on'}" data-act="subj-tog" data-v="${s.id}" aria-pressed="${!s.hidden}" aria-label="${esc(s.name)}を表示"></button><button class="btn sm ghost" data-act="subj-del" data-v="${s.id}" aria-label="${esc(s.name)}を削除">${icon('trash')}</button></div>`).join('')}</div>
       <form class="row" data-form="subj-add" style="margin-top:12px"><input id="sj-name" type="text" maxlength="12" placeholder="科目を追加（例：小論文）"><button class="btn" type="submit">${icon('plus')}追加</button></form>
-      <p class="note" style="margin:8px 0 0">オフにした科目はタイマーに表示されなくなります（記録は残ります）。</p></section>
+      <p class="note" style="margin:8px 0 0">スイッチをオフにするとタイマーに出なくなります。ゴミ箱で科目そのものを消せます。どちらも、これまでの勉強記録（時間・経験値）は残ります。</p>
+      ${(st.removedSubj || []).length ? `<button class="btn sm ghost" data-act="subj-restore" style="margin-top:10px">${icon('plus')}消した標準の科目を元に戻す（${st.removedSubj.length}個）</button>` : ''}</section>
     <section class="panel"><div class="ph"><h2>アカウント</h2><span class="pill ${MODE === 'cloud' ? 'good' : ''}">${MODE === 'cloud' ? '同期中' : 'この端末のみ'}</span></div>
       ${MODE === 'cloud' ? `<p style="margin:0 0 6px;font-size:14px">ログイン中：<b>${esc(EMAIL)}</b></p>
       <p class="note" style="margin:0 0 12px">スマホでもパソコンでも、同じメールアドレスでログインすれば記録と部屋が引き継がれます。</p>
@@ -1775,6 +1828,7 @@ const ACT = {
   'hist-cancel'(){ UI.histConfirm = null; render(); },
   'hist-del'(b){ const m = data.months[b.dataset.m]; if (!m) return; m.sessions = m.sessions.filter(s => s.id !== b.dataset.v); UI.histConfirm = null; queueWrite('m-' + b.dataset.m, 0); publishPub(); toast('記録を削除しました。', 'trash'); render(); },
   // room
+  'shop-cat'(b){ UI.shopCat = b.dataset.v; render(); },
   'rm-tab'(b){ UI.roomTab = b.dataset.v; render(); },
   'rm-desel'(){ UI.sel = null; UI.colorOpen = false; render(); },
   'rm-cancel'(){ UI.place = null; render(); },
@@ -1827,6 +1881,16 @@ const ACT = {
   'exam-del'(b){ const e = S().exams.find(x => x.id === b.dataset.v); confirmBox('試験日を削除しますか？', e ? e.name : '', '削除', () => { S().exams = S().exams.filter(x => x.id !== b.dataset.v); queueWrite('state'); render(); }, true); },
   'tg-del'(b){ S().targets = S().targets.filter(x => x.id !== b.dataset.v); queueWrite('state'); render(); },
   // prefs
+  'subj-del'(b){ const st = S(), s = st.subjects.find(x => x.id === b.dataset.v); if (!s) return;
+    if (st.subjects.length <= 1) { toast('科目は1つ以上必要です。', 'x'); return; }
+    confirmBox(`「${s.name}」を削除しますか？`, 'タイマーと科目一覧から消えます。これまでの勉強時間と経験値はそのまま残り、記録では「削除した科目」と表示されます。', '削除する', () => {
+      st.subjects = st.subjects.filter(x => x.id !== s.id);
+      if (SUBJ_DEFAULT.some(d => d[0] === s.id)) st.removedSubj = [...new Set([...(st.removedSubj || []), s.id])];
+      if (T.subj === s.id) { T.subj = (st.subjects.find(x => !x.hidden) || st.subjects[0]).id; saveTimer(); }
+      if (!st.subjects.some(x => !x.hidden)) st.subjects[0].hidden = false;
+      queueWrite('state'); render(); toast(`「${s.name}」を削除しました。`, 'trash'); }, true); },
+  'subj-restore'(){ const st = S(); for (const [id, name, color] of SUBJ_DEFAULT) if ((st.removedSubj || []).includes(id) && !st.subjects.some(x => x.id === id)) st.subjects.push({id, name, color, hidden: false});
+    st.removedSubj = []; queueWrite('state'); render(); toast('標準の科目を元に戻しました。', 'plus'); },
   'subj-tog'(b){ const s = S().subjects.find(x => x.id === b.dataset.v); if (!s) return; if (!s.hidden && S().subjects.filter(x => !x.hidden).length <= 1) { toast('少なくとも1科目は表示してください。', 'x'); return; } s.hidden = !s.hidden; queueWrite('state'); render(); },
   export(){
     const payload = JSON.stringify({app: 'STUDY HARD', exportedAt: new Date().toISOString(), state: data.state, months: data.months}, null, 2);
