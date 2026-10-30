@@ -554,7 +554,7 @@ const data = { state: null, months: {} };   // months: {'2026-10': {sessions:[],
 let pubDocs = [];                           // ranking docs
 let myPubDoc = null;
 let dataV = 0;
-const UI = { calMonth: monthOf(dkey()), statMode: 'day', donut: 'week', rankScope: 'friends', rankPeriod: 'week', roomTab: 'inv', sel: null, place: null, histConfirm: null, review: null, editExam: null, reviewToasted: null, authTab: 'signup', authMsg: null, authBusy: false, signupNick: '' };
+const UI = { calMonth: monthOf(dkey()), statMode: 'day', donut: 'week', rankScope: 'friends', rankPeriod: 'week', roomTab: 'inv', sel: null, place: null, histConfirm: null, review: null, editExam: null, reviewToasted: null, rankGroup: null, grpRename: null, authTab: 'signup', authMsg: null, authBusy: false, signupNick: '' };
 
 function defaultState(owner){
   const today = dkey();
@@ -576,7 +576,7 @@ function defaultState(owner){
     owned: {desk_basic:1, chair_basic:1, lamp_small:1},
     spent: 0, bonus: 0, badges: {}, missions: {}, roomLog: [{stage: 0, date: today}],
     seenLevel: 1, prefs: {reviewTime: '22:00', stopSound: true, vol: .5, sound: 'rain'},
-    privacy: {share: true, room: true}, friends: [], group: '', created: Date.now()
+    privacy: {share: true, room: true}, friends: [], groups: [], group: '', created: Date.now()
   };
 }
 function normState(s){
@@ -587,7 +587,8 @@ function normState(s){
   o.privacy = Object.assign({}, d.privacy, s.privacy || {});
   o.room = Object.assign({}, d.room, s.room || {});
   if (!Array.isArray(o.room.items)) o.room.items = [];
-  for (const k of ['subjects','exams','targets','friends','roomLog']) if (!Array.isArray(o[k])) o[k] = d[k];
+  for (const k of ['subjects','exams','targets','friends','roomLog','groups']) if (!Array.isArray(o[k])) o[k] = d[k];
+  if (o.group && !o.groups.some(g => g.c === o.group)) o.groups.push({c: o.group, n: o.group}); o.group = '';
   for (const k of ['owned','badges','missions']) if (!o[k] || typeof o[k] !== 'object') o[k] = {};
   // add any new default subject that's missing
   for (const sd of d.subjects) if (!o.subjects.find(x => x.id === sd.id)) o.subjects.push(sd);
@@ -615,8 +616,8 @@ function queueWrite(name, delay = 500){
   if (MODE !== 'cloud') return;
   let p = pending.get(name);
   if (!p) { p = {timer: null, writing: false, dirty: false}; pending.set(name, p); }
-  clearTimeout(p.timer);
-  p.timer = setTimeout(() => flush(name), delay);
+  const due = Date.now() + delay;
+  if (!(p.timer && p.due <= due)) { clearTimeout(p.timer); p.due = due; p.timer = setTimeout(() => flush(name), delay); }
   setSync('saving');
 }
 async function flush(name){
@@ -669,7 +670,10 @@ const isSecretKey = k => { if (/^sb_secret_/.test(k)) return true; try { return 
 const SECRET_KEY = !!(CFG.supabaseKey && isSecretKey(CFG.supabaseKey));
 const CONFIGURED = !!(window.supabase && CFG.supabaseUrl && CFG.supabaseKey && !/YOUR_/.test(CFG.supabaseUrl + CFG.supabaseKey) && !SECRET_KEY);
 async function boot(){
-  try { const q = new URLSearchParams(location.search).get('friend'); if (q) { LS.set('sh-pending-friend', q.toUpperCase().slice(0, 6)); history.replaceState(null, '', location.pathname + location.hash); } } catch {}
+  try { const qs = new URLSearchParams(location.search), q = qs.get('friend'), g = qs.get('group');
+    if (q) LS.set('sh-pending-friend', q.toUpperCase().slice(0, 6));
+    if (g) LS.set('sh-pending-group', g.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6));
+    if (q || g) history.replaceState(null, '', location.pathname + location.hash); } catch {}
   if (!CONFIGURED && !LS.get('sh-local-ok')) { MODE = 'setup'; setSync('local'); $('#synctxt').textContent = '設定前'; render(); return; }
   if (!CONFIGURED) {
     MODE = 'local'; setSync('local');
@@ -769,6 +773,8 @@ async function refreshPub(force){
   const pf = LS.get('sh-pending-friend');
   if (pf && S()) { LS.del('sh-pending-friend'); const st = S();
     if (pf !== st.code && !st.friends.includes(pf) && pubDocs.find(d => d.code === pf)) { st.friends.push(pf); queueWrite('state'); const f = pubDocs.find(d => d.code === pf); toast(`${f.nick || 'ななしの受験生'}さんを友達に追加しました。`, 'users', 5000); } }
+  const pg = LS.get('sh-pending-group');
+  if (pg && S()) { LS.del('sh-pending-group'); joinGroup(pg, true); }
   dataV++; scheduleRender(); publishPub();
 }
 function afterDataReady(){
@@ -785,15 +791,15 @@ function buildPub(){
   return {
     code: st.code, nick: (st.nickname || '').slice(0, 20), lv: x.level, tot: x.total,
     wk: weekStart(today), wMin: x.weekMin, mo: monthOf(today), mMin: x.monthMin, streak: x.streak,
-    group: st.group || '', fr: st.friends.slice(0, 200), room: st.privacy.room ? {wall: st.room.wall, floor: st.room.floor, items: st.room.items, size: STAGES[stageFor(x.level)].size, stage: stageFor(x.level)} : null
+    groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200), room: st.privacy.room ? {wall: st.room.wall, floor: st.room.floor, items: st.room.items, size: STAGES[stageFor(x.level)].size, stage: stageFor(x.level)} : null
   };
 }
-function publishPub(){
+function publishPub(delay = 1500){
   if (MODE !== 'cloud') return;
   const doc = buildPub();
   if (!doc && !myPubDoc) return;
   if (doc && myPubDoc) { const {uid, upd, ...cur} = myPubDoc; if (stableStr(cur) === stableStr(doc)) return; }
-  queueWrite('pub', 1500);
+  queueWrite('pub', delay);
 }
 
 /* ================= derived stats ================= */
@@ -911,7 +917,7 @@ function badgeToast(b){ toast(`実績解除「${b.n}」 ${b.d}`, 'medal', 4500);
 /* ================= router & render ================= */
 const ROUTES = {
   home:['ホーム','home'], timer:['タイマー','timer'], stats:['記録・分析','chart'], room:['勉強部屋','room'],
-  rank:['ランキング','trophy'], exams:['入試カウントダウン','cal'], review:['今日の振り返り','pen'], badges:['実績・称号','medal'], prefs:['設定','gear']
+  rank:['ランキング','trophy'], groups:['グループ','users'], exams:['入試カウントダウン','cal'], review:['今日の振り返り','pen'], badges:['実績・称号','medal'], prefs:['設定','gear']
 };
 const route = () => { const h = (location.hash || '').replace('#', ''); return ROUTES[h] ? h : 'home'; };
 let pendingRender = false, renderQueued = false;
@@ -1547,7 +1553,8 @@ VIEWS.rank = () => {
   const val = d => UI.rankPeriod === 'week' ? (d.wk === wk ? d.wMin || 0 : 0) : UI.rankPeriod === 'month' ? (d.mo === mo ? d.mMin || 0 : 0) : (d.tot || 0);
   let pool = pubDocs.filter(d => d.code && d.uid !== UID); const mine = buildPub(); if (mine) pool.push({uid: UID, ...mine});
   if (UI.rankScope === 'friends') pool = pool.filter(d => d.uid === UID || st.friends.includes(d.code) || (Array.isArray(d.fr) && d.fr.includes(st.code)));
-  if (UI.rankScope === 'group') pool = st.group ? pool.filter(d => d.group === st.group) : [];
+  const gs = st.groups || [];
+  if (UI.rankScope === 'group') { if (!gs.some(g => g.c === UI.rankGroup)) UI.rankGroup = gs[0] ? gs[0].c : null; pool = UI.rankGroup ? pool.filter(d => inGroup(d, UI.rankGroup)) : []; }
   const rows = pool.map(d => ({...d, v: val(d)})).sort((a, b) => b.v - a.v || (b.lv || 0) - (a.lv || 0));
   const meIn = rows.some(r => r.uid === UID);
   const avColor = id => ['#22e4ff','#a46bff','#3d7bff','#3ee6a0','#ffc24d','#ff6fb0','#ff9350'][hashStr(id) % 7];
@@ -1555,7 +1562,8 @@ VIEWS.rank = () => {
   <div class="grid2">
     <section class="panel"><div class="ph"><div class="seg">${[['friends','友達'],['group','グループ'],['all','全員']].map(([k, n]) => `<button data-act="rank-s" data-v="${k}" class="${UI.rankScope === k ? 'on' : ''}">${n}</button>`).join('')}</div><span class="note">${UI.rankPeriod === 'week' ? '月曜はじまり' : UI.rankPeriod === 'month' ? `${+mo.slice(5)}月` : '全期間'}</span></div>
       ${!st.privacy.share ? '<p class="banner" style="margin:0 0 10px">ランキング参加がオフです。自分は表示されません（下の設定で変更できます）。</p>' : ''}
-      ${UI.rankScope === 'group' && !st.group ? '<div class="empty">グループに参加すると、同じグループの人だけのランキングが見られます。</div>' :
+      ${UI.rankScope === 'group' && gs.length ? `<div class="chips" style="margin:-2px 0 12px">${gs.map(g => `<button class="chip ${UI.rankGroup === g.c ? 'on' : ''}" style="--c:#a46bff" data-act="rank-g" data-v="${esc(g.c)}"><i></i>${esc(groupName(g.c))}</button>`).join('')}</div>` : ''}
+      ${UI.rankScope === 'group' && !gs.length ? `<div class="empty">まだグループに入っていません。<br><a class="btn primary" href="#groups" style="margin-top:12px">${icon('plus')}グループを作る・参加する</a></div>` :
         rows.length ? `<div>${rows.map((r, i) => `<div class="rk ${i < 3 && r.v > 0 ? 'top' + (i + 1) : ''} ${r.uid === UID ? 'me' : ''}"><span class="n">${i + 1}</span><span class="av" style="--c:${avColor(r.uid)}">${esc((r.nick || '?').slice(0, 1))}</span>
           <div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.nick || 'ななしの受験生')}${r.uid === UID ? '（あなた）' : ''}</b><span class="note">LV${r.lv || 1} · ${esc(titleFor(r.lv || 1))} · 連続${r.streak || 0}日</span></div>
           <span class="disp" style="font-size:16px">${fmtHM(r.v)}</span>${r.room && r.uid !== UID ? `<button class="btn sm ghost" data-act="see-room" data-v="${esc(r.uid)}" aria-label="部屋を見る">${icon('eye')}</button>` : ''}</div>`).join('')}</div>`
@@ -1570,14 +1578,67 @@ VIEWS.rank = () => {
         <p class="note" style="margin:8px 0 0">どちらか一方がコードを登録すれば、お互いの「友達」ランキングに表示されます。</p></section>
       <section class="panel"><div class="ph"><h3>友達を追加</h3></div><form class="row" data-form="add-friend"><input id="fr-code" type="text" maxlength="6" placeholder="例：K7QX2M" autocomplete="off" style="text-transform:uppercase"><button class="btn primary" type="submit">${icon('plus')}追加</button></form>
         ${st.friends.length ? `<div class="list" style="margin-top:10px">${st.friends.map(c => { const d = pubDocs.find(p => p.code === c); return `<div class="li"><span class="disp" style="letter-spacing:.15em">${esc(c)}</span><div class="t"><b>${d ? esc(d.nick || 'ななしの受験生') : '見つかりません'}</b><span>${d ? `LV${d.lv}` : 'ランキング参加をオフにしている可能性があります'}</span></div><button class="btn sm ghost" data-act="fr-del" data-v="${esc(c)}" aria-label="友達を削除">${icon('x')}</button></div>`; }).join('')}</div>` : ''}</section>
-      <section class="panel"><div class="ph"><h3>グループ</h3>${st.group ? `<span class="pill cy">${esc(st.group)}</span>` : ''}</div><form class="row" data-form="group"><input id="grp" type="text" maxlength="12" placeholder="例：KOBE3A" value="${esc(st.group)}" autocomplete="off" style="text-transform:uppercase"><button class="btn" type="submit">${st.group ? '変更' : '参加'}</button></form>
-        <p class="note" style="margin:8px 0 0">同じグループ名を入れた人どうしでランキングになります。クラスや塾の仲間と決めてください。空欄で保存すると退出します。</p></section>
+      <section class="panel"><div class="ph"><h3>グループ</h3><a class="btn sm" href="#groups">${gs.length ? '管理する' : '作る・参加する'}</a></div>
+        ${gs.length ? `<div class="chips">${gs.map(g => `<span class="chip on" style="--c:#a46bff"><i></i>${esc(groupName(g.c))}</span>`).join('')}</div>` : '<p class="note" style="margin:0">クラスや塾の仲間でグループを作ると、そのメンバーだけのランキングで競えます。</p>'}</section>
       <section class="panel"><div class="ph"><h3>公開する情報</h3></div>
         <div class="row" style="margin-bottom:12px"><span style="flex:1;font-size:14px">ランキングに参加する<br><span class="note">ニックネーム・レベル・勉強時間・連続日数</span></span><button class="tog ${st.privacy.share ? 'on' : ''}" data-act="priv" data-k="share" aria-pressed="${st.privacy.share}" aria-label="ランキングに参加する"></button></div>
         <div class="row"><span style="flex:1;font-size:14px">勉強部屋を公開する</span><button class="tog ${st.privacy.room ? 'on' : ''}" data-act="priv" data-k="room" aria-pressed="${st.privacy.room}" aria-label="勉強部屋を公開する" ${st.privacy.share ? '' : 'disabled'}></button></div>
         <p class="note" style="margin:10px 0 0">科目の内訳・振り返りの文章・志望校は公開されません。</p></section>
     </div>
   </div>`;
+};
+
+function inGroup(d, c){ return (Array.isArray(d.groups) && d.groups.some(g => g && g.c === c)) || d.group === c; }
+function groupName(c){
+  const docs = pubDocs.filter(d => d.uid !== UID);
+  const owner = docs.find(d => Array.isArray(d.groups) && d.groups.some(g => g.c === c && g.own));
+  const mine = (S().groups || []).find(g => g.c === c);
+  if (mine && mine.own) return mine.n;
+  if (owner) return owner.groups.find(g => g.c === c).n;
+  if (mine) return mine.n;
+  for (const d of docs) { const g = (d.groups || []).find(g => g.c === c); if (g) return g.n; }
+  return null;
+}
+function groupMembers(c){
+  const pool = pubDocs.filter(d => d.code && d.uid !== UID); const mine = buildPub(); if (mine) pool.push({uid: UID, ...mine});
+  return pool.filter(d => inGroup(d, c));
+}
+const groupUrl = c => `${location.origin}${location.pathname}?group=${c}`;
+function joinGroup(code, fromLink){
+  const st = S(); code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 6) { toast('グループコードは6文字です。', 'x'); return false; }
+  if (st.groups.some(g => g.c === code)) { toast('このグループにはもう参加しています。', 'users'); UI.rankScope = 'group'; UI.rankGroup = code; return false; }
+  if (st.groups.length >= 10) { toast('参加できるグループは10個までです。', 'x'); return false; }
+  const n = groupName(code);
+  if (!n) { toast(fromLink ? '招待されたグループが見つかりませんでした。作った人がランキング参加をオンにしているか確認してください。' : 'そのコードのグループが見つかりません。コードをもう一度確認してください。', 'x', 6000); return false; }
+  st.groups.push({c: code, n}); UI.rankScope = 'group'; UI.rankGroup = code;
+  queueWrite('state'); publishPub(200); toast(`グループ「${n}」に参加しました。`, 'users', 4500); return true;
+}
+VIEWS.groups = () => {
+  const st = S(), gs = st.groups || [], wk = weekStart(dkey());
+  if (MODE !== 'cloud') return `<div class="pagehead"><h1>グループ</h1></div><section class="panel"><div class="empty">${icon('users')}<br>グループはログインして使えます。</div></section>`;
+  const card = g => {
+    const name = groupName(g.c) || g.n, mem = groupMembers(g.c).map(d => ({...d, v: d.wk === wk ? d.wMin || 0 : 0})).sort((a, b) => b.v - a.v);
+    const total = mem.reduce((a, d) => a + d.v, 0);
+    return `<section class="panel"><div class="ph"><div style="min-width:0"><span class="eyebrow">GROUP · ${esc(g.c)}</span><h2 style="overflow:hidden;text-overflow:ellipsis">${esc(name)}</h2></div>${g.own ? '<span class="pill cy">作成者</span>' : ''}</div>
+      <div class="row wrap" style="gap:16px;margin-bottom:10px"><div class="kv"><span class="k">メンバー</span><span class="v" style="font-size:18px">${mem.length}<small>人</small></span></div><div class="kv"><span class="k">今週のみんなの合計</span><span class="v" style="font-size:18px">${fmtHM(total)}</span></div></div>
+      ${mem.length ? `<div>${mem.slice(0, 5).map((d, i) => `<div class="rk ${i < 3 && d.v > 0 ? 'top' + (i + 1) : ''} ${d.uid === UID ? 'me' : ''}" style="padding:7px 4px"><span class="n">${i + 1}</span><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(d.nick || 'ななしの受験生')}${d.uid === UID ? '（あなた）' : ''}</b></div><span class="disp">${fmtHM(d.v)}</span></div>`).join('')}</div>` : ''}
+      ${mem.length > 5 ? `<p class="note" style="margin:6px 0 0">ほか ${mem.length - 5}人</p>` : ''}
+      ${UI.grpRename === g.c ? `<form class="row" data-form="grp-rename" data-v="${esc(g.c)}" style="margin-top:12px"><input id="gr-name" type="text" maxlength="20" value="${esc(name)}" aria-label="グループ名"><button class="btn primary" type="submit">保存</button><button class="btn ghost" type="button" data-act="grp-rename" data-v="">やめる</button></form>` : ''}
+      <div class="row wrap" style="gap:8px;margin-top:14px"><button class="btn sm primary" data-act="grp-invite" data-v="${esc(g.c)}">${icon('users')}招待リンクを送る</button><button class="btn sm" data-act="grp-rank" data-v="${esc(g.c)}">${icon('trophy')}ランキング</button>
+        ${g.own ? `<button class="btn sm" data-act="grp-rename" data-v="${esc(g.c)}">${icon('pen')}名前を変える</button>` : ''}<button class="btn sm ghost" data-act="grp-leave" data-v="${esc(g.c)}">${icon('x')}抜ける</button></div></section>`;
+  };
+  return `<div class="pagehead"><h1>グループ</h1><span class="note">${gs.length} / 10 グループ</span></div>
+  <div class="grid2">
+    <form class="panel hero stack" data-form="grp-create" style="gap:12px"><div><span class="eyebrow">NEW GROUP</span><h2 style="margin:2px 0 0;font-size:17px">グループを作る</h2></div>
+      <label class="fld" for="gc-name">グループ名<input id="gc-name" type="text" maxlength="20" placeholder="例：3年A組、〇〇塾の仲間" autocomplete="off"></label>
+      <button class="btn primary" type="submit">${icon('plus')}作成する</button>
+      <p class="note" style="margin:0">作ったら「招待リンクを送る」でLINEなどに送るだけ。リンクを開いた人は自動でグループに入ります。</p></form>
+    <form class="panel stack" data-form="grp-join" style="gap:12px"><div><span class="eyebrow">JOIN</span><h2 style="margin:2px 0 0;font-size:17px">コードで参加する</h2></div>
+      <label class="fld" for="gj-code">グループコード（6文字）<input id="gj-code" type="text" maxlength="6" placeholder="例：Q7KX2M" autocomplete="off" style="text-transform:uppercase"></label>
+      <button class="btn" type="submit">参加する</button></form>
+  </div>
+  ${gs.length ? gs.map(card).join('') : '<section class="panel"><div class="empty">まだグループに入っていません。上でグループを作るか、友達から届いたコードで参加しよう。</div></section>'}`;
 };
 
 VIEWS.exams = () => {
@@ -1692,7 +1753,7 @@ const ACT = {
   more(){
     if ($('#sheet')) { $('#sheet').remove(); return; }
     const el = document.createElement('div');
-    el.innerHTML = `<div class="scrim" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-label="メニュー"><div class="sheet-grid">${['rank','exams','review','badges','prefs','stats'].map(k => `<a href="#${k}" data-act="sheet-close">${icon(ROUTES[k][1])}${ROUTES[k][0]}</a>`).join('')}</div></div>`;
+    el.innerHTML = `<div class="scrim" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-label="メニュー"><div class="sheet-grid">${['rank','groups','exams','review','badges','prefs'].map(k => `<a href="#${k}" data-act="sheet-close">${icon(ROUTES[k][1])}${ROUTES[k][0]}</a>`).join('')}</div></div>`;
     el.id = 'sheet'; document.body.appendChild(el);
   },
   'sheet-close'(){ $('#sheet')?.remove(); },
@@ -1742,6 +1803,17 @@ const ACT = {
   // rank
   'rank-p'(b){ UI.rankPeriod = b.dataset.v; render(); },
   'rank-s'(b){ UI.rankScope = b.dataset.v; render(); },
+  'rank-g'(b){ UI.rankGroup = b.dataset.v; render(); },
+  'grp-rank'(b){ UI.rankScope = 'group'; UI.rankGroup = b.dataset.v; location.hash = '#rank'; },
+  'grp-rename'(b){ UI.grpRename = b.dataset.v || null; render(); },
+  async 'grp-invite'(b){ const c = b.dataset.v, url = groupUrl(c), name = groupName(c) || '';
+    const text = `STUDY HARDのグループ「${name}」に参加しよう！リンクを開いて登録すると、みんなで勉強時間を競えるよ。`;
+    if (navigator.share) { try { await navigator.share({title: 'STUDY HARD', text, url}); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+    try { navigator.clipboard.writeText(`${text}\n${url}`).then(() => toast('招待リンクをコピーしました。LINEなどに貼り付けてください。', 'copy', 4500), () => toast(url, 'copy', 9000)); } catch { toast(url, 'copy', 9000); } },
+  'grp-leave'(b){ const c = b.dataset.v, name = groupName(c) || c;
+    confirmBox(`「${name}」から抜けますか？`, 'このグループのランキングに表示されなくなります。コードか招待リンクがあれば、また参加できます。', '抜ける', () => {
+      const st = S(); st.groups = st.groups.filter(g => g.c !== c); if (UI.rankGroup === c) UI.rankGroup = null;
+      queueWrite('state'); publishPub(200); render(); toast(`「${name}」から抜けました。`, 'x'); }, true); },
   'copy-code'(){ const c = S().code; const done = () => toast('フレンドコードをコピーしました。', 'copy');
     try { navigator.clipboard.writeText(c).then(done, () => selectCode()); } catch { selectCode(); } },
   'fr-del'(b){ S().friends = S().friends.filter(c => c !== b.dataset.v); queueWrite('state'); render(); },
@@ -1921,7 +1993,13 @@ document.addEventListener('submit', e => {
     if (st.friends.includes(c)) { toast('すでに登録済みです。', 'users'); return; }
     if (!pubDocs.find(p => p.code === c)) { toast('そのコードの人が見つかりません。相手がランキング参加をオンにしているか確認してください。', 'x', 5000); return; }
     st.friends.push(c); queueWrite('state'); pendingRender = false; render(); toast('友達を追加しました。', 'users'); }
-  if (k === 'group') { st.group = val('grp').toUpperCase().replace(/[^A-Z0-9\-_]/g, '').slice(0, 12); queueWrite('state'); publishPub(); pendingRender = false; UI.rankScope = st.group ? 'group' : UI.rankScope; render(); toast(st.group ? `グループ「${st.group}」に参加しました。` : 'グループから退出しました。', 'users'); }
+  if (k === 'grp-create') { const n = val('gc-name').slice(0, 20); if (!n) { toast('グループ名を入れてください。', 'x'); return; }
+    if (st.groups.length >= 10) { toast('参加できるグループは10個までです。', 'x'); return; }
+    const used = new Set(pubDocs.flatMap(d => (d.groups || []).map(g => g.c))); let c = genCode(); while (used.has(c)) c = genCode();
+    st.groups.push({c, n, own: true}); UI.rankGroup = c; queueWrite('state'); publishPub(200); pendingRender = false; render();
+    toast(`グループ「${n}」を作りました。「招待リンクを送る」でメンバーを呼ぼう。`, 'users', 5000); }
+  if (k === 'grp-join') { if (joinGroup(val('gj-code'), false)) { pendingRender = false; render(); } }
+  if (k === 'grp-rename') { const g = st.groups.find(x => x.c === f.dataset.v), n = val('gr-name').slice(0, 20); if (g && n) { g.n = n; queueWrite('state'); publishPub(); toast('グループ名を変えました。', 'check'); } UI.grpRename = null; pendingRender = false; render(); }
   if (k === 'exam-add') { const n = val('ex-name'), d = val('ex-date'); if (!n || !d) { toast('試験名と日付を入力してください。', 'x'); return; } st.exams.push({id: uid6(), name: n.slice(0, 40), date: d}); queueWrite('state'); pendingRender = false; render(); toast('試験日を追加しました。', 'cal'); }
   if (k === 'exam-edit') { const e2 = st.exams.find(x => x.id === f.dataset.v), n = val('ee-name'), d = val('ee-date'); if (e2 && n && d) { e2.name = n.slice(0, 40); e2.date = d; queueWrite('state'); } UI.editExam = null; pendingRender = false; render(); }
   if (k === 'tg-add') { const u = val('tg-univ'); if (!u) { toast('大学名を入力してください。', 'x'); return; } st.targets.push({id: uid6(), univ: u.slice(0, 30), fac: val('tg-fac').slice(0, 30)}); queueWrite('state'); pendingRender = false; render(); }
@@ -1988,7 +2066,7 @@ function renderAuth(){
     </form>
     <div class="row wrap" style="justify-content:center;margin-top:10px">${t === 'reset' ? '<button class="btn sm ghost" data-act="auth-tab" data-v="login">ログインに戻る</button>' : '<button class="btn sm ghost" data-act="auth-tab" data-v="reset">パスワードを忘れた</button>'}</div>
     </section>
-    ${LS.get('sh-pending-friend') ? '<p class="banner">友達からの招待リンクで開きました。登録すると、その友達とランキングで競えます。</p>' : ''}</div>`;
+    ${LS.get('sh-pending-group') ? '<p class="banner">グループへの招待リンクで開きました。登録するとそのグループに自動で入ります。</p>' : LS.get('sh-pending-friend') ? '<p class="banner">友達からの招待リンクで開きました。登録すると、その友達とランキングで競えます。</p>' : ''}</div>`;
 }
 async function doAuth(f){
   if (UI.authBusy) return;
