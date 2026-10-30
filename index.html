@@ -1,0 +1,2025 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>STUDY HARD</title>
+<meta name="description" content="今日の努力が、未来の自分をつくる。勉強時間で経験値を貯めてレベルアップする、受験生のための学習管理アプリ。">
+<meta name="theme-color" content="#04050b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="STUDY HARD">
+<meta property="og:title" content="STUDY HARD">
+<meta property="og:description" content="勉強をゲームに。友達とランキングで競える受験生向け学習管理アプリ。">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: HUD command deck — sticky status bar, column of glass modules, bottom dock on phones / side rail on desktop */
+:root{
+  color-scheme: dark;
+  --bg:#04050b; --bg-2:#090d19; --ink:#e8eeff; --mute:#8e98b9; --dim:#5a6382;
+  --glass:rgba(130,165,255,.055); --glass-2:rgba(130,165,255,.1); --line:rgba(130,175,255,.14); --line-2:rgba(130,175,255,.3);
+  --cyan:#22e4ff; --blue:#3d7bff; --violet:#a46bff; --good:#3ee6a0; --warn:#ffc65c; --bad:#ff5c7a;
+  --f-disp:"Chakra Petch","Zen Kaku Gothic New",system-ui,sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --r:18px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px);background:#04050b;-webkit-text-size-adjust:100%}
+html,body{height:auto}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+.bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+   radial-gradient(60vw 50vh at 85% -10%, rgba(164,107,255,.20), transparent 70%),
+   radial-gradient(55vw 45vh at -10% 20%, rgba(34,228,255,.13), transparent 70%),
+   radial-gradient(70vw 50vh at 50% 120%, rgba(61,123,255,.14), transparent 70%),
+   linear-gradient(rgba(130,175,255,.035) 1px, transparent 1px) 0 0/40px 40px,
+   linear-gradient(90deg, rgba(130,175,255,.035) 1px, transparent 1px) 0 0/40px 40px,
+   var(--bg);}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:8px}
+.ic{width:20px;height:20px;flex:none}
+.disp{font-family:var(--f-disp);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.mute{color:var(--mute)} .dim{color:var(--dim)}
+.eyebrow{font-family:var(--f-disp);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);font-weight:600}
+
+/* ---------- frame ---------- */
+.app{position:relative;z-index:1;min-height:100vh}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:rgba(4,5,11,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.topbar-in{display:flex;align-items:center;gap:10px;height:56px;max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{font-family:var(--f-disp);font-weight:700;letter-spacing:.14em;font-size:17px;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);white-space:nowrap}
+.brand-mark{width:26px;height:26px}
+.brand b{background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.top-sp{flex:1}
+.hchip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:var(--glass);font-family:var(--f-disp);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hchip .ic{width:16px;height:16px}
+.sync{width:8px;height:8px;border-radius:50%;background:var(--dim);box-shadow:0 0 0 3px rgba(90,99,130,.2)}
+.sync.ok{background:var(--good);box-shadow:0 0 8px var(--good)}
+.sync.saving{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.sync.local{background:var(--violet)}
+.sync.err{background:var(--bad)}
+.main{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px calc(96px + env(safe-area-inset-bottom,0px))}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(6,8,16,.86);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(6px,env(safe-area-inset-right,0px))}
+.dock-in{display:grid;grid-template-columns:repeat(5,1fr);max-width:560px;margin:0 auto}
+.dock a,.dock button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 8px;font-size:10.5px;color:var(--mute);text-decoration:none;background:none;border:0;letter-spacing:.04em}
+.dock .ic{width:22px;height:22px}
+.dock .on{color:var(--cyan)}
+.dock .on .ic{filter:drop-shadow(0 0 6px rgba(34,228,255,.7))}
+.rail{display:none}
+@media (min-width:960px){
+  .dock{display:none}
+  .shell{display:grid;grid-template-columns:220px minmax(0,1fr);max-width:1180px;margin:0 auto;gap:0}
+  .rail{display:flex;flex-direction:column;gap:4px;position:sticky;top:calc(56px + env(safe-area-inset-top,0px));align-self:start;padding:18px 10px 18px max(16px,env(safe-area-inset-left,0px));height:calc(100vh - 56px)}
+  .rail a{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;color:var(--mute);text-decoration:none;font-size:14px}
+  .rail a:hover{background:var(--glass);color:var(--ink)}
+  .rail a.on{background:linear-gradient(90deg,rgba(34,228,255,.14),rgba(164,107,255,.06));color:var(--ink);box-shadow:inset 0 0 0 1px var(--line-2)}
+  .rail a.on .ic{color:var(--cyan)}
+  .main{padding-left:16px;padding-bottom:40px;margin:0;max-width:none}
+}
+
+/* ---------- modules ---------- */
+.stack{display:flex;flex-direction:column;gap:16px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px}
+.panel{position:relative;background:linear-gradient(180deg,rgba(150,180,255,.07),rgba(150,180,255,.025));border:1px solid var(--line);border-radius:var(--r);padding:18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);min-width:0}
+.panel.hero{background:radial-gradient(120% 120% at 0% 0%,rgba(34,228,255,.12),transparent 55%),radial-gradient(120% 120% at 100% 100%,rgba(164,107,255,.16),transparent 55%),rgba(10,14,28,.7);border-color:var(--line-2)}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.ph h2,.ph h3{margin:0;font-size:16px;font-weight:700;text-wrap:balance}
+.ph .eyebrow{display:block;margin-bottom:2px}
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 2px}
+.pagehead h1{margin:0;font-size:24px;font-weight:700;letter-spacing:.02em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 16px;border-radius:12px;border:1px solid var(--line-2);background:var(--glass-2);color:var(--ink);font-weight:500;text-decoration:none;transition:transform .12s,background .2s,box-shadow .2s;white-space:nowrap}
+.btn:hover{background:rgba(130,165,255,.16)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{border:0;background:linear-gradient(100deg,#19c9ff,#4b7dff 55%,#9a5cff);color:#04050b;font-weight:700;box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 8px 30px -8px rgba(34,228,255,.6)}
+.btn.primary:hover{box-shadow:0 0 0 1px rgba(255,255,255,.2) inset,0 10px 36px -6px rgba(34,228,255,.8)}
+.btn.big{min-height:56px;font-size:17px;padding:0 26px;border-radius:16px;letter-spacing:.06em}
+.btn.sm{min-height:34px;padding:0 12px;font-size:13px;border-radius:10px}
+.btn.ghost{background:transparent}
+.btn.danger{border-color:rgba(255,92,122,.5);color:#ff9fb1}
+.btn.wide{width:100%}
+.seg{display:inline-flex;padding:3px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid var(--line);gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:none;padding:7px 12px;border-radius:9px;color:var(--mute);font-size:13px}
+.seg button.on{background:linear-gradient(100deg,rgba(34,228,255,.22),rgba(164,107,255,.22));color:var(--ink);box-shadow:inset 0 0 0 1px var(--line-2)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--glass);font-size:13px;color:var(--mute)}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--c,#999);box-shadow:0 0 8px var(--c,#999)}
+.chip.on{color:var(--ink);border-color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent)}
+.bar{height:8px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--violet));box-shadow:0 0 12px rgba(34,228,255,.6);transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.kv{display:flex;flex-direction:column;gap:2px;min-width:0}
+.kv .k{font-size:12px;color:var(--mute)}
+.kv .v{font-family:var(--f-disp);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
+.kv .v small{font-size:13px;color:var(--mute);font-weight:500;margin-left:2px}
+.row{display:flex;align-items:center;gap:12px;min-width:0}
+.row.wrap{flex-wrap:wrap}
+.sp{flex:1}
+.list{display:flex;flex-direction:column}
+.li{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line);min-width:0}
+.li:first-child{border-top:0}
+.li .t{min-width:0;flex:1}
+.li .t b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .t span{font-size:12px;color:var(--mute)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);flex:none}
+label.fld{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--mute);min-width:0}
+input[type=text],input[type=number],input[type=date],input[type=time],textarea,select{background:rgba(0,0,0,.4);border:1px solid var(--line-2);border-radius:11px;padding:10px 12px;color:var(--ink);font-size:16px;min-width:0;width:100%}
+textarea{min-height:84px;resize:vertical;line-height:1.6}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,228,255,.18)}
+.tog{position:relative;width:46px;height:26px;border-radius:99px;background:rgba(255,255,255,.12);border:0;flex:none;transition:background .2s}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#cfd6ea;transition:transform .2s}
+.tog.on{background:linear-gradient(90deg,var(--cyan),var(--violet))}
+.tog.on::after{transform:translateX(20px);background:#fff}
+.note{font-size:12.5px;color:var(--mute);line-height:1.7}
+.empty{padding:22px 10px;text-align:center;color:var(--mute);font-size:14px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600;border:1px solid var(--line-2);color:var(--mute);white-space:nowrap}
+.pill.good{color:var(--good);border-color:rgba(62,230,160,.45);background:rgba(62,230,160,.08)}
+.pill.warn{color:var(--warn);border-color:rgba(255,198,92,.45)}
+.pill.cy{color:var(--cyan);border-color:rgba(34,228,255,.45)}
+.banner{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid rgba(164,107,255,.45);background:linear-gradient(90deg,rgba(164,107,255,.18),rgba(34,228,255,.08));font-size:14px}
+
+/* ---------- home ---------- */
+.home-hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center}
+@media (max-width:560px){.home-hero{grid-template-columns:1fr;justify-items:center;text-align:center}.home-hero .row{justify-content:center}}
+.ringwrap{position:relative;width:176px;height:176px}
+.ringwrap svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ringwrap .rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ringwrap .rc .disp{font-size:34px;font-weight:600;line-height:1}
+.ringwrap .rc small{font-size:12px;color:var(--mute);margin-top:6px}
+.lvcard .lvnum{font-family:var(--f-disp);font-size:44px;font-weight:700;line-height:1;background:linear-gradient(180deg,#fff,#9fd9ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.mission{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.mission:first-child{border-top:0}
+.mcheck{width:24px;height:24px;border-radius:7px;border:1.5px solid var(--line-2);display:grid;place-items:center;flex:none}
+.mission.done .mcheck{background:linear-gradient(135deg,var(--cyan),var(--violet));border:0;color:#04050b}
+.mission.done .mt{color:var(--mute);text-decoration:line-through;text-decoration-color:rgba(255,255,255,.3)}
+.mission .mt{flex:1;min-width:0;font-size:14px}
+.roomcard{display:block;text-decoration:none;color:inherit;overflow:hidden}
+.roomcard .rv{margin:-6px -6px 0;border-radius:14px;background:radial-gradient(80% 80% at 50% 40%,rgba(61,123,255,.16),transparent 70%)}
+.quote{font-size:15px;line-height:1.9}
+.quote cite{display:block;font-style:normal;color:var(--mute);font-size:12px;margin-top:6px}
+
+/* ---------- timer ---------- */
+.tface{display:flex;flex-direction:column;align-items:center;gap:16px;padding:8px 0}
+.tring{position:relative;width:min(300px,78vw);aspect-ratio:1;max-width:100%}
+.tring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.tring .rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.ttime{font-family:var(--f-disp);font-size:clamp(46px,14vw,68px);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.03em;line-height:1;text-shadow:0 0 24px rgba(34,228,255,.35)}
+.tphase{font-family:var(--f-disp);font-size:12px;letter-spacing:.24em;color:var(--cyan)}
+.tphase.brk{color:var(--good)}
+.tsubj{font-size:14px;color:var(--mute)}
+.tctl{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.running .tring svg .prog{filter:drop-shadow(0 0 8px rgba(34,228,255,.8))}
+.cheer{font-size:14px;color:var(--mute);text-align:center;min-height:1.6em;max-width:36ch}
+.sounds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.snd{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border-radius:14px;border:1px solid var(--line);background:var(--glass);color:var(--mute);font-size:12.5px}
+.snd.on{color:var(--ink);border-color:var(--cyan);background:rgba(34,228,255,.1);box-shadow:0 0 18px -6px rgba(34,228,255,.7)}
+.snd .ic{width:24px;height:24px}
+input[type=range]{width:100%;accent-color:var(--cyan)}
+
+/* ---------- stats ---------- */
+.chart svg{width:100%;height:auto;display:block}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.cal .h{font-size:11px;color:var(--dim);text-align:center}
+.cal .d{aspect-ratio:1;border-radius:8px;display:grid;place-items:center;font-size:12px;font-family:var(--f-disp);color:var(--mute);background:rgba(255,255,255,.035);border:1px solid transparent;font-variant-numeric:tabular-nums}
+.cal .d.l1{background:rgba(34,228,255,.12);color:var(--ink)}
+.cal .d.l2{background:rgba(34,228,255,.26);color:var(--ink)}
+.cal .d.l3{background:rgba(61,123,255,.45);color:#fff}
+.cal .d.l4{background:linear-gradient(135deg,var(--cyan),var(--violet));color:#04050b;font-weight:700;box-shadow:0 0 12px -2px rgba(34,228,255,.7)}
+.cal .d.today{border-color:var(--cyan)}
+.cal .d.x{visibility:hidden}
+.legend{display:flex;flex-direction:column;gap:6px}
+.legend .row{font-size:13px}
+
+/* ---------- room ---------- */
+.roomstage{position:relative;border-radius:var(--r);overflow:hidden;border:1px solid var(--line-2);background:radial-gradient(70% 60% at 50% 45%,rgba(61,123,255,.18),transparent 70%),radial-gradient(60% 50% at 50% 100%,rgba(164,107,255,.16),transparent 70%),#05070f}
+.roomstage svg{display:block;width:100%;height:auto;max-height:68vh;touch-action:manipulation}
+.roomsvg [data-i]{cursor:pointer}
+.roomsvg .tile{cursor:pointer}
+.roomsvg .sel polygon,.roomsvg .sel rect{stroke:var(--cyan)!important;stroke-width:1.6!important;stroke-opacity:1!important}
+.roomsvg .sel{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.78}}
+.rb-head{display:flex;align-items:center;gap:6px;font-size:13px;padding:0 4px 7px;min-width:0}
+.rb-head .ic{width:16px;height:16px;color:var(--cyan);flex:none}
+.rb-head b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rb-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(52px,1fr));gap:6px}
+.tool{user-select:none;-webkit-user-select:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:48px;padding:4px 2px;border-radius:11px;border:1px solid var(--line);background:var(--glass-2);font-size:10.5px;line-height:1.2;color:var(--ink);touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .1s,background .15s}
+.tool .ic{width:18px;height:18px}
+.tool:hover{background:rgba(130,165,255,.16)}
+.tool:active{transform:scale(.94);background:rgba(34,228,255,.18)}
+.tool.on{border-color:var(--cyan);color:var(--cyan);background:rgba(34,228,255,.1)}
+.rb-move{display:flex;gap:8px;align-items:stretch}
+.pad{display:grid;grid-template-columns:repeat(2,50px);grid-auto-rows:48px;gap:6px;flex:none}
+.pad .tool{min-height:0}
+.rb-move .rb-tools{flex:1;align-content:stretch}
+.tool.go{border:0;background:linear-gradient(100deg,#19c9ff,#4b7dff 55%,#9a5cff);color:#04050b;font-weight:700;font-size:12px}
+.tool:disabled{opacity:.35}
+.tool.go.warn{background:linear-gradient(100deg,#ffb04d,#ff6f8f);color:#1a0610}
+.pill.bad{color:#ff9fb1;border-color:rgba(255,92,122,.5)}
+.roomsvg .ghost{filter:drop-shadow(0 0 5px rgba(34,228,255,.95))}
+.roomsvg .ghost.bad{filter:drop-shadow(0 0 5px rgba(255,92,122,.95));opacity:.72}
+.roombar{position:relative;margin:0 10px 10px;display:block;padding:8px;border-radius:14px;background:rgba(5,8,18,.85);border:1px solid var(--line-2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.roomtop{position:absolute;left:12px;top:12px;right:12px;display:flex;gap:8px;align-items:flex-start;justify-content:space-between;pointer-events:none}
+.roomtop>*{pointer-events:auto}
+.shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:10px}
+.item{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:14px;border:1px solid var(--line);background:rgba(0,0,0,.25);min-width:0}
+.item .thumb{height:86px;border-radius:10px;background:radial-gradient(70% 70% at 50% 50%,rgba(61,123,255,.14),transparent 70%);display:grid;place-items:center}
+.item .thumb svg{max-height:86px;width:100%}
+.item b{font-size:13px;font-weight:500}
+.item .meta{font-size:11.5px;color:var(--mute);display:flex;justify-content:space-between;gap:6px}
+.item.locked{opacity:.55}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:var(--c)}
+.sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--cyan)}
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,108px),1fr));gap:8px}
+.theme{padding:8px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.3);font-size:12px;color:var(--mute);display:flex;flex-direction:column;gap:6px;align-items:stretch;text-align:left}
+.theme i{display:block;height:36px;border-radius:8px;background:var(--c)}
+.theme.on{border-color:var(--cyan);color:var(--ink)}
+.theme:disabled{opacity:.45}
+.timeline{display:flex;flex-direction:column;gap:0;position:relative;padding-left:22px}
+.timeline::before{content:"";position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--cyan),var(--violet));opacity:.5}
+.tl{position:relative;padding:6px 0 12px}
+.tl::before{content:"";position:absolute;left:-21px;top:12px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--cyan)}
+.tl.lock::before{border-color:var(--dim)}
+.tl.lock{color:var(--dim)}
+
+/* ---------- rank ---------- */
+.rk{display:flex;align-items:center;gap:12px;padding:10px 4px;border-top:1px solid var(--line)}
+.rk:first-child{border-top:0}
+.rk .n{width:28px;text-align:center;font-family:var(--f-disp);font-weight:700;color:var(--mute)}
+.rk.top1 .n{color:#ffd66b;text-shadow:0 0 10px rgba(255,214,107,.7)}
+.rk.top2 .n{color:#d8e0f0}
+.rk.top3 .n{color:#e3a072}
+.rk.me{background:rgba(34,228,255,.07);border-radius:12px}
+.av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;color:#04050b;background:var(--c);flex:none}
+.code{font-family:var(--f-disp);font-size:24px;letter-spacing:.2em;font-weight:700}
+
+/* ---------- badges ---------- */
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,140px),1fr));gap:10px}
+.bd{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:14px 8px;border-radius:14px;border:1px solid var(--line);background:rgba(0,0,0,.25)}
+.bd svg{width:54px;height:54px}
+.bd b{font-size:13px;font-weight:600}
+.bd span{font-size:11.5px;color:var(--mute);line-height:1.5}
+.bd.off{opacity:.42;filter:grayscale(1)}
+
+/* ---------- overlays ---------- */
+.modal-back{position:fixed;inset:0;z-index:60;background:rgba(2,3,8,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));animation:fade .2s}
+.modal{width:min(520px,100%);max-height:100%;overflow:auto;background:linear-gradient(180deg,#0e1426,#080b16);border:1px solid var(--line-2);border-radius:22px;padding:22px;box-shadow:0 30px 80px -20px rgba(0,0,0,.8),0 0 60px -20px rgba(34,228,255,.35)}
+.modal h3{margin:0 0 6px;font-size:19px}
+.modal .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}
+@keyframes fade{from{opacity:0}}
+.celebrate{text-align:center;position:relative;overflow:hidden}
+.celebrate .burst{position:absolute;left:50%;top:70px;width:10px;height:10px;pointer-events:none}
+.celebrate .burst i{position:absolute;width:6px;height:6px;border-radius:2px;left:0;top:0;animation:fly 1.2s cubic-bezier(.15,.7,.3,1) forwards}
+@keyframes fly{to{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
+.bigxp{font-family:var(--f-disp);font-size:56px;font-weight:700;line-height:1;background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(34,228,255,.45));animation:pop .6s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.4);opacity:0}}
+.lvup{font-family:var(--f-disp);font-weight:700;letter-spacing:.3em;font-size:14px;color:var(--cyan)}
+.lvring{width:150px;height:150px;margin:10px auto;position:relative;display:grid;place-items:center}
+.lvring::before,.lvring::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--cyan);animation:ringout 1.6s ease-out infinite}
+.lvring::after{border-color:var(--violet);animation-delay:.6s}
+@keyframes ringout{from{transform:scale(.6);opacity:1}to{transform:scale(1.25);opacity:0}}
+.lvring b{font-family:var(--f-disp);font-size:64px;font-weight:700;background:linear-gradient(180deg,#fff,var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+.toasts{position:fixed;left:0;right:0;top:calc(64px + env(safe-area-inset-top,0px));z-index:70;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;padding:0 16px}
+.toast{pointer-events:auto;max-width:440px;display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:14px;background:rgba(12,16,32,.95);border:1px solid var(--line-2);box-shadow:0 12px 40px -10px rgba(0,0,0,.8),0 0 30px -12px rgba(34,228,255,.6);font-size:14px;animation:tin .35s cubic-bezier(.2,1.3,.4,1)}
+.toast .ic{color:var(--cyan)}
+@keyframes tin{from{transform:translateY(-14px);opacity:0}}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:55;background:#0a0e1c;border-top:1px solid var(--line-2);border-radius:22px 22px 0 0;padding:14px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));animation:sup .25s cubic-bezier(.2,.9,.3,1)}
+@keyframes sup{from{transform:translateY(100%)}}
+.sheet-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:520px;margin:0 auto}
+.sheet-grid a{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 6px;border-radius:16px;border:1px solid var(--line);background:var(--glass);color:var(--ink);text-decoration:none;font-size:12.5px;text-align:center}
+.sheet-grid .ic{width:24px;height:24px;color:var(--cyan)}
+.scrim{position:fixed;inset:0;z-index:54;background:rgba(0,0,0,.5)}
+.fadein{animation:fadeup .35s ease-out}
+@keyframes fadeup{from{opacity:.4;transform:translateY(6px)}}
+@media (max-width:430px){#synctxt{display:none}.brand{font-size:15px;letter-spacing:.1em}.hchip{padding:0 8px}.topbar-in{gap:6px}}
+.authmode .dock,.authmode .rail,.authmode #hc-coin,.authmode #hc-lv{display:none}
+.authmode .shell{display:block}
+.authmode .main{margin:0 auto;max-width:520px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-bottom:40px}
+.auth h1{font-size:clamp(22px,6vw,28px);margin:8px 0 6px;line-height:1.4;text-wrap:balance}
+.auth form{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.auth .msg{font-size:13.5px;padding:10px 12px;border-radius:11px;background:rgba(255,92,122,.1);border:1px solid rgba(255,92,122,.4);color:#ffc2cd}
+.auth .msg.ok{background:rgba(62,230,160,.1);border-color:rgba(62,230,160,.4);color:#b9f5dc}
+.feat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+.feat div{padding:10px 6px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);text-align:center;font-size:11.5px;color:var(--mute)}
+.feat .ic{display:block;margin:0 auto 4px;color:var(--cyan)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="bgfx" aria-hidden="true"></div>
+<div class="app">
+  <header class="topbar"><div class="topbar-in">
+    <a class="brand" href="#home" aria-label="STUDY HARD ホームへ">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="bm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22e4ff"/><stop offset="1" stop-color="#a46bff"/></linearGradient></defs><path d="M16 2 29 9.5v13L16 30 3 22.5v-13z" fill="none" stroke="url(#bm)" stroke-width="2"/><path d="M11 20.5c1.2 1.2 2.9 1.8 4.8 1.8 2.6 0 4.2-1.2 4.2-3 0-4.3-8.6-2.4-8.6-6.8 0-1.8 1.7-3 4.1-3 1.6 0 3 .5 4 1.3" fill="none" stroke="url(#bm)" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <span>STUDY <b>HARD</b></span>
+    </a>
+    <span class="top-sp"></span>
+    <span class="hchip" id="hc-coin" title="コイン"></span>
+    <span class="hchip" id="hc-lv" title="レベル"></span>
+    <span class="hchip" id="hc-sync" title="同期状態"><i class="sync" id="syncdot"></i><span id="synctxt">接続中</span></span>
+  </div></header>
+  <div class="shell">
+    <nav class="rail" id="rail" aria-label="メインメニュー"></nav>
+    <main class="main" id="view" tabindex="-1"></main>
+  </div>
+  <nav class="dock" aria-label="メインメニュー"><div class="dock-in" id="dock"></div></nav>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="modal-root"></div>
+
+<script src="vendor/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+(() => {
+'use strict';
+
+/* ================= utilities ================= */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad2 = n => String(n).padStart(2, '0');
+const dkey = (d = new Date()) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const parseD = k => { const [y,m,d] = k.split('-').map(Number); return new Date(y, m-1, d || 1); };
+const addDays = (k, n) => { const d = parseD(k); d.setDate(d.getDate()+n); return dkey(d); };
+const weekStart = k => { const d = parseD(k); d.setDate(d.getDate() - (d.getDay()+6)%7); return dkey(d); };
+const monthOf = k => k.slice(0,7);
+const addMonths = (mk, n) => { const [y,m] = mk.split('-').map(Number); const d = new Date(y, m-1+n, 1); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; };
+const daysInMonth = mk => { const [y,m] = mk.split('-').map(Number); return new Date(y, m, 0).getDate(); };
+const daysUntil = k => Math.round((parseD(k) - parseD(dkey())) / 86400000);
+const WD = ['日','月','火','水','木','金','土'];
+const fmtDate = k => { const d = parseD(k); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`; };
+const fmtMD = k => { const d = parseD(k); return `${d.getMonth()+1}/${d.getDate()}`; };
+const fmtHM = m => { m = Math.max(0, Math.round(m)); const h = Math.floor(m/60), r = m%60; return h ? `${h}時間${r ? r+'分' : ''}` : `${r}分`; };
+const hmParts = m => { m = Math.max(0, Math.round(m)); return [Math.floor(m/60), m%60]; };
+const uid6 = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const hashStr = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const LS = {
+  get(k){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k){ try { localStorage.removeItem(k); } catch {} }
+};
+function hexRgb(h){ h = h.replace('#',''); if (h.length === 3) h = h.split('').map(c=>c+c).join(''); const n = parseInt(h,16); return [n>>16&255, n>>8&255, n&255]; }
+function mix(a, b, t){ const A = hexRgb(a), B = hexRgb(b); return '#' + A.map((v,i) => pad2(Math.round(v + (B[i]-v)*t).toString(16))).join(''); }
+const clone = v => JSON.parse(JSON.stringify(v ?? null));
+const stableStr = v => JSON.stringify(v, (k, x) => (x && typeof x === 'object' && !Array.isArray(x)) ? Object.keys(x).sort().reduce((o, kk) => (o[kk] = x[kk], o), {}) : x);
+const genCode = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s = ''; for (let i=0;i<6;i++) s += A[Math.floor(Math.random()*A.length)]; return s; };
+
+/* ================= icons ================= */
+const IC = {
+  home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  timer:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',
+  chart:'<path d="M4 20V11M10 20V5M16 20v-8M21 20H3"/>',
+  room:'<path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5-9-5"/>',
+  trophy:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+  cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  pen:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
+  medal:'<circle cx="12" cy="15" r="5"/><path d="M8.5 11 6 3h4l2 4 2-4h4l-2.5 8"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+  play:'<path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/>',
+  pause:'<path d="M7 4h3.5v16H7zM13.5 4H17v16h-3.5z" fill="currentColor"/>',
+  stop:'<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>',
+  flame:'<path d="M12 22c4 0 7-3 7-7 0-4.5-3.5-6.5-4.5-11-2 2-3 4-3 6-1-.8-2-2-2.2-3.8C6.6 8.6 5 11 5 15c0 4 3 7 7 7z"/>',
+  coin:'<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h4a1.8 1.8 0 0 1 0 3.5h-3a1.8 1.8 0 0 0 0 3.5h4"/>',
+  bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  rotate:'<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+  move:'<path d="M12 3v18M3 12h18M12 3 9 6M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/>',
+  palette:'<path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.6 0-1.4-1-1.6-1-2.9 0-.9.7-1.5 1.6-1.5H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1" fill="currentColor"/><circle cx="10" cy="7" r="1" fill="currentColor"/><circle cx="15" cy="7.5" r="1" fill="currentColor"/>',
+  box:'<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6M16 4.5a3.5 3.5 0 0 1 0 7M18 15c2.5.5 4 2.5 4 6"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4V4h11v1"/>',
+  moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  sound:'<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/>',
+  rain:'<path d="M7 15a4.5 4.5 0 1 1 1.2-8.8A6 6 0 0 1 19 9a3.5 3.5 0 0 1-1 6.8"/><path d="M8 18l-1 3M12 17l-1 3M16 18l-1 3"/>',
+  fire:'<path d="M12 21c3.5 0 6-2.5 6-6 0-3.8-3-5.5-4-9.5-1.6 1.6-2.4 3.4-2.4 5-1-.6-1.7-1.6-2-3C7.3 9.6 6 11.8 6 15c0 3.5 2.5 6 6 6z"/><path d="M10 18c0-1.5 1-2.5 2-3.5 1 1 2 2 2 3.5"/>',
+  wave:'<path d="M2 10c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2M2 15c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2M2 20c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2"/>',
+  tree:'<path d="M12 2 5 12h4l-3 5h12l-3-5h4z"/><path d="M12 17v5"/>',
+  noise:'<path d="M3 12h2l1.5-5 2 10 2-12 2 14 2-10 1.5 6 1.5-3H21"/>',
+  music:'<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.3-1.4M17.7 6.3l1.4-1.4"/>',
+  flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+  download:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+  chevL:'<path d="M15 6l-6 6 6 6"/>', chevR:'<path d="M9 6l6 6-6 6"/>',
+  eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  arrow:'<path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/>',
+  star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'
+};
+const icon = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n] || ''}</svg>`;
+
+/* ================= game data ================= */
+const STREAK_MIN = 5;                 // 1日5分以上で「勉強した日」
+const MAX_SESSION_MS = 12 * 3600e3;   // 1セッション最大12時間
+const SUBJ_DEFAULT = [['en','英語','#3fb8ff'],['ma','数学','#a98bff'],['ja','国語','#ff6fb0'],['wh','世界史','#ffc24d'],['jh','日本史','#ff9350'],['ge','地理','#3ee6a0'],['ph','物理','#22e4ff'],['ch','化学','#8d93ff'],['bi','生物','#7be36b'],['it','情報','#e57bff'],['ot','その他','#9aa3c0']];
+const EXTRA_COLORS = ['#5eead4','#fda4af','#c4b5fd','#fde68a','#93c5fd','#f9a8d4','#86efac','#fdba74'];
+const TITLES = [[1,'見習い受験生'],[3,'机に向かう者'],[5,'集中の探求者'],[8,'知識の収集家'],[12,'書斎の主'],[18,'合格への挑戦者'],[25,'不屈の受験生'],[32,'学びの賢者'],[40,'伝説の受験生']];
+const STAGES = [
+  {lv:1, size:5, name:'何もない小さな部屋'},
+  {lv:3, size:6, name:'机と椅子が充実した部屋'},
+  {lv:5, size:6, name:'本棚と植物のある部屋'},
+  {lv:8, size:7, name:'ハイテクな勉強部屋'},
+  {lv:12, size:8, name:'豪華な書斎'},
+  {lv:18, size:9, name:'特別な空間'},
+  {lv:25, size:10, name:'伝説の書斎'}
+];
+const xpForLevel = n => 50 * n * (n - 1);
+const levelFromXp = xp => Math.max(1, Math.floor((1 + Math.sqrt(1 + 0.08 * xp)) / 2));
+const titleFor = lv => { let t = TITLES[0][1]; for (const [l, n] of TITLES) if (lv >= l) t = n; return t; };
+const stageFor = lv => { let i = 0; STAGES.forEach((s, k) => { if (lv >= s.lv) i = k; }); return i; };
+
+const QUOTES = [
+  ['千里の道も一歩から。今日の一問が、合格への一歩。','老子のことば'],
+  ['継続は力なり。','ことわざ'],
+  ['学びて時に之を習う、亦た説ばしからずや。','論語'],
+  ['為せば成る、為さねば成らぬ何事も。','上杉鷹山'],
+  ['天才とは1%のひらめきと99%の努力である。','エジソンのことばとして伝わる'],
+  ['昨日の自分より、ほんの少し前へ。それで十分。','STUDY HARD'],
+  ['できない問題は、伸びしろの地図。','STUDY HARD'],
+  ['集中した25分は、なんとなくの2時間に勝つ。','STUDY HARD'],
+  ['焦らなくていい。積み上げた時間は消えない。','STUDY HARD'],
+  ['塵も積もれば山となる。','ことわざ'],
+  ['急がば回れ。基礎は最短ルート。','ことわざ'],
+  ['間違えた数だけ、本番で強くなる。','STUDY HARD'],
+  ['休むのも作戦のうち。眠った脳が記憶を固める。','STUDY HARD'],
+  ['少年老い易く学成り難し、一寸の光陰軽んずべからず。','朱熹とされる詩'],
+  ['自分のペースで、毎日少しずつ。','STUDY HARD'],
+  ['今日やったことは、明日の自分への贈り物。','STUDY HARD'],
+  ['七転び八起き。','ことわざ'],
+  ['机に向かった時点で、もう半分勝っている。','STUDY HARD']
+];
+const CHEER_START = ['よし、始めよう。目の前の1問に集中。','スマホは裏返しにして、いざ集中モードへ。','今日の努力が、未来の自分をつくる。','一歩ずつで大丈夫。始めたあなたはえらい。','この時間は、未来の自分への投資。','深呼吸してスタート。きっとできる。'];
+const CHEER_END = ['おつかれさま！積み上げた時間は裏切らない。','ナイス集中！少し休んで水分補給しよう。','よく頑張った！その調子。','ひとつ前に進んだね。自分をほめてあげよう。','いい時間だった。脳を少し休ませよう。'];
+
+const MISSIONS = {
+  focus25:{t:'1回で25分以上集中する', r:20, chk:d => d.maxSession >= 25},
+  total60:{t:'今日合計60分勉強する', r:20, chk:d => d.total >= 60},
+  morning:{t:'お昼までに勉強を始める', r:20, chk:d => d.morning},
+  subj2:{t:'2科目以上に取り組む', r:20, chk:d => d.subjCount >= 2},
+  goal50:{t:'今日の目標の半分に到達', r:20, chk:d => d.goal > 0 && d.total >= d.goal * .5},
+  goal100:{t:'今日の目標時間を達成する', r:40, chk:d => d.goal > 0 && d.total >= d.goal},
+  review:{t:'夜の振り返りを書く', r:15, chk:d => d.reviewed}
+};
+const missionsFor = k => { const h = hashStr(k); return [['focus25','total60','morning'][h % 3], ['subj2','goal50'][(h >> 4) % 2], 'goal100', 'review']; };
+
+const BADGES = [
+  {id:'first', n:'はじめの一歩', d:'初めて勉強を記録', c:'#22e4ff', chk:s => s.count >= 1},
+  {id:'h10', n:'10時間突破', d:'累計10時間', c:'#3fb8ff', chk:s => s.total >= 600},
+  {id:'h50', n:'50時間突破', d:'累計50時間', c:'#3d7bff', chk:s => s.total >= 3000},
+  {id:'h100', n:'100時間の壁', d:'累計100時間', c:'#a46bff', chk:s => s.total >= 6000},
+  {id:'h300', n:'300時間の努力', d:'累計300時間', c:'#e57bff', chk:s => s.total >= 18000},
+  {id:'h1000', n:'千時間の修行', d:'累計1000時間', c:'#ffc24d', chk:s => s.total >= 60000},
+  {id:'st3', n:'三日坊主卒業', d:'3日連続で勉強', c:'#ff9350', chk:s => s.best >= 3},
+  {id:'st7', n:'一週間皆勤', d:'7日連続で勉強', c:'#ff6fb0', chk:s => s.best >= 7},
+  {id:'st30', n:'習慣の達人', d:'30日連続で勉強', c:'#ff5c7a', chk:s => s.best >= 30},
+  {id:'st100', n:'百日の継続', d:'100日連続で勉強', c:'#ffd66b', chk:s => s.best >= 100},
+  {id:'deep90', n:'ディープフォーカス', d:'1回で90分以上集中', c:'#22e4ff', chk:s => s.maxSession >= 90},
+  {id:'goal1', n:'目標達成', d:'1日の目標を初めて達成', c:'#3ee6a0', chk:s => s.goalDays >= 1},
+  {id:'goal10', n:'有言実行', d:'目標達成日が10日', c:'#7be36b', chk:s => s.goalDays >= 10},
+  {id:'allround', n:'オールラウンダー', d:'5科目以上を勉強', c:'#8d93ff', chk:s => s.subjUsed >= 5},
+  {id:'early', n:'朝型の挑戦者', d:'朝7時前に勉強を開始', c:'#ffc24d', chk:s => s.early},
+  {id:'review7', n:'振り返り名人', d:'振り返りを7回書いた', c:'#e57bff', chk:s => s.reviews >= 7},
+  {id:'lv10', n:'レベル10', d:'レベル10に到達', c:'#3fb8ff', chk:s => s.level >= 10},
+  {id:'lv25', n:'レベル25', d:'レベル25に到達', c:'#a46bff', chk:s => s.level >= 25},
+  {id:'decor', n:'インテリア好き', d:'家具を6個置いた', c:'#ff9350', chk:s => s.placed >= 6}
+];
+
+/* ---------- furniture catalog ----------
+   parts: [x,y,z,w,d,h,color]  color: m=main md=dark ml=light a=accent, "!" emissive, "~" glass */
+function genBooks(){
+  const out = [], cols = ['#d9576e','#3fb8ff','#ffc24d','#6fcf6a','#a98bff','#eef0f6','#ff9350','#22c4d6','#2b3a7a'];
+  let s = 11; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  for (let lvl = 0; lvl < 4; lvl++) {
+    const z = lvl * .75 + .08; let x = .12;
+    while (x < 1.8) { const w = .1 + rnd() * .07, h = .4 + rnd() * .22; if (x + w > 1.88) break;
+      out.push([x, .14, z, w, .56, h, cols[Math.floor(rnd() * cols.length)]]); x += w + .012; if (rnd() < .13) x += .14; }
+  }
+  return out;
+}
+const LEGS = (W, D, H, t = .09, c = 'md') => [[.06,.06,0,t,t,H,c],[W-.06-t,.06,0,t,t,H,c],[.06,D-.06-t,0,t,t,H,c],[W-.06-t,D-.06-t,0,t,t,H,c]];
+const F = {
+  desk_basic:{n:'シンプルな机', lv:1, cost:0, W:2, D:1, surf:1.2, colors:['#9a7552','#cdb38c','#3b4058','#e3e6ee'], parts:[[0,0,1.1,2,1,.1,'m'], ...LEGS(2,1,1.1)]},
+  chair_basic:{n:'木の椅子', lv:1, cost:0, W:1, D:1, colors:['#9a7552','#cdb38c','#3b4058','#c9505a'], parts:[...LEGS(1,1,.7,.07).map(p => [p[0]+.18*(p[0]<.5?1:-1), p[1]+.18*(p[1]<.5?1:-1), p[2],p[3],p[4],p[5],p[6]]), [.2,.2,.7,.6,.6,.08,'m'], [.2,.72,.78,.6,.08,.78,'m']]},
+  lamp_small:{n:'小さな照明', lv:1, cost:0, W:1, D:1, glow:'#ffd89a', colors:['#2b3045','#c9ccd6','#b8893f'], parts:[[.34,.34,0,.32,.32,.06,'m'],[.47,.47,.06,.06,.06,1.75,'m'],[.3,.3,1.8,.4,.4,.36,'!#ffe2ad']]},
+  poster:{n:'ネオンアート', lv:2, cost:60, wall:true, W:1, H:1.3, zb:1.7, colors:['#22e4ff','#a46bff','#ff6fb0','#3ee6a0']},
+  banner:{n:'合格祈願の掛け軸', lv:1, cost:30, wall:true, W:1, H:1.7, zb:1.3, colors:['#c8102e','#1d2a6b','#2f2f2f']},
+  carpet:{n:'カーペット', lv:3, cost:120, rug:true, W:3, D:2, colors:['#2a3358','#5b2a4a','#1f4a45','#6b5a3a','#3b3f4f']},
+  desk_pro:{n:'高級な机', lv:3, cost:180, W:2, D:1, surf:1.24, accent:'#22e4ff', colors:['#20263a','#6a4a33','#eef0f6','#3b2a52'], parts:[[.05,.05,0,.12,.9,1.1,'md'],[1.3,.05,0,.65,.9,1.1,'md'],[1.36,.94,.78,.53,.03,.26,'ml'],[1.36,.94,.43,.53,.03,.26,'ml'],[1.36,.94,.08,.53,.03,.26,'ml'],[0,0,1.1,2,1,.14,'m'],[0,.99,1.07,2,.02,.03,'!a']]},
+  chair_gaming:{n:'ゲーミングチェア', lv:3, cost:220, W:1, D:1, accent:'#22e4ff', colors:['#1c2133','#c4304a','#2a5bd7','#7a3fd1','#e8ebf2'], parts:[[.18,.18,0,.64,.64,.07,'#1a1e2c'],[.45,.45,.07,.1,.1,.5,'#2a3040'],[.17,.16,.57,.66,.64,.16,'m'],[.1,.24,.73,.08,.5,.26,'#1a1e2c'],[.82,.24,.73,.08,.5,.26,'#1a1e2c'],[.19,.72,.73,.62,.13,1.2,'m'],[.43,.85,.8,.14,.01,1.05,'!a'],[.3,.7,1.93,.4,.16,.2,'md']]},
+  bookshelf:{n:'本棚', lv:5, cost:260, W:2, D:1, colors:['#6b4a32','#2a3045','#e6e2d8'], parts:[[0,0,0,2,.1,3,'md'],[0,0,0,.08,.8,3,'m'],[1.92,0,0,.08,.8,3,'m'],...genBooks(),[0,0,0,2,.8,.08,'m'],[0,0,.75,2,.8,.08,'m'],[0,0,1.5,2,.8,.08,'m'],[0,0,2.25,2,.8,.08,'m'],[0,0,2.92,2,.8,.08,'m']]},
+  plant:{n:'観葉植物', lv:5, cost:120, W:1, D:1, colors:['#e9e4dc','#2b3045','#b5653e','#4b6cb7'], parts:[[.3,.3,0,.4,.4,.45,'m'],[.33,.33,.45,.34,.34,.03,'#4a3426'],[.22,.24,.48,.5,.5,.32,'#2f9e6a'],[.12,.34,.72,.36,.36,.42,'#3bb47a'],[.46,.18,.78,.36,.36,.5,'#2c8f60'],[.32,.34,1.1,.36,.36,.48,'#46c486']]},
+  window:{n:'窓', lv:5, cost:240, wall:true, W:2, H:1.7, zb:1.3, colors:['#cfd6e6','#2b3045','#8a6a4a']},
+  desklight:{n:'デスクライト', lv:8, cost:150, small:true, W:1, D:1, glow:'#fff1c2', colors:['#e9ecf3','#2b3045','#3d7bff'], parts:[[.35,.42,0,.3,.24,.05,'m'],[.47,.5,.05,.06,.06,.62,'m'],[.28,.3,.62,.44,.28,.1,'m'],[.33,.34,.6,.34,.2,.02,'!#fff3c4']]},
+  pc:{n:'ノートパソコン', lv:8, cost:320, small:true, W:1, D:1, colors:['#c9ccd6','#2b3045','#a46bff'], parts:[[.14,.28,0,.72,.5,.04,'m'],[.14,.22,.04,.72,.05,.46,'m'],[.17,.27,.07,.66,.005,.4,'!#3fb8ff']]},
+  monitor:{n:'モニター', lv:8, cost:360, small:true, W:1, D:1, colors:['#1c2133','#e9ecf3'], parts:[[.3,.3,0,.4,.28,.03,'md'],[.47,.33,.03,.06,.06,.38,'md'],[.04,.3,.38,.92,.06,.56,'m'],[.07,.36,.41,.86,.005,.5,'!#7dd3fc']]},
+  clock:{n:'壁掛け時計', lv:8, cost:160, wall:true, W:1, H:1, zb:2.5, colors:['#eef0f6','#1c2133','#ffc24d']},
+  sofa:{n:'ソファ', lv:12, cost:520, W:2, D:1, colors:['#3a4466','#7a2f45','#2f5c55','#c9b79a'], parts:[[.08,.08,0,.08,.08,.2,'#1a1e2c'],[1.84,.08,0,.08,.08,.2,'#1a1e2c'],[.08,.84,0,.08,.08,.2,'#1a1e2c'],[1.84,.84,0,.08,.08,.2,'#1a1e2c'],[0,0,.2,2,1,.35,'m'],[0,0,.55,2,.26,.62,'m'],[0,.26,.55,.22,.74,.34,'md'],[1.78,.26,.55,.22,.74,.34,'md'],[.24,.28,.55,.76,.68,.15,'ml'],[1.01,.28,.55,.76,.68,.15,'ml']]},
+  bed:{n:'ベッド', lv:12, cost:600, W:2, D:3, colors:['#3d7bff','#a46bff','#2f5c55','#d0d4de'], parts:[[0,0,0,2,3,.4,'#2a2f40'],[0,0,.4,2,.12,1,'#2a2f40'],[.05,.12,.4,1.9,2.83,.3,'#e8ecf5'],[.2,.2,.7,.7,.5,.15,'#ffffff'],[1.1,.2,.7,.7,.5,.15,'#ffffff'],[.05,1.0,.7,1.9,1.95,.09,'m']]},
+  trophy:{n:'トロフィー', lv:12, cost:300, small:true, W:1, D:1, colors:['#ffc24d','#d8dde8','#cd7f4a'], parts:[[.33,.33,0,.34,.34,.14,'#2a2f40'],[.44,.44,.14,.12,.12,.12,'m'],[.34,.34,.26,.32,.32,.3,'!m']]},
+  neon:{n:'ネオンサイン', lv:18, cost:800, wall:true, W:3, H:.8, zb:2.75, colors:['#22e4ff','#a46bff','#ff6fb0','#3ee6a0']},
+  aquarium:{n:'水槽', lv:18, cost:900, W:2, D:1, colors:['#1c2133','#6b4a32','#e9ecf3'], parts:[[0,.1,0,2,.8,.9,'m'],[.03,.13,.9,1.94,.74,.08,'#d6c08a'],[.25,.55,.98,.12,.12,.45,'#2f9e6a'],[1.6,.3,.98,.14,.14,.6,'#3bb47a'],[.7,.45,1.3,.22,.08,.12,'!#ff9350'],[1.2,.55,1.5,.2,.08,.1,'!#ffc24d'],[.95,.3,1.15,.18,.07,.09,'!#3fb8ff'],[0,.1,.9,2,.8,.95,'~#7dd3fc'],[0,.1,1.85,2,.8,.06,'m']]},
+  bigwindow:{n:'大きな窓', lv:18, cost:1000, wall:true, W:3, H:2.3, zb:.9, colors:['#cfd6e6','#2b3045']},
+  hologram:{n:'ホログラム投影機', lv:25, cost:1500, W:1, D:1, glow:'#22e4ff', colors:['#22e4ff','#a46bff','#3ee6a0'], parts:[[.18,.18,0,.64,.64,.16,'#151a28'],[.24,.24,.16,.52,.52,.03,'!m'],[.3,.3,.22,.4,.4,1.5,'~m'],[.42,.42,.75,.16,.16,.16,'!#ffffff'],[.38,.38,1.2,.24,.24,.06,'!m']]},
+  trophycase:{n:'トロフィーケース', lv:25, cost:1300, W:2, D:1, colors:['#1c2133','#6b4a32'], parts:[[0,0,0,2,1,.5,'m'],[.2,.3,.5,.3,.3,.4,'!#ffc24d'],[.85,.3,.5,.3,.3,.55,'!#d8dde8'],[1.5,.3,.5,.3,.3,.35,'!#cd7f4a'],[.25,.35,1.6,.2,.2,.3,'!#a46bff'],[1.5,.35,1.6,.2,.2,.28,'!#22e4ff'],[0,0,1.5,2,1,.06,'m'],[0,0,.5,2,1,2.2,'~#bcd4ff'],[0,0,2.7,2,1,.1,'m']]}
+};
+const F_ORDER = ['desk_basic','chair_basic','lamp_small','poster','banner','carpet','desk_pro','chair_gaming','bookshelf','plant','window','desklight','pc','monitor','clock','sofa','bed','trophy','neon','aquarium','bigwindow','hologram','trophycase'];
+const WALLS = {
+  midnight:{n:'ミッドナイト', lv:1, c:'#151b30'}, slate:{n:'スレート', lv:1, c:'#2b303e'}, ivory:{n:'アイボリー', lv:3, c:'#d5d1c8'},
+  wood:{n:'ウッドパネル', lv:5, c:'#5a4030'}, neongrid:{n:'ネオングリッド', lv:8, c:'#0b1020'}, aurora:{n:'オーロラ', lv:18, c:'#2a1d55'}
+};
+const FLOORS = {
+  wood:{n:'フローリング', lv:1, c:'#6e5038'}, darktile:{n:'ダークタイル', lv:1, c:'#1b2030'}, grey:{n:'グレーカーペット', lv:3, c:'#3a3f4e'},
+  tatami:{n:'畳', lv:5, c:'#9fae6b'}, marble:{n:'大理石', lv:12, c:'#dfe2ea'}, neon:{n:'ネオンフロア', lv:18, c:'#070a14'}
+};
+
+/* ================= app state ================= */
+let SB = null, UID = null, EMAIL = '';
+let MODE = 'boot';      // boot | auth | cloud | local
+let SYNC = 'boot';      // boot | ok | saving | local | err
+const data = { state: null, months: {} };   // months: {'2026-10': {sessions:[], reviews:{}}}
+let pubDocs = [];                           // ranking docs
+let myPubDoc = null;
+let dataV = 0;
+const UI = { calMonth: monthOf(dkey()), statMode: 'day', donut: 'week', rankScope: 'friends', rankPeriod: 'week', roomTab: 'inv', sel: null, place: null, histConfirm: null, review: null, editExam: null, reviewToasted: null, authTab: 'signup', authMsg: null, authBusy: false, signupNick: '' };
+
+function defaultState(owner){
+  const today = dkey();
+  return {
+    v: 1, onboarded: false, nickname: '', code: genCode(), dailyGoal: 180,
+    subjects: SUBJ_DEFAULT.map(([id, name, color]) => ({id, name, color, hidden: false})),
+    exams: [
+      {id:'kyotsu', name:'大学入学共通テスト', date:'2027-01-16'},
+      {id:'zenki', name:'国公立 前期日程', date:'2027-02-25'},
+      {id:'kouki', name:'国公立 後期日程', date:'2027-03-12'}
+    ],
+    targets: owner ? ['神戸大学','大阪公立大学','大阪教育大学','畿央大学','武庫川大学'].map(u => ({id: uid6(), univ: u, fac: ''})) : [],
+    pinnedExam: null,
+    room: { wall: 'midnight', floor: 'wood', items: [
+      {id:'i1', t:'desk_basic', x:1, y:0, r:0, c:0},
+      {id:'i2', t:'chair_basic', x:1, y:1, r:0, c:0},
+      {id:'i3', t:'lamp_small', x:4, y:0, r:0, c:0}
+    ]},
+    owned: {desk_basic:1, chair_basic:1, lamp_small:1},
+    spent: 0, bonus: 0, badges: {}, missions: {}, roomLog: [{stage: 0, date: today}],
+    seenLevel: 1, prefs: {reviewTime: '22:00', stopSound: true, vol: .5, sound: 'rain'},
+    privacy: {share: true, room: true}, friends: [], group: '', created: Date.now()
+  };
+}
+function normState(s){
+  const d = defaultState(false);
+  if (!s || typeof s !== 'object') return d;
+  const o = Object.assign({}, d, s);
+  o.prefs = Object.assign({}, d.prefs, s.prefs || {});
+  o.privacy = Object.assign({}, d.privacy, s.privacy || {});
+  o.room = Object.assign({}, d.room, s.room || {});
+  if (!Array.isArray(o.room.items)) o.room.items = [];
+  for (const k of ['subjects','exams','targets','friends','roomLog']) if (!Array.isArray(o[k])) o[k] = d[k];
+  for (const k of ['owned','badges','missions']) if (!o[k] || typeof o[k] !== 'object') o[k] = {};
+  // add any new default subject that's missing
+  for (const sd of d.subjects) if (!o.subjects.find(x => x.id === sd.id)) o.subjects.push(sd);
+  return o;
+}
+const normMonth = m => ({ sessions: Array.isArray(m?.sessions) ? m.sessions : [], reviews: (m && typeof m.reviews === 'object' && m.reviews) ? m.reviews : {} });
+const S = () => data.state;
+const monthDoc = mk => (data.months[mk] ||= {sessions: [], reviews: {}});
+
+/* ================= persistence ================= */
+const base = () => `data/users/${UID}`;
+const pending = new Map();
+function cacheLocal(){
+  const payload = {uid: UID, state: data.state, months: data.months};
+  if (MODE === 'cloud') LS.set('sh-cache', payload); else LS.set('sh-local', payload);
+}
+function touched(){ dataV++; cacheLocal(); }
+function docData(name){
+  if (name === 'state') return data.state;
+  if (name.startsWith('m-')) return data.months[name.slice(2)];
+  return null;
+}
+function queueWrite(name, delay = 500){
+  touched();
+  if (MODE !== 'cloud') return;
+  let p = pending.get(name);
+  if (!p) { p = {timer: null, writing: false, dirty: false}; pending.set(name, p); }
+  clearTimeout(p.timer);
+  p.timer = setTimeout(() => flush(name), delay);
+  setSync('saving');
+}
+async function flush(name){
+  const p = pending.get(name); if (!p) return;
+  p.timer = null;
+  if (p.writing) { p.dirty = true; return; }
+  p.writing = true;
+  try {
+    let res = null;
+    const now = new Date().toISOString();
+    if (name === 'pub') {
+      const doc = buildPub();
+      res = doc ? await SB.from('public_profiles').upsert({user_id: UID, data: doc, updated_at: now})
+                : await SB.from('public_profiles').delete().eq('user_id', UID);
+      if (!res.error) myPubDoc = doc ? {uid: UID, ...clone(doc)} : null;
+    } else {
+      const body = docData(name);
+      if (body) res = await SB.from('user_docs').upsert({user_id: UID, name, data: clone(body), updated_at: now});
+    }
+    if (res && res.error) throw res.error;
+  } catch (e) { writeFailed(e, name); }
+  p.writing = false;
+  if (p.dirty) { p.dirty = false; return flush(name); }
+  if (!p.timer) pending.delete(name);
+  if (!pending.size && MODE === 'cloud' && SYNC !== 'err') setSync('ok');
+}
+function writeFailed(e, name){
+  const msg = String((e && (e.message || e.code)) || '');
+  setSync('err');
+  if (/jwt|token|auth/i.test(msg)) { toast('ログインの有効期限が切れました。もう一度ログインしてください。', 'lock', 6000); return; }
+  if (name !== 'pub') toast('保存に失敗しました。通信がもどると自動で保存し直します。', 'x');
+  setTimeout(() => { if (MODE === 'cloud') queueWrite(name, 0); }, 5000);
+}
+async function flushAll(){
+  for (const [name, p] of [...pending.entries()]) { clearTimeout(p.timer); if (!p.writing) await flush(name); }
+}
+function switchToLocal(){
+  MODE = 'local'; pending.clear(); setSync('local');
+  LS.set('sh-local', {uid: null, state: data.state, months: data.months});
+}
+function setSync(s){
+  SYNC = s;
+  const dot = $('#syncdot'), t = $('#synctxt'); if (!dot) return;
+  dot.className = 'sync ' + ({ok:'ok', saving:'saving', local:'local', err:'err'}[s] || '');
+  t.textContent = ({boot:'接続中', ok:'同期済み', saving:'保存中', local:'端末のみ', err:'再試行中'}[s]);
+}
+
+const CFG = window.STUDY_HARD_CONFIG || {};
+const isSecretKey = k => { if (/^sb_secret_/.test(k)) return true; try { return /service_role/.test(atob((k.split('.')[1] || '').replace(/-/g, '+').replace(/_/g, '/'))); } catch { return false; } };
+const SECRET_KEY = !!(CFG.supabaseKey && isSecretKey(CFG.supabaseKey));
+const CONFIGURED = !!(window.supabase && CFG.supabaseUrl && CFG.supabaseKey && !/YOUR_/.test(CFG.supabaseUrl + CFG.supabaseKey) && !SECRET_KEY);
+async function boot(){
+  try { const q = new URLSearchParams(location.search).get('friend'); if (q) { LS.set('sh-pending-friend', q.toUpperCase().slice(0, 6)); history.replaceState(null, '', location.pathname + location.hash); } } catch {}
+  if (!CONFIGURED) {
+    MODE = 'local'; setSync('local');
+    const loc = LS.get('sh-local');
+    data.state = normState(loc && loc.state ? loc.state : defaultState(false)); data.months = {};
+    if (loc) for (const k in (loc.months || {})) data.months[k] = normMonth(loc.months[k]);
+    dataV++; render(); restoreTimer(); afterDataReady();
+    toast(SECRET_KEY ? 'config.js に秘密のキー（secret / service_role）が入っています。危険なので使っていません。Publishable key（anon key）に入れ替えてください。' : 'config.js にSupabaseの設定がまだ入っていないため、この端末だけに保存しています。', 'lock', 9000);
+    return;
+  }
+  SB = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, {auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}});
+  SB.auth.onAuthStateChange((ev) => {
+    if (ev === 'PASSWORD_RECOVERY') setTimeout(showNewPassword, 400);
+    if (ev === 'SIGNED_OUT' && MODE === 'cloud') signedOut();
+  });
+  let session = null;
+  try { session = (await SB.auth.getSession()).data.session; } catch {}
+  if (session) await startCloud(session.user); else showAuth();
+}
+function showAuth(){ MODE = 'auth'; setSync('boot'); $('#synctxt').textContent = '未ログイン'; render(); }
+function signedOut(){
+  UID = null; EMAIL = ''; data.state = null; data.months = {}; pubDocs = []; myPubDoc = null; pending.clear();
+  LS.del('sh-cache'); UI.authTab = 'login'; UI.authMsg = null; showAuth();
+}
+async function startCloud(user){
+  UID = user.id; EMAIL = user.email || ''; MODE = 'cloud'; setSync('boot');
+  const cache = LS.get('sh-cache');
+  if (cache && cache.uid === UID && cache.state) {
+    data.state = normState(cache.state); data.months = {};
+    for (const k in (cache.months || {})) data.months[k] = normMonth(cache.months[k]);
+  } else { data.state = null; data.months = {}; }
+  dataV++; render(); restoreTimer();
+  await pullCloud(true);
+  afterDataReady();
+  refreshPub(true);
+}
+async function pullCloud(first){
+  if (MODE !== 'cloud') return false;
+  const {data: rows, error} = await SB.from('user_docs').select('name,data').eq('user_id', UID);
+  if (error) {
+    setSync('err'); toast('データを読み込めませんでした。通信状態を確認してください。', 'x');
+    if (!data.state) data.state = normState(defaultState(false));
+    dataV++; scheduleRender(); return false;
+  }
+  let sawState = false; const months = {};
+  for (const r of rows) {
+    if (pending.has(r.name)) { if (r.name === 'state') sawState = true; continue; }
+    if (r.name === 'state') { data.state = normState(clone(r.data)); sawState = true; }
+    else if (r.name.startsWith('m-')) months[r.name.slice(2)] = normMonth(clone(r.data));
+  }
+  for (const k in data.months) if (pending.has('m-' + k) || (!rows.length && first)) months[k] = data.months[k];
+  data.months = months;
+  if (!sawState && first) {
+    const loc = LS.get('sh-local');
+    if (loc && loc.state && loc.state.onboarded) {
+      data.state = normState(loc.state);
+      for (const k in (loc.months || {})) { data.months[k] = normMonth(loc.months[k]); queueWrite('m-' + k, 0); }
+      LS.del('sh-local');
+    } else {
+      data.state = normState(defaultState(false));
+      if (UI.signupNick) data.state.nickname = UI.signupNick;
+    }
+    queueWrite('state', 0);
+  }
+  if (!data.state) data.state = normState(defaultState(false));
+  if (!pending.size) setSync('ok');
+  dataV++; cacheLocal(); scheduleRender();
+  return true;
+}
+let pubAt = 0;
+async function refreshPub(force){
+  if (MODE !== 'cloud' || !SB) return;
+  if (!force && Date.now() - pubAt < 15000) return;
+  pubAt = Date.now();
+  const {data: rows, error} = await SB.from('public_profiles').select('user_id,data').order('updated_at', {ascending: false}).limit(1000);
+  if (error || !rows) return;
+  pubDocs = rows.map(r => ({uid: r.user_id, ...clone(r.data)}));
+  myPubDoc = pubDocs.find(d => d.uid === UID) || null;
+  // a friend link opened before signing in
+  const pf = LS.get('sh-pending-friend');
+  if (pf && S()) { LS.del('sh-pending-friend'); const st = S();
+    if (pf !== st.code && !st.friends.includes(pf) && pubDocs.find(d => d.code === pf)) { st.friends.push(pf); queueWrite('state'); const f = pubDocs.find(d => d.code === pf); toast(`${f.nick || 'ななしの受験生'}さんを友達に追加しました。`, 'users', 5000); } }
+  dataV++; scheduleRender(); publishPub();
+}
+function afterDataReady(){
+  render();
+  checkRoomStage(true); checkBadges(true); checkMissions(true);
+  setTimeout(publishPub, 2500);
+  if (!S().onboarded) setTimeout(showOnboarding, 300);
+}
+
+/* ---------- public ranking doc ---------- */
+function buildPub(){
+  const st = S(); if (!st || !st.privacy.share) return null;
+  const x = stats(), today = dkey();
+  return {
+    code: st.code, nick: (st.nickname || '').slice(0, 20), lv: x.level, tot: x.total,
+    wk: weekStart(today), wMin: x.weekMin, mo: monthOf(today), mMin: x.monthMin, streak: x.streak,
+    group: st.group || '', fr: st.friends.slice(0, 200), room: st.privacy.room ? {wall: st.room.wall, floor: st.room.floor, items: st.room.items, size: STAGES[stageFor(x.level)].size, stage: stageFor(x.level)} : null
+  };
+}
+function publishPub(){
+  if (MODE !== 'cloud') return;
+  const doc = buildPub();
+  if (!doc && !myPubDoc) return;
+  if (doc && myPubDoc) { const {uid, upd, ...cur} = myPubDoc; if (stableStr(cur) === stableStr(doc)) return; }
+  queueWrite('pub', 1500);
+}
+
+/* ================= derived stats ================= */
+let statCache = {v: -1, val: null};
+function goalFor(k){
+  const prev = addDays(k, -1), rv = data.months[monthOf(prev)]?.reviews?.[prev];
+  return (rv && rv.tg > 0) ? rv.tg : (S().dailyGoal || 0);
+}
+function allSessions(){ return Object.values(data.months).flatMap(m => m.sessions); }
+function stats(){
+  if (statCache.v === dataV && statCache.val) return statCache.val;
+  const ss = allSessions(), today = dkey();
+  const byDay = {}, subjDay = {}, subjects = new Set();
+  let total = 0, maxSession = 0, early = false;
+  for (const s of ss) {
+    byDay[s.d] = (byDay[s.d] || 0) + s.m; total += s.m; subjects.add(s.s);
+    (subjDay[s.d] ||= {})[s.s] = (subjDay[s.d][s.s] || 0) + s.m;
+    if (s.m > maxSession) maxSession = s.m;
+    if (new Date(s.t).getHours() < 7) early = true;
+  }
+  const studied = k => (byDay[k] || 0) >= STREAK_MIN;
+  let streak = 0, k = studied(today) ? today : addDays(today, -1);
+  while (studied(k)) { streak++; k = addDays(k, -1); }
+  const days = Object.keys(byDay).filter(studied).sort();
+  let best = 0, run = 0, prev = null;
+  for (const d of days) { run = (prev && addDays(prev, 1) === d) ? run + 1 : 1; best = Math.max(best, run); prev = d; }
+  let goalDays = 0; for (const d of Object.keys(byDay)) { const g = goalFor(d); if (g > 0 && byDay[d] >= g) goalDays++; }
+  let reviews = 0; for (const m of Object.values(data.months)) reviews += Object.values(m.reviews).filter(r => r && (r.did || r.tomorrow)).length;
+  const ws = weekStart(today), mk = monthOf(today);
+  let weekMin = 0, monthMin = 0;
+  for (const d in byDay) { if (d >= ws && d <= today) weekMin += byDay[d]; if (monthOf(d) === mk) monthMin += byDay[d]; }
+  const level = levelFromXp(total);
+  const st = S();
+  const coins = total + (st.bonus || 0) - (st.spent || 0);
+  const val = {sessions: ss, count: ss.length, byDay, subjDay, total, xp: total, level, coins, streak, best: Math.max(best, streak), maxSession, early,
+    goalDays, reviews, subjUsed: subjects.size, weekMin, monthMin, today: byDay[today] || 0, placed: st.room.items.length};
+  statCache = {v: dataV, val};
+  return val;
+}
+function todayInfo(){
+  const x = stats(), today = dkey();
+  const ss = x.sessions.filter(s => s.d === today);
+  const rv = data.months[monthOf(today)]?.reviews?.[today];
+  return { total: x.today, goal: goalFor(today), maxSession: ss.reduce((a, s) => Math.max(a, s.m), 0), subjCount: new Set(ss.map(s => s.s)).size,
+    morning: ss.some(s => new Date(s.t).getHours() < 12), reviewed: !!(rv && (rv.did || rv.tomorrow)), sessions: ss };
+}
+const subjOf = id => S().subjects.find(s => s.id === id) || {id, name: '不明', color: '#9aa3c0'};
+
+/* ================= checks: badges / missions / stages ================= */
+function checkBadges(silent){
+  const x = stats(), st = S(); let changed = false;
+  for (const b of BADGES) if (!st.badges[b.id] && b.chk(x)) { st.badges[b.id] = dkey(); changed = true; if (!silent) queueOverlay(() => badgeToast(b)); }
+  if (changed) queueWrite('state');
+}
+function checkMissions(silent){
+  const st = S(), today = dkey(), info = todayInfo(); let changed = false;
+  const done = st.missions[today] || [];
+  for (const id of missionsFor(today)) {
+    if (!done.includes(id) && MISSIONS[id].chk(info)) {
+      done.push(id); st.bonus = (st.bonus || 0) + MISSIONS[id].r; changed = true;
+      if (!silent) toast(`ミッション達成「${MISSIONS[id].t}」 +${MISSIONS[id].r}コイン`, 'check');
+    }
+  }
+  if (changed) {
+    st.missions[today] = done;
+    const keep = Object.keys(st.missions).sort().slice(-14); for (const k of Object.keys(st.missions)) if (!keep.includes(k)) delete st.missions[k];
+    queueWrite('state');
+  }
+}
+function checkRoomStage(silent){
+  const st = S(), stg = stageFor(stats().level);
+  const lastLogged = st.roomLog.reduce((a, r) => Math.max(a, r.stage), -1);
+  if (stg > lastLogged) {
+    for (let i = lastLogged + 1; i <= stg; i++) st.roomLog.push({stage: i, date: dkey()});
+    queueWrite('state');
+  }
+}
+
+/* ================= toasts / modals ================= */
+function toast(msg, ic = 'bolt', ms = 3600){
+  const el = document.createElement('div'); el.className = 'toast';
+  el.innerHTML = icon(ic) + `<span>${esc(msg)}</span>`;
+  $('#toasts').appendChild(el);
+  setTimeout(() => { el.style.transition = 'opacity .4s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 400); }, ms);
+}
+let modalOpen = false; const overlayQ = [];
+function showModal(html, opts = {}){
+  modalOpen = true;
+  const root = $('#modal-root');
+  root.innerHTML = `<div class="modal-back" data-back="1"><div class="modal ${opts.cls || ''}" role="dialog" aria-modal="true">${html}</div></div>`;
+  const back = root.firstElementChild;
+  back.addEventListener('click', e => { if (e.target === back && !opts.sticky) closeModal(); });
+  opts.mount && opts.mount(back.firstElementChild);
+  const f = back.querySelector('[autofocus]') || back.querySelector('button'); f && f.focus();
+}
+function closeModal(){
+  $('#modal-root').innerHTML = ''; modalOpen = false;
+  if (pendingRender) { pendingRender = false; render(); }
+  setTimeout(() => { while (overlayQ.length && !modalOpen) overlayQ.shift()(); }, 120);
+}
+function queueOverlay(fn){ if (modalOpen) overlayQ.push(fn); else fn(); }
+function confirmBox(title, body, okLabel, onOk, danger){
+  showModal(`<h3>${esc(title)}</h3><p class="note" style="font-size:14px">${esc(body)}</p><div class="acts"><button class="btn ghost" data-act="modal-close">やめる</button><button class="btn ${danger ? 'danger' : 'primary'}" id="cf-ok">${esc(okLabel)}</button></div>`,
+    {mount: m => m.querySelector('#cf-ok').addEventListener('click', () => { closeModal(); onOk(); })});
+}
+function burst(){
+  const cols = ['#22e4ff','#a46bff','#3d7bff','#ffc24d','#3ee6a0','#ff6fb0'];
+  let h = '<div class="burst" aria-hidden="true">';
+  for (let i = 0; i < 28; i++) { const a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 120;
+    h += `<i style="background:${cols[i % cols.length]};--x:${(Math.cos(a) * d).toFixed(0)}px;--y:${(Math.sin(a) * d).toFixed(0)}px;--r:${(Math.random() * 540).toFixed(0)}deg;animation-delay:${(Math.random() * .15).toFixed(2)}s"></i>`; }
+  return h + '</div>';
+}
+function badgeToast(b){ toast(`実績解除「${b.n}」 ${b.d}`, 'medal', 4500); }
+
+/* ================= router & render ================= */
+const ROUTES = {
+  home:['ホーム','home'], timer:['タイマー','timer'], stats:['記録・分析','chart'], room:['勉強部屋','room'],
+  rank:['ランキング','trophy'], exams:['入試カウントダウン','cal'], review:['今日の振り返り','pen'], badges:['実績・称号','medal'], prefs:['設定','gear']
+};
+const route = () => { const h = (location.hash || '').replace('#', ''); return ROUTES[h] ? h : 'home'; };
+let pendingRender = false, renderQueued = false;
+function scheduleRender(){
+  if (renderQueued) return; renderQueued = true;
+  requestAnimationFrame(() => { renderQueued = false;
+    const a = document.activeElement;
+    if (modalOpen || (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && $('#view').contains(a))) { pendingRender = true; renderHeader(); return; }
+    render(); });
+}
+document.addEventListener('focusout', () => setTimeout(() => { if (pendingRender && !modalOpen) { const a = document.activeElement; if (!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) { pendingRender = false; render(); } } }, 50));
+function renderHeader(){
+  if (!S()) return;
+  const x = stats();
+  $('#hc-coin').innerHTML = icon('coin') + `<span>${Math.max(0, x.coins).toLocaleString()}</span>`;
+  $('#hc-lv').innerHTML = `<span style="color:var(--cyan)">LV</span><span>${x.level}</span>`;
+}
+function renderNav(){
+  const r = route();
+  $('#rail').innerHTML = Object.entries(ROUTES).map(([k, [n, ic]]) => `<a href="#${k}" class="${k === r ? 'on' : ''}">${icon(ic)}<span>${n}</span></a>`).join('');
+  const dock = ['home','timer','stats','room'];
+  $('#dock').innerHTML = dock.map(k => `<a href="#${k}" class="${k === r ? 'on' : ''}">${icon(ROUTES[k][1])}<span>${ROUTES[k][0].replace('記録・分析','記録').replace('勉強部屋','部屋')}</span></a>`).join('')
+    + `<button data-act="more" class="${dock.includes(r) ? '' : 'on'}">${icon('menu')}<span>メニュー</span></button>`;
+}
+function render(){
+  if (!S()) return;
+  const r = route();
+  renderHeader(); renderNav();
+  const v = $('#view');
+  v.innerHTML = `<div class="stack fadein">${VIEWS[r]()}</div>`;
+  if (r === 'timer') updateTimerUI();
+}
+window.addEventListener('hashchange', () => { UI.sel = null; UI.place = null; render(); window.scrollTo(0, 0); });
+
+/* ================= charts ================= */
+function ringSVG(pct, size = 176, stroke = 12, id = 'rg'){
+  const r = (size - stroke) / 2 - 4, c = 2 * Math.PI * r, p = clamp(pct, 0, 1);
+  return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22e4ff"/><stop offset="1" stop-color="#a46bff"/></linearGradient></defs>
+  <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="${stroke}"/>
+  <circle class="prog" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="url(#${id})" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${(c * p).toFixed(1)} ${c.toFixed(1)}" style="filter:drop-shadow(0 0 6px rgba(34,228,255,.6))"/></svg>`;
+}
+function barChart(cols, goal){
+  // cols: [{label, segs:[{v,c}], hl}]
+  const W = 340, H = 180, L = 34, B = 24, T = 12, R = 6;
+  const maxV = Math.max(goal || 0, ...cols.map(c => c.segs.reduce((a, s) => a + s.v, 0)), 60);
+  let stepH = [1,2,3,4,5,6,8,10,12,15,20,25,30,40,50,60,80,100,150,200,300,500].find(s => maxV / 60 / s <= 4) || 1000;
+  const top = Math.ceil(maxV / 60 / stepH) * stepH * 60;
+  const y = v => T + (H - T - B) * (1 - v / top);
+  const bw = (W - L - R) / cols.length;
+  let g = '';
+  for (let t = 0; t <= top; t += stepH * 60) g += `<line x1="${L}" x2="${W - R}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}" stroke="rgba(150,180,255,.09)"/><text x="${L - 6}" y="${(y(t) + 3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="#8e98b9" font-family="Chakra Petch">${t / 60}h</text>`;
+  cols.forEach((c, i) => {
+    const x = L + i * bw + bw * .2, w = bw * .6; let acc = 0;
+    c.segs.forEach((s, j) => { if (s.v <= 0) return; const y1 = y(acc + s.v), y0 = y(acc); acc += s.v;
+      g += `<rect x="${x.toFixed(1)}" y="${y1.toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(1, y0 - y1).toFixed(1)}" fill="${s.c}" ${j === c.segs.length - 1 ? 'rx="3"' : ''} opacity="${c.hl === false ? .55 : 1}"/>`; });
+    if (acc > 0) g += `<text x="${(x + w / 2).toFixed(1)}" y="${(y(acc) - 4).toFixed(1)}" text-anchor="middle" font-size="9" fill="#c9d3f2" font-family="Chakra Petch">${acc >= 60 ? (acc / 60).toFixed(1) : acc + 'm'}</text>`;
+    g += `<text x="${(x + w / 2).toFixed(1)}" y="${H - 7}" text-anchor="middle" font-size="10" fill="${c.hl ? '#22e4ff' : '#8e98b9'}" font-family="Chakra Petch">${esc(c.label)}</text>`;
+  });
+  if (goal > 0) g += `<line x1="${L}" x2="${W - R}" y1="${y(goal).toFixed(1)}" y2="${y(goal).toFixed(1)}" stroke="#ffc65c" stroke-dasharray="4 4" stroke-width="1.2"/><text x="${W - R}" y="${(y(goal) - 4).toFixed(1)}" text-anchor="end" font-size="10" fill="#ffc65c">目標</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="勉強時間のグラフ">${g}</svg>`;
+}
+function donut(items){
+  const tot = items.reduce((a, i) => a + i.v, 0); const r = 54, c = 2 * Math.PI * r; let off = 0, g = '';
+  if (!tot) return `<svg viewBox="0 0 140 140"><circle cx="70" cy="70" r="${r}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="18"/></svg>`;
+  for (const i of items) { const len = c * i.v / tot; g += `<circle cx="70" cy="70" r="${r}" fill="none" stroke="${i.c}" stroke-width="18" stroke-dasharray="${Math.max(0, len - 1.5).toFixed(2)} ${c.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 70 70)"/>`; off += len; }
+  const [h, m] = hmParts(tot);
+  return `<svg viewBox="0 0 140 140" role="img" aria-label="科目別の割合">${g}<text x="70" y="70" text-anchor="middle" font-size="20" fill="#e8eeff" font-family="Chakra Petch" font-weight="600">${h}h${pad2(m)}</text><text x="70" y="88" text-anchor="middle" font-size="10" fill="#8e98b9">合計</text></svg>`;
+}
+
+/* ================= ROOM RENDERER (isometric) ================= */
+const TW = 32, TH = 16, ZS = 34, WALL_H = 3.8;
+const P = (x, y, z) => [(x - y) * TW, (x + y) * TH - z * ZS];
+const poly = pts => pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+function footprint(it){ const d = F[it.t]; return (it.r % 2) ? [d.D, d.W] : [d.W, d.D]; }
+function rotPart(p, W, D, r){
+  const [x, y, z, w, d, h, c] = p;
+  if (r === 1) return [D - y - d, x, z, d, w, h, c];
+  if (r === 2) return [W - x - w, D - y - d, z, w, d, h, c];
+  if (r === 3) return [y, W - x - w, z, d, w, h, c];
+  return [x, y, z, w, d, h, c];
+}
+function resolveCol(key, def, ci){
+  const main = def.colors[ci % def.colors.length]; let emi = false, tr = false;
+  if (key[0] === '!') { emi = true; key = key.slice(1); } else if (key[0] === '~') { tr = true; key = key.slice(1); }
+  const c = key === 'm' ? main : key === 'md' ? mix(main, '#000000', .3) : key === 'ml' ? mix(main, '#ffffff', .25) : key === 'a' ? (def.accent || '#22e4ff') : key;
+  return {c, emi, tr};
+}
+function surfaceAt(items, x, y, excludeId){
+  for (const o of items) { if (o.id === excludeId) continue; const d = F[o.t]; if (!d || d.wall || d.rug || d.small) continue;
+    const [w, dd] = footprint(o); if (x >= o.x && x < o.x + w && y >= o.y && y < o.y + dd) return {item: o, surf: d.surf || null}; }
+  return null;
+}
+function itemZ(items, it){ const d = F[it.t]; if (!d.small) return 0; const s = surfaceAt(items, it.x, it.y, it.id); return s && s.surf ? s.surf : 0; }
+function canPlace(items, N, t, x, y, r, excludeId){
+  const d = F[t]; if (!d) return false;
+  if (d.wall) return false;
+  const [w, dd] = (r % 2) ? [d.D, d.W] : [d.W, d.D];
+  if (x < 0 || y < 0 || x + w > N || y + dd > N) return false;
+  for (const o of items) {
+    if (o.id === excludeId) continue; const od = F[o.t]; if (!od || od.wall) continue;
+    const [ow, odd] = footprint(o);
+    const ov = x < o.x + ow && o.x < x + w && y < o.y + odd && o.y < y + dd;
+    if (!ov) continue;
+    if (d.rug || od.rug) { if (d.rug && od.rug) return false; continue; }
+    if (d.small && !od.small) { if (!od.surf) return false; continue; }
+    if (!d.small && od.small) { const sz = itemZ(items, o); if (sz === 0) return false; if (!d.surf) return false; continue; }
+    return false;
+  }
+  return true;
+}
+function canPlaceWall(items, N, t, side, p, excludeId){
+  const d = F[t]; if (p < 0 || p + d.W > N) return false;
+  for (const o of items) { if (o.id === excludeId) continue; const od = F[o.t]; if (!od || !od.wall || o.side !== side) continue;
+    if (p < o.x + od.W && o.x < p + d.W) return false; }
+  return true;
+}
+function sortBoxes(boxes){
+  const n = boxes.length, eps = 1e-6;
+  const before = (A, B) => {
+    const xo = A.x < B.x + B.w - eps && B.x < A.x + A.w - eps, yo = A.y < B.y + B.d - eps && B.y < A.y + A.d - eps;
+    if (xo && yo) return A.z + A.h <= B.z + eps;
+    if (yo && A.x + A.w <= B.x + eps) return true;
+    if (xo && A.y + A.d <= B.y + eps) return true;
+    if (!xo && !yo && A.x + A.w <= B.x + eps && A.y + A.d <= B.y + eps) return true;
+    return false;
+  };
+  const indeg = new Array(n).fill(0), adj = Array.from({length: n}, () => []);
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j && before(boxes[i], boxes[j]) && !before(boxes[j], boxes[i])) { adj[i].push(j); indeg[j]++; }
+  const out = [], used = new Array(n).fill(false);
+  for (let step = 0; step < n; step++) {
+    let pick = -1; for (let i = 0; i < n; i++) if (!used[i] && indeg[i] === 0) { pick = i; break; }
+    if (pick < 0) { for (let i = 0; i < n; i++) if (!used[i]) { pick = i; break; } }
+    used[pick] = true; out.push(boxes[pick]); for (const j of adj[pick]) indeg[j]--;
+  }
+  return out;
+}
+function boxSVG(b){
+  const {x, y, z, w, d, h} = b;
+  const top = [P(x,y,z+h), P(x+w,y,z+h), P(x+w,y+d,z+h), P(x,y+d,z+h)];
+  const fy = [P(x,y+d,z), P(x+w,y+d,z), P(x+w,y+d,z+h), P(x,y+d,z+h)];
+  const fx = [P(x+w,y,z), P(x+w,y+d,z), P(x+w,y+d,z+h), P(x+w,y,z+h)];
+  let ct, cl, cr;
+  if (b.emi) { ct = mix(b.c, '#ffffff', .35); cl = b.c; cr = mix(b.c, '#000000', .15); }
+  else { ct = mix(b.c, '#ffffff', .15); cl = mix(b.c, '#000000', .1); cr = mix(b.c, '#000000', .34); }
+  const op = b.tr ? ' fill-opacity=".2"' : '';
+  const st = b.tr ? `stroke="${b.c}" stroke-opacity=".65"` : 'stroke="rgba(0,0,0,.3)"';
+  const flt = b.emi ? ` style="filter:drop-shadow(0 0 4px ${b.c})"` : '';
+  return `<g${flt}><polygon points="${poly(fy)}" fill="${cl}"${op} ${st} stroke-width=".6"/><polygon points="${poly(fx)}" fill="${cr}"${op} ${st} stroke-width=".6"/><polygon points="${poly(top)}" fill="${ct}"${op} ${st} stroke-width=".6"/></g>`;
+}
+function wallItemSVG(it, pfx){
+  const d = F[it.t], c = d.colors[(it.c || 0) % d.colors.length], W = d.W, H = d.H;
+  const ns = 'vector-effect="non-scaling-stroke"';
+  if (it.t === 'poster') return `<rect x=".08" y="0" width="${W - .16}" height="${H}" fill="#0b0f1f" stroke="#cfd6e6" stroke-width="1.6" ${ns}/><circle cx=".5" cy=".86" r=".2" fill="none" stroke="${c}" stroke-width="2" ${ns} style="filter:drop-shadow(0 0 3px ${c})"/><path d="M.2 .2 L.5 .55 L.8 .2" fill="none" stroke="${c}" stroke-width="2" ${ns} style="filter:drop-shadow(0 0 3px ${c})"/><rect x=".2" y="1.12" width=".6" height=".04" fill="${c}"/>`;
+  if (it.t === 'banner') { const txt = ['合','格','祈','願']; return `<rect x=".22" y=".05" width=".56" height="${H - .1}" fill="${c}" stroke="#d6b25e" stroke-width="1.4" ${ns}/><rect x=".15" y="${H - .08}" width=".7" height=".08" fill="#3b2a1e"/><rect x=".15" y="0" width=".7" height=".07" fill="#3b2a1e"/>` + txt.map((t, i) => `<text transform="translate(.5 ${(H - .38 - i * .35).toFixed(2)}) scale(1 -1)" text-anchor="middle" font-size=".28" fill="${c === '#2f2f2f' || c === '#1d2a6b' ? '#f5e6c0' : '#fff7e0'}" font-family="'Zen Kaku Gothic New',serif" font-weight="700">${t}</text>`).join(''); }
+  if (it.t === 'window' || it.t === 'bigwindow') {
+    let city = ''; let s = 3; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    for (let x = .1; x < W - .1; x += .18 + rnd() * .12) { const bh = .25 + rnd() * (H * .45), bw = .14 + rnd() * .1;
+      city += `<rect x="${x.toFixed(2)}" y=".08" width="${bw.toFixed(2)}" height="${bh.toFixed(2)}" fill="#0b1124"/>`;
+      for (let wy = .16; wy < bh; wy += .12) for (let wx = x + .03; wx < x + bw - .03; wx += .06) if (rnd() < .4) city += `<rect x="${wx.toFixed(2)}" y="${wy.toFixed(2)}" width=".025" height=".04" fill="${rnd() < .5 ? '#ffd66b' : '#7dd3fc'}"/>`; }
+    return `<rect x="0" y="0" width="${W}" height="${H}" fill="url(#${pfx}sky)"/><circle cx="${(W * .78).toFixed(2)}" cy="${(H * .78).toFixed(2)}" r=".14" fill="#f4f1e0" style="filter:drop-shadow(0 0 4px #fff)"/>${city}<rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="${c}" stroke-width="3" ${ns}/><line x1="${W / 2}" y1="0" x2="${W / 2}" y2="${H}" stroke="${c}" stroke-width="2" ${ns}/><line x1="0" y1="${H / 2}" x2="${W}" y2="${H / 2}" stroke="${c}" stroke-width="1.5" ${ns}/><rect x="-.06" y="-.08" width="${W + .12}" height=".08" fill="${c}"/>`;
+  }
+  if (it.t === 'clock') {
+    const now = new Date(), hA = ((now.getHours() % 12) + now.getMinutes() / 60) / 12 * Math.PI * 2, mA = now.getMinutes() / 60 * Math.PI * 2;
+    const dark = mix(c, '#000000', .8); let ticks = '';
+    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; ticks += `<line x1="${(.5 + Math.sin(a) * .33).toFixed(3)}" y1="${(.5 + Math.cos(a) * .33).toFixed(3)}" x2="${(.5 + Math.sin(a) * .38).toFixed(3)}" y2="${(.5 + Math.cos(a) * .38).toFixed(3)}" stroke="${dark}" stroke-width="1.4" ${ns}/>`; }
+    return `<circle cx=".5" cy=".5" r=".44" fill="${c}" stroke="${mix(c, '#000000', .45)}" stroke-width="3" ${ns}/>${ticks}<line x1=".5" y1=".5" x2="${(.5 + Math.sin(hA) * .2).toFixed(3)}" y2="${(.5 + Math.cos(hA) * .2).toFixed(3)}" stroke="${dark}" stroke-width="2.4" stroke-linecap="round" ${ns}/><line x1=".5" y1=".5" x2="${(.5 + Math.sin(mA) * .31).toFixed(3)}" y2="${(.5 + Math.cos(mA) * .31).toFixed(3)}" stroke="#ff5c7a" stroke-width="1.6" stroke-linecap="round" ${ns}/>`;
+  }
+  if (it.t === 'neon') return `<rect x="0" y="0" width="${W}" height="${H}" rx=".12" fill="#070a14" stroke="rgba(255,255,255,.15)" stroke-width="1" ${ns}/><text transform="translate(${W / 2} ${(H * .3).toFixed(2)}) scale(1 -1)" text-anchor="middle" font-size=".44" fill="${c}" font-family="'Chakra Petch',sans-serif" font-weight="700" letter-spacing=".08" style="filter:drop-shadow(0 0 3px ${c}) drop-shadow(0 0 8px ${c})">STUDY HARD</text>`;
+  return '';
+}
+function floorPattern(fl, N, pfx){
+  const ns = 'vector-effect="non-scaling-stroke"'; const th = FLOORS[fl] || FLOORS.wood; let g = `<rect x="0" y="0" width="${N}" height="${N}" fill="${th.c}"/>`;
+  if (fl === 'wood') { for (let y = 0; y < N; y += .34) { g += `<line x1="0" y1="${y.toFixed(2)}" x2="${N}" y2="${y.toFixed(2)}" stroke="#563e2b" stroke-width="1" ${ns}/>`; const off = (Math.round(y / .34) % 3) * .7;
+    for (let x = off; x < N; x += 2.1) g += `<line x1="${x.toFixed(2)}" y1="${y.toFixed(2)}" x2="${x.toFixed(2)}" y2="${(y + .34).toFixed(2)}" stroke="#563e2b" stroke-width="1" ${ns}/>`; } }
+  else if (fl === 'darktile') { for (let i = 1; i < N; i++) g += `<line x1="${i}" y1="0" x2="${i}" y2="${N}" stroke="#2a3048" stroke-width="1.2" ${ns}/><line x1="0" y1="${i}" x2="${N}" y2="${i}" stroke="#2a3048" stroke-width="1.2" ${ns}/>`; }
+  else if (fl === 'grey') { for (let i = .5; i < N; i += .5) g += `<line x1="${i}" y1="0" x2="${i}" y2="${N}" stroke="rgba(255,255,255,.03)" ${ns}/>`; }
+  else if (fl === 'tatami') { for (let y = 0; y < N; y += 2) for (let x = 0; x < N; x += 2) {
+      const flip = ((x + y) / 2) % 2;
+      const r1 = flip ? [x, y, 1, 2] : [x, y, 2, 1], r2 = flip ? [x + 1, y, 1, 2] : [x, y + 1, 2, 1];
+      for (const r of [r1, r2]) g += `<rect x="${r[0]}" y="${r[1]}" width="${r[2]}" height="${r[3]}" fill="#a7b673" stroke="#3d3424" stroke-width="2.2" ${ns}/>`; } }
+  else if (fl === 'marble') { for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if ((x + y) % 2) g += `<rect x="${x}" y="${y}" width="1" height="1" fill="#cfd3de"/>`;
+    g += `<path d="M0 ${N * .3} C ${N * .3} ${N * .2}, ${N * .5} ${N * .6}, ${N} ${N * .5}" fill="none" stroke="rgba(120,130,150,.35)" ${ns}/>`; }
+  else if (fl === 'neon') { for (let i = 0; i <= N; i++) g += `<line x1="${i}" y1="0" x2="${i}" y2="${N}" stroke="#22e4ff" stroke-opacity=".35" stroke-width="1" ${ns}/><line x1="0" y1="${i}" x2="${N}" y2="${i}" stroke="#a46bff" stroke-opacity=".35" stroke-width="1" ${ns}/>`; }
+  return g;
+}
+function wallPattern(wl, N, side, pfx){
+  const ns = 'vector-effect="non-scaling-stroke"'; const th = WALLS[wl] || WALLS.midnight;
+  let g = `<rect x="0" y="0" width="${N}" height="${WALL_H}" fill="${wl === 'aurora' ? `url(#${pfx}aur)` : th.c}"/>`;
+  if (wl === 'midnight') for (let i = 1; i < N; i++) g += `<line x1="${i}" y1=".15" x2="${i}" y2="${WALL_H}" stroke="rgba(140,180,255,.07)" ${ns}/>`;
+  if (wl === 'ivory') for (let i = .25; i < N; i += .25) g += `<line x1="${i}" y1=".15" x2="${i}" y2="${WALL_H}" stroke="rgba(0,0,0,.05)" ${ns}/>`;
+  if (wl === 'wood') for (let i = .4; i < N; i += .4) g += `<line x1="${i.toFixed(2)}" y1=".15" x2="${i.toFixed(2)}" y2="${WALL_H}" stroke="#46301f" ${ns}/>`;
+  if (wl === 'neongrid') { for (let i = .5; i < N; i += .5) g += `<line x1="${i}" y1=".15" x2="${i}" y2="${WALL_H}" stroke="#22e4ff" stroke-opacity=".16" ${ns}/>`; for (let v = .5; v < WALL_H; v += .5) g += `<line x1="0" y1="${v}" x2="${N}" y2="${v}" stroke="#a46bff" stroke-opacity=".14" ${ns}/>`; }
+  g += `<rect x="0" y="0" width="${N}" height=".15" fill="rgba(0,0,0,.35)"/>`;
+  g += `<rect x="0" y="0" width="${N}" height="${WALL_H}" fill="${side === 'R' ? 'rgba(255,255,255,.035)' : 'rgba(0,0,0,.22)'}"/>`;
+  return g;
+}
+let svgSeq = 0;
+function roomSVG(room, N, opts = {}){
+  const pfx = 'r' + (++svgSeq) + '_';
+  const baseItems = room.items.filter(it => F[it.t]);
+  const pl0 = opts.place; let items = baseItems, ghostId = null;
+  if (pl0 && pl0.x !== undefined) {
+    if (pl0.moveId) { items = baseItems.map(i => i.id === pl0.moveId ? {...i, x: pl0.x, y: pl0.y, r: pl0.r || 0, side: pl0.side || i.side} : i); ghostId = pl0.moveId; }
+    else { ghostId = '__ghost'; items = baseItems.concat([{id: '__ghost', t: pl0.t, x: pl0.x, y: pl0.y, r: pl0.r || 0, side: pl0.side, c: 0}]); }
+  }
+  const gcls = id => id === ghostId ? (opts.placeOk === false ? ' ghost bad' : ' ghost') : '';
+  const pad = 14, cap = .14;
+  const vbX = -N * TW - pad - cap * TW, vbY = -WALL_H * ZS - pad - 8, vbW = 2 * N * TW + 2 * pad + cap * TW * 2, vbH = N * 2 * TH + WALL_H * ZS + 2 * pad + 8;
+  const mR = `matrix(${TW} ${TH} 0 ${-ZS} 0 0)`;              // wall y=0  (u = x)
+  const mL = `matrix(${TW} ${-TH} 0 ${-ZS} ${-N * TW} ${N * TH})`; // wall x=0  (u = N - y)
+  const mF = `matrix(${TW} ${TH} ${-TW} ${TH} 0 0)`;
+  const sel = opts.sel, place = opts.place;
+  let s = `<svg class="roomsvg" viewBox="${vbX.toFixed(0)} ${vbY.toFixed(0)} ${vbW.toFixed(0)} ${vbH.toFixed(0)}" role="img" aria-label="勉強部屋"><defs>
+    <linearGradient id="${pfx}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2a6e"/><stop offset="1" stop-color="#0a1230"/></linearGradient>
+    <linearGradient id="${pfx}aur" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1d2a6b"/><stop offset=".5" stop-color="#3b1f6e"/><stop offset="1" stop-color="#0f3a4a"/></linearGradient>
+    <radialGradient id="${pfx}shade" cx=".5" cy=".5" r=".6"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient>
+    ${[...new Set(items.filter(i => F[i.t].glow).map(i => F[i.t].glow))].map((c, k) => `<radialGradient id="${pfx}g${k}"><stop offset="0" stop-color="${c}" stop-opacity=".42"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`).join('')}
+  </defs>`;
+  const glowIds = [...new Set(items.filter(i => F[i.t].glow).map(i => F[i.t].glow))];
+  // walls
+  s += `<g transform="${mL}">${wallPattern(room.wall, N, 'L', pfx)}</g><g transform="${mR}">${wallPattern(room.wall, N, 'R', pfx)}</g>`;
+  // wall caps
+  s += `<polygon points="${poly([P(0, 0, WALL_H), P(0, N, WALL_H), P(-cap, N, WALL_H), P(-cap, -cap, WALL_H)])}" fill="#2a3150"/><polygon points="${poly([P(0, 0, WALL_H), P(N, 0, WALL_H), P(N, -cap, WALL_H), P(-cap, -cap, WALL_H)])}" fill="#353d60"/>`;
+  s += `<line x1="0" y1="${-WALL_H * ZS}" x2="0" y2="0" stroke="rgba(0,0,0,.35)"/>`;
+  // wall items
+  for (const it of items.filter(i => F[i.t].wall)) {
+    const d = F[it.t], m = it.side === 'L' ? mL : mR, isSel = sel === it.id;
+    s += `<g transform="${m}"><g transform="translate(${it.x} ${d.zb})" data-i="${it.id}" class="${isSel ? 'sel' : ''}${gcls(it.id)}">${wallItemSVG(it, pfx)}${isSel ? `<rect x="-.05" y="-.05" width="${d.W + .1}" height="${d.H + .1}" fill="none" stroke="#22e4ff" stroke-width="2" vector-effect="non-scaling-stroke" stroke-dasharray="4 3"/>` : ''}</g></g>`;
+  }
+  // floor
+  s += `<g transform="${mF}"><clipPath id="${pfx}fc"><rect x="0" y="0" width="${N}" height="${N}"/></clipPath><g clip-path="url(#${pfx}fc)">${floorPattern(room.floor, N, pfx)}`;
+  for (const it of items.filter(i => F[i.t].rug)) { const [w, dd] = footprint(it), c = F[it.t].colors[(it.c || 0) % F[it.t].colors.length];
+    s += `<g data-i="${it.id}" class="${sel === it.id ? 'sel' : ''}${gcls(it.id)}"><rect x="${it.x + .05}" y="${it.y + .05}" width="${w - .1}" height="${dd - .1}" fill="${c}" stroke="${sel === it.id ? '#22e4ff' : mix(c, '#000000', .3)}" stroke-width="2" vector-effect="non-scaling-stroke"/><rect x="${it.x + .22}" y="${it.y + .22}" width="${w - .44}" height="${dd - .44}" fill="none" stroke="${mix(c, '#ffffff', .3)}" stroke-width="1.2" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/></g>`; }
+  s += `<rect x="0" y="0" width="${N}" height="${N}" fill="url(#${pfx}shade)"/></g></g>`;
+  // light pools
+  for (const it of items.filter(i => F[i.t].glow)) { const [w, dd] = footprint(it); const [cx, cy] = P(it.x + w / 2, it.y + dd / 2, 0);
+    s += `<ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${TW * 3.2}" ry="${TH * 3.2}" fill="url(#${pfx}g${glowIds.indexOf(F[it.t].glow)})" pointer-events="none"/>`; }
+  // placement tiles
+  if (place && !F[place.t].wall) {
+    const fd = F[place.t], [pw, pd] = (place.r % 2) ? [fd.D, fd.W] : [fd.W, fd.D], cover = new Set();
+    for (let ax = 0; ax < N; ax++) for (let ay = 0; ay < N; ay++) if (canPlace(baseItems, N, place.t, ax, ay, place.r, place.moveId))
+      for (let i = 0; i < pw; i++) for (let j = 0; j < pd; j++) cover.add((ax + i) + ',' + (ay + j));
+    for (let x = 0; x < N; x++) for (let y = 0; y < N; y++) {
+      const ok = cover.has(x + ',' + y);
+      const foot = pl0 && pl0.x !== undefined && x >= pl0.x && x < pl0.x + pw && y >= pl0.y && y < pl0.y + pd;
+      const fill = foot ? (opts.placeOk === false ? 'rgba(255,92,122,.4)' : 'rgba(62,230,160,.42)') : ok ? 'rgba(34,228,255,.14)' : 'rgba(255,92,122,.04)';
+      const strk = foot ? (opts.placeOk === false ? '#ff5c7a' : '#3ee6a0') : ok ? 'rgba(34,228,255,.55)' : 'rgba(255,255,255,.05)';
+      s += `<polygon class="tile" points="${poly([P(x, y, 0), P(x + 1, y, 0), P(x + 1, y + 1, 0), P(x, y + 1, 0)])}" fill="${fill}" stroke="${strk}" stroke-width="${foot ? 1.4 : .8}" pointer-events="none"/>`;
+    }
+  }
+  // boxes
+  const boxes = [];
+  for (const it of items) {
+    const d = F[it.t]; if (d.wall || d.rug) continue;
+    const z0 = itemZ(items, it), r = it.r || 0;
+    for (const p of d.parts) { const q = rotPart(p, d.W, d.D, r); const col = resolveCol(q[6], d, it.c || 0);
+      boxes.push({x: it.x + q[0], y: it.y + q[1], z: z0 + q[2], w: q[3], d: q[4], h: q[5], ...col, iid: it.id}); }
+  }
+  const sorted = sortBoxes(boxes);
+  const noPtr = place ? ' pointer-events="none"' : '';
+  for (const b of sorted) s += `<g data-i="${b.iid}" class="${sel === b.iid ? 'sel' : ''}${gcls(b.iid)}"${noPtr}>${boxSVG(b)}</g>`;
+  // wall slots for wall placement
+  if (place && F[place.t].wall) {
+    const d = F[place.t];
+    for (const side of ['L', 'R']) for (let p = 0; p + d.W <= N; p++) {
+      const ok = canPlaceWall(baseItems, N, place.t, side, p, place.moveId); if (!ok) continue;
+      s += `<g transform="${side === 'L' ? mL : mR}"><rect pointer-events="none" x="${p + .04}" y="${d.zb}" width="${d.W - .08}" height="${d.H}" fill="rgba(34,228,255,.14)" stroke="#22e4ff" stroke-width="1.2" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/></g>`;
+    }
+  }
+  return s + '</svg>';
+}
+function thumbSVG(t, ci = 0){
+  const d = F[t];
+  if (d.wall) { const W = d.W, H = d.H; return `<svg viewBox="${-.1} ${-.1} ${W + .2} ${H + .2}" style="height:70px"><g transform="translate(0 ${H}) scale(1 -1)">${wallItemSVG({t, c: ci, x: 0}, 'th' + t)}</g><defs><linearGradient id="th${t}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2a6e"/><stop offset="1" stop-color="#0a1230"/></linearGradient></defs></svg>`; }
+  if (d.rug) { const c = d.colors[ci % d.colors.length]; return `<svg viewBox="-110 -10 220 120"><g transform="matrix(${TW} ${TH} ${-TW} ${TH} 0 0)"><rect x="0" y="0" width="3" height="2" fill="${c}" stroke="${mix(c, '#000000', .3)}" stroke-width="2" vector-effect="non-scaling-stroke"/><rect x=".2" y=".2" width="2.6" height="1.6" fill="none" stroke="${mix(c, '#ffffff', .3)}" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/></g></svg>`; }
+  const boxes = d.parts.map(p => ({x: p[0], y: p[1], z: p[2], w: p[3], d: p[4], h: p[5], ...resolveCol(p[6], d, ci)}));
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+  for (const b of boxes) for (const pt of [P(b.x, b.y, b.z), P(b.x + b.w, b.y, b.z + b.h), P(b.x, b.y + b.d, b.z), P(b.x + b.w, b.y + b.d, b.z), P(b.x, b.y, b.z + b.h)]) { minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]); minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]); }
+  return `<svg viewBox="${(minX - 6).toFixed(0)} ${(minY - 6).toFixed(0)} ${(maxX - minX + 12).toFixed(0)} ${(maxY - minY + 12).toFixed(0)}">${sortBoxes(boxes).map(boxSVG).join('')}</svg>`;
+}
+
+/* ================= AUDIO (Web Audio — generated in-browser, no recordings) ================= */
+const AudioEng = {
+  ctx: null, master: null, nodes: [], timers: [], loops: [], cur: null, bufs: {},
+  ensure(){
+    if (!this.ctx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return false;
+      this.ctx = new C(); this.master = this.ctx.createGain(); this.master.gain.value = S().prefs.vol ?? .5; this.master.connect(this.ctx.destination); }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    return true;
+  },
+  noise(kind){
+    if (this.bufs[kind]) return this.bufs[kind];
+    const len = this.ctx.sampleRate * 4, buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = buf.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0, last = 0;
+    for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1;
+      if (kind === 'white') d[i] = w * .5;
+      else if (kind === 'pink') { b0 = .99765 * b0 + w * .099046; b1 = .963 * b1 + w * .2965; b2 = .57 * b2 + w * 1.0526; d[i] = (b0 + b1 + b2 + w * .1848) * .11; }
+      else { last = (last + .02 * w) / 1.02; d[i] = last * 3.5; } }
+    return (this.bufs[kind] = buf);
+  },
+  src(kind, gain, filters = []){
+    const s = this.ctx.createBufferSource(); s.buffer = this.noise(kind); s.loop = true;
+    const g = this.ctx.createGain(); g.gain.value = gain; let n = s;
+    for (const [type, f, q] of filters) { const bq = this.ctx.createBiquadFilter(); bq.type = type; bq.frequency.value = f; if (q) bq.Q.value = q; n.connect(bq); n = bq; this.nodes.push(bq); }
+    n.connect(g); g.connect(this.master); s.start(); this.nodes.push(s, g); return g;
+  },
+  blip(freq, dur, gain, type = 'bandpass', q = 1){
+    const t = this.ctx.currentTime, s = this.ctx.createBufferSource(); s.buffer = this.noise('white');
+    const f = this.ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+    const g = this.ctx.createGain(); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(this.master); s.start(t, Math.random() * 3); s.stop(t + dur + .02);
+  },
+  tone(freq, t, dur, gain, type = 'sine'){
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain(); o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + Math.min(.6, dur * .3)); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(this.out || this.master); o.start(t); o.stop(t + dur + .05);
+  },
+  every(fn, minMs, maxMs){ const h = {id: null, live: true}; this.loops.push(h); const loop = () => { if (!h.live) return; fn(); h.id = setTimeout(loop, minMs + Math.random() * (maxMs - minMs)); }; loop(); },
+  play(kind){
+    this.stop(); if (!this.ensure()) { toast('このブラウザでは音声を再生できません。', 'x'); return; }
+    this.cur = kind; const C = this.ctx;
+    if (kind === 'white') this.src('white', .32, [['lowpass', 9000]]);
+    if (kind === 'rain') { this.src('pink', .9, [['highpass', 400], ['lowpass', 7000]]); this.src('brown', .35, [['lowpass', 600]]);
+      this.every(() => this.blip(2500 + Math.random() * 3500, .03 + Math.random() * .04, .04 + Math.random() * .08, 'bandpass', 2), 25, 90); }
+    if (kind === 'fire') { this.src('brown', .9, [['lowpass', 420]]); this.src('pink', .06, [['bandpass', 900, .7]]);
+      this.every(() => this.blip(1200 + Math.random() * 3000, .008 + Math.random() * .03, .1 + Math.random() * .45, 'bandpass', 3), 40, 420); }
+    if (kind === 'wave') { const g = this.src('brown', .1, [['lowpass', 1000]]); const g2 = this.src('pink', .03, [['highpass', 1500]]);
+      const lfo = C.createOscillator(); lfo.frequency.value = .085; const d = C.createGain(); d.gain.value = .55; lfo.connect(d); d.connect(g.gain);
+      const d2 = C.createGain(); d2.gain.value = .12; lfo.connect(d2); d2.connect(g2.gain); g.gain.value = .65; g2.gain.value = .14; lfo.start(); this.nodes.push(lfo, d, d2); }
+    if (kind === 'forest') { const g = this.src('pink', .12, [['bandpass', 1100, .5]]); const lfo = C.createOscillator(); lfo.frequency.value = .05; const d = C.createGain(); d.gain.value = .07; lfo.connect(d); d.connect(g.gain); lfo.start(); this.nodes.push(lfo, d);
+      this.every(() => { const t = C.currentTime + .05, base = 2200 + Math.random() * 2400, n = 2 + Math.floor(Math.random() * 4);
+        for (let i = 0; i < n; i++) { const o = C.createOscillator(), gg = C.createGain(), st = t + i * (.11 + Math.random() * .05);
+          o.type = 'sine'; o.frequency.setValueAtTime(base, st); o.frequency.exponentialRampToValueAtTime(base * (1.25 + Math.random() * .4), st + .07);
+          gg.gain.setValueAtTime(0, st); gg.gain.linearRampToValueAtTime(.05, st + .015); gg.gain.exponentialRampToValueAtTime(.0001, st + .09);
+          o.connect(gg); gg.connect(this.master); o.start(st); o.stop(st + .12); } }, 1400, 5200); }
+    if (kind === 'bgm') {
+      const out = C.createGain(); out.gain.value = .9; const lp = C.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
+      const dl = C.createDelay(); dl.delayTime.value = .42; const fb = C.createGain(); fb.gain.value = .35;
+      out.connect(lp); lp.connect(this.master); lp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(this.master); this.nodes.push(out, lp, dl, fb); this.out = out;
+      const chords = [[57,60,64,67],[53,57,60,64],[48,52,55,59],[55,59,62,65]]; const mf = n => 440 * Math.pow(2, (n - 69) / 12); let ci = 0;
+      const playChord = () => { const t = C.currentTime + .05, ch = chords[ci++ % chords.length];
+        for (const n of ch) { this.tone(mf(n), t, 8.2, .035, 'triangle'); this.tone(mf(n) * 1.003, t, 8.2, .02, 'sine'); }
+        this.tone(mf(ch[0] - 12), t, 8.2, .05, 'sine');
+        for (let i = 0; i < 8; i++) if (Math.random() < .7) this.tone(mf(ch[Math.floor(Math.random() * 4)] + 12), t + i * 1 + Math.random() * .2, 1.6, .025, 'sine'); };
+      playChord(); const id = setInterval(playChord, 8000); this.timers.push(id);
+    }
+    renderSoundBtns();
+  },
+  stop(){
+    for (const n of this.nodes) { try { n.stop && n.stop(); } catch {} try { n.disconnect(); } catch {} }
+    this.nodes = []; this.timers.forEach(id => { clearTimeout(id); clearInterval(id); }); this.timers = []; this.loops.forEach(h => { h.live = false; clearTimeout(h.id); }); this.loops = []; this.out = null; this.cur = null; renderSoundBtns();
+  },
+  setVol(v){ if (this.master) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, .05); },
+  chime(){
+    if (!this.ensure()) return; const t = this.ctx.currentTime + .02, prev = this.out; this.out = null;
+    [[880, 0], [1318.5, .18], [1760, .36]].forEach(([f, d]) => this.tone(f, t + d, 1.4, .12, 'sine')); this.out = prev;
+  }
+};
+const SOUNDS = [['rain','雨音','rain'],['fire','焚き火','fire'],['wave','波の音','wave'],['forest','森の音','tree'],['white','ホワイトノイズ','noise'],['bgm','集中BGM','music']];
+function renderSoundBtns(){ document.querySelectorAll('[data-snd]').forEach(b => { b.classList.toggle('on', AudioEng.cur === b.dataset.snd); b.setAttribute('aria-pressed', AudioEng.cur === b.dataset.snd); }); const pp = $('#snd-pp'); if (pp) pp.innerHTML = AudioEng.cur ? icon('pause') + '停止' : icon('play') + '再生'; }
+
+/* ================= TIMER ================= */
+let T = LS.get('sh-timer') || {mode: 'cd', target: 25, subj: 'en', state: 'idle', acc: 0, since: null, phase: 'study', brk: 5, startAt: null, cheer: ''};
+let tickId = null, wakeLock = null;
+const saveTimer = () => LS.set('sh-timer', T);
+const elapsed = () => T.acc + (T.since ? Date.now() - T.since : 0);
+function restoreTimer(){ if (T.state === 'run' || T.state === 'pause') { startTick(); if (T.state === 'run') requestWake(); } }
+function startTick(){ if (!tickId) tickId = setInterval(tick, 250); }
+function stopTick(){ clearInterval(tickId); tickId = null; }
+async function requestWake(){ try { wakeLock = await navigator.wakeLock?.request('screen'); } catch {} }
+function releaseWake(){ try { wakeLock && wakeLock.release(); } catch {} wakeLock = null; }
+function tick(){
+  if (T.state === 'run') {
+    const el = elapsed();
+    if (T.phase === 'break' && el >= T.brk * 60000) { endBreak(); return; }
+    if (T.phase === 'study' && T.mode === 'cd' && el >= T.target * 60000) { finishStudy(true); return; }
+    if (T.phase === 'study' && el >= MAX_SESSION_MS) { finishStudy(true); return; }
+  }
+  updateTimerUI();
+}
+function fmtClock(ms){ const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60; return h ? `${h}:${pad2(m)}:${pad2(ss)}` : `${pad2(m)}:${pad2(ss)}`; }
+function updateTimerUI(){
+  const tt = $('#t-time'); if (!tt) return;
+  const el = elapsed(), isBrk = T.phase === 'break';
+  let show, pct;
+  if (isBrk) { const tg = T.brk * 60000; show = tg - el; pct = 1 - el / tg; }
+  else if (T.mode === 'cd') { const tg = T.target * 60000; show = tg - el; pct = el / tg; }
+  else { show = el; pct = (el % 3600000) / 3600000; }
+  tt.textContent = fmtClock(show);
+  const ring = $('#t-ring .prog');
+  if (ring) { const r = +ring.getAttribute('r'), c = 2 * Math.PI * r; ring.setAttribute('stroke-dasharray', `${(c * clamp(pct, 0, 1)).toFixed(1)} ${c.toFixed(1)}`); }
+  const xp = $('#t-xp'); if (xp) xp.textContent = isBrk ? '休憩中は記録されません' : `いまの獲得予定 +${Math.floor(Math.min(el, T.mode === 'cd' ? T.target * 60000 : MAX_SESSION_MS) / 60000)} XP`;
+}
+function timerStart(){
+  if (T.mode === 'cd' && !(T.target >= 1)) { toast('時間を1分以上に設定してください。', 'x'); return; }
+  if (!S().subjects.find(s => s.id === T.subj && !s.hidden)) T.subj = S().subjects.find(s => !s.hidden)?.id || 'ot';
+  Object.assign(T, {state: 'run', acc: 0, since: Date.now(), phase: 'study', startAt: Date.now(), cheer: CHEER_START[Math.floor(Math.random() * CHEER_START.length)]});
+  saveTimer(); startTick(); requestWake(); AudioEng.ensure();
+  render();
+}
+function timerPause(){ if (T.state !== 'run') return; T.acc = elapsed(); T.since = null; T.state = 'pause'; saveTimer(); releaseWake(); render(); }
+function timerResume(){ if (T.state !== 'pause') return; T.since = Date.now(); T.state = 'run'; saveTimer(); requestWake(); render(); }
+function timerReset(){ Object.assign(T, {state: 'idle', acc: 0, since: null, phase: 'study', startAt: null}); saveTimer(); stopTick(); releaseWake(); render(); }
+function finishStudy(auto){
+  if (T.phase !== 'study') { endBreak(); return; }
+  const cap = T.mode === 'cd' ? T.target * 60000 : MAX_SESSION_MS;
+  const el = Math.min(elapsed(), cap), min = Math.floor(el / 60000);
+  const startAt = T.startAt || (Date.now() - el), subj = T.subj, mode = T.mode;
+  Object.assign(T, {state: 'idle', acc: 0, since: null, startAt: null}); saveTimer(); stopTick(); releaseWake();
+  if (S().prefs.stopSound) AudioEng.stop();
+  AudioEng.chime();
+  if (min < 1) { toast('1分未満の勉強は記録されません。', 'timer'); render(); return; }
+  const startDate = new Date(startAt);
+  addSession({id: uid6(), d: dkey(startDate), t: startAt, s: subj, m: min, k: mode});
+  if (auto && T.brk > 0) { Object.assign(T, {state: 'run', phase: 'break', acc: 0, since: Date.now()}); saveTimer(); startTick(); }
+  render();
+}
+function endBreak(){ Object.assign(T, {state: 'idle', phase: 'study', acc: 0, since: null}); saveTimer(); stopTick(); AudioEng.chime(); toast('休憩おわり。準備ができたら次のセッションへ。', 'timer'); render(); }
+function addSession(sess){
+  const before = stats(), lvBefore = before.level;
+  const mk = monthOf(sess.d); monthDoc(mk).sessions.push(sess); queueWrite('m-' + mk, 0);
+  const after = stats();
+  checkMissions(false); checkRoomStage(false);
+  showSessionDone(sess, before, after);
+  if (after.level > lvBefore) queueOverlay(() => showLevelUp(lvBefore, after.level));
+  checkBadges(false);
+  publishPub();
+}
+function showSessionDone(sess, before, after){
+  const sj = subjOf(sess.s), lv = after.level, cur = after.xp - xpForLevel(lv), need = xpForLevel(lv + 1) - xpForLevel(lv);
+  showModal(`<div class="celebrate">${burst()}<div class="eyebrow">SESSION COMPLETE</div><div class="bigxp" style="margin-top:14px">+${sess.m} XP</div>
+    <p style="margin:10px 0 4px;font-size:15px"><span class="dot" style="--c:${sj.color};display:inline-block;margin-right:6px"></span>${esc(sj.name)}を${fmtHM(sess.m)}勉強しました</p>
+    <p class="mute" style="margin:0 0 16px;font-size:14px">${esc(CHEER_END[Math.floor(Math.random() * CHEER_END.length)])}</p>
+    <div class="row" style="justify-content:space-between;font-size:12px" ><span class="disp">LV ${lv}</span><span class="mute disp">${cur} / ${need} XP</span></div>
+    <div class="bar" style="margin-top:6px"><i id="sd-bar" style="width:0%"></i></div>
+    <div class="row" style="justify-content:center;gap:18px;margin-top:16px;font-size:13px"><span>${icon('coin')} +${sess.m} コイン</span><span>${icon('flame')} 連続 ${after.streak}日</span><span>今日 ${fmtHM(after.today)}</span></div>
+    <div class="acts" style="justify-content:center"><button class="btn primary" data-act="modal-close" autofocus>OK</button></div></div>`,
+    {mount: () => setTimeout(() => { const b = $('#sd-bar'); if (b) b.style.width = (cur / need * 100).toFixed(1) + '%'; }, 80)});
+}
+function showLevelUp(from, to){
+  const unlocked = F_ORDER.filter(t => F[t].lv > from && F[t].lv <= to).map(t => F[t].n);
+  const st0 = stageFor(from), st1 = stageFor(to);
+  showModal(`<div class="celebrate">${burst()}<div class="lvup">LEVEL UP</div><div class="lvring"><b>${to}</b></div>
+    <p style="margin:0;font-size:17px;font-weight:700">称号「${esc(titleFor(to))}」</p>
+    ${st1 > st0 ? `<p class="mute" style="margin:6px 0 0">部屋が「${esc(STAGES[st1].name)}」に進化！ 広さが ${STAGES[st1].size}×${STAGES[st1].size} になりました。</p>` : ''}
+    ${unlocked.length ? `<p class="mute" style="margin:10px 0 0;font-size:13px">新しく解放：${unlocked.map(esc).join('、')}</p>` : ''}
+    <div class="acts" style="justify-content:center">${st1 > st0 || unlocked.length ? '<a class="btn" href="#room" data-act="modal-close">部屋を見る</a>' : ''}<button class="btn primary" data-act="modal-close" autofocus>やったね</button></div></div>`);
+}
+
+/* ================= VIEWS ================= */
+const VIEWS = {};
+function nextExam(){
+  const st = S(), today = dkey();
+  const list = st.exams.filter(e => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+  return st.exams.find(e => e.id === st.pinnedExam && e.date >= today) || list[0] || null;
+}
+VIEWS.home = () => {
+  const st = S(), x = stats(), today = dkey(), info = todayInfo(), goal = info.goal, pct = goal ? info.total / goal : 0;
+  const lv = x.level, cur = x.xp - xpForLevel(lv), need = xpForLevel(lv + 1) - xpForLevel(lv);
+  const ex = nextExam(), q = QUOTES[hashStr(today) % QUOTES.length];
+  const done = st.missions[today] || [];
+  const [th, tm] = hmParts(info.total);
+  const showReview = !info.reviewed && nowHM() >= st.prefs.reviewTime;
+  const stg = stageFor(lv);
+  return `
+  ${showReview ? `<a class="banner" href="#review" style="text-decoration:none;color:inherit">${icon('moon')}<span style="flex:1">夜の振り返りの時間です。今日がんばったことを記録しよう。</span>${icon('chevR')}</a>` : ''}
+  <section class="panel hero"><div class="home-hero">
+    <div class="ringwrap">${ringSVG(pct, 176, 12, 'hr')}<div class="rc"><span class="disp">${th}<small style="font-size:16px;margin:0 2px">h</small>${pad2(tm)}<small style="font-size:16px;margin-left:2px">m</small></span><small>今日の勉強時間</small></div></div>
+    <div class="stack" style="gap:14px;min-width:0">
+      <div><span class="eyebrow">TODAY · ${fmtMD(today)}（${WD[parseD(today).getDay()]}）</span>
+      <div class="row wrap" style="gap:8px;margin-top:6px"><span class="pill ${pct >= 1 ? 'good' : 'cy'}">目標達成率 ${Math.floor(pct * 100)}%</span><span class="pill">目標 ${fmtHM(goal)}</span></div></div>
+      <div class="row wrap" style="gap:10px"><a class="btn primary big" href="#timer">${icon('play')}勉強を始める</a><a class="btn big" href="#room" style="font-size:15px">${icon('room')}自分の部屋へ</a></div>
+    </div></div></section>
+
+  <div class="grid3">
+    <section class="panel lvcard"><div class="row" style="align-items:flex-end;gap:10px"><span class="lvnum">${lv}</span><div class="kv"><span class="k">LEVEL</span><b style="font-size:14px">${esc(titleFor(lv))}</b></div></div>
+      <div class="bar" style="margin:12px 0 6px"><i style="width:${(cur / need * 100).toFixed(1)}%"></i></div>
+      <div class="row" style="justify-content:space-between;font-size:12px"><span class="mute">累計 <b class="disp" style="color:var(--ink)">${x.xp.toLocaleString()}</b> XP</span><span class="mute">次まで <b class="disp" style="color:var(--cyan)">${need - cur}</b> XP</span></div></section>
+    <section class="panel"><div class="kv"><span class="k">連続勉強日数</span><span class="v" style="color:#ffb067">${icon('flame')} ${x.streak}<small>日</small></span></div>
+      <p class="note" style="margin:8px 0 0">最長 ${x.best}日。1日${STREAK_MIN}分以上で記録がつながります。${x.today >= STREAK_MIN ? '今日はクリア済み。' : '今日も少しだけやってみよう。'}</p></section>
+    <a class="panel" href="#exams" style="text-decoration:none;color:inherit"><div class="kv"><span class="k">${ex ? esc(ex.name) + 'まで' : '試験日を登録しよう'}</span>
+      <span class="v" style="color:var(--violet)">${ex ? (daysUntil(ex.date) === 0 ? '今日' : `${daysUntil(ex.date)}<small>日</small>`) : '—'}</span></div>
+      <p class="note" style="margin:8px 0 0">${ex ? fmtDate(ex.date) : '入試カウントダウンから追加できます'}</p></a>
+  </div>
+
+  <div class="grid2">
+    <section class="panel"><div class="ph"><div><span class="eyebrow">DAILY MISSION</span><h2>今日のミッション</h2></div><span class="pill">${done.length}/${missionsFor(today).length}</span></div>
+      <div>${missionsFor(today).map(id => { const m = MISSIONS[id], ok = done.includes(id); return `<div class="mission ${ok ? 'done' : ''}"><span class="mcheck">${ok ? icon('check') : ''}</span><span class="mt">${m.t}</span><span class="pill ${ok ? 'good' : ''}">${icon('coin')}${m.r}</span></div>`; }).join('')}</div>
+      <p class="note" style="margin:10px 0 0">達成すると自動でコインがもらえます。コインは部屋の家具に使えます。</p></section>
+    <a class="panel roomcard" href="#room"><div class="ph"><div><span class="eyebrow">MY ROOM · LEVEL ${stg + 1}</span><h2>${esc(STAGES[stg].name)}</h2></div>${icon('chevR')}</div>
+      <div class="rv">${roomSVG(st.room, STAGES[stg].size, {})}</div></a>
+  </div>
+
+  <section class="panel"><span class="eyebrow">WORDS OF THE DAY</span><p class="quote" style="margin:8px 0 0">${esc(q[0])}<cite>— ${esc(q[1])}</cite></p></section>
+  ${info.sessions.length ? `<section class="panel"><div class="ph"><h3>今日の記録</h3><a class="btn sm ghost" href="#stats">すべて見る</a></div><div class="list">${info.sessions.slice().reverse().slice(0, 5).map(s => { const sj = subjOf(s.s); const t = new Date(s.t); return `<div class="li"><span class="dot" style="--c:${sj.color}"></span><div class="t"><b>${esc(sj.name)}</b><span>${pad2(t.getHours())}:${pad2(t.getMinutes())} 開始</span></div><span class="disp">${fmtHM(s.m)}</span></div>`; }).join('')}</div></section>` : ''}
+  `;
+};
+const nowHM = () => { const d = new Date(); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+
+VIEWS.timer = () => {
+  const st = S(), idle = T.state === 'idle', run = T.state === 'run', isBrk = T.phase === 'break';
+  const sj = subjOf(T.subj), subs = st.subjects.filter(s => !s.hidden);
+  const presets = [25, 50, 90];
+  return `<div class="pagehead"><h1>勉強タイマー</h1><span class="note">実際に経過した時間だけが記録されます</span></div>
+  <div class="grid2">
+    <section class="panel hero ${run ? 'running' : ''}"><div class="tface">
+      <div class="tring" id="t-ring">${ringSVG(0, 300, 14, 'tr')}<div class="rc"><span class="tphase ${isBrk ? 'brk' : ''}">${isBrk ? 'BREAK · 休憩' : T.mode === 'cd' ? 'FOCUS · カウントダウン' : 'FOCUS · ストップウォッチ'}</span><span class="ttime" id="t-time">00:00</span><span class="tsubj"><span class="dot" style="--c:${sj.color};display:inline-block;margin-right:6px;vertical-align:middle"></span>${esc(sj.name)}</span></div></div>
+      <div class="cheer">${!idle && !isBrk ? esc(T.cheer || '') : isBrk ? 'しっかり休もう。目を閉じる、ストレッチ、水を飲む。' : '科目と時間を選んでスタート。'}</div>
+      <div class="note disp" id="t-xp"></div>
+      <div class="tctl">
+        ${idle ? `<button class="btn primary big" data-act="t-start">${icon('play')}開始</button>` : ''}
+        ${run ? `<button class="btn big" data-act="t-pause">${icon('pause')}${isBrk ? '休憩を一時停止' : '一時停止'}</button>` : ''}
+        ${T.state === 'pause' ? `<button class="btn primary big" data-act="t-resume">${icon('play')}再開</button>` : ''}
+        ${!idle ? `<button class="btn big" data-act="t-finish">${icon('stop')}${isBrk ? '休憩を終える' : '終了して記録'}</button>` : ''}
+      </div>
+      ${T.state === 'pause' && !isBrk ? `<button class="btn sm ghost" data-act="t-discard">記録せずにリセット</button>` : ''}
+    </div></section>
+
+    <div class="stack">
+      <section class="panel"><div class="ph"><h3>モードと時間</h3>${!idle ? '<span class="pill warn">計測中は変更できません</span>' : ''}</div>
+        <div class="seg" role="group" aria-label="モード"><button data-act="t-mode" data-v="cd" class="${T.mode === 'cd' ? 'on' : ''}" ${idle ? '' : 'disabled'}>カウントダウン</button><button data-act="t-mode" data-v="sw" class="${T.mode === 'sw' ? 'on' : ''}" ${idle ? '' : 'disabled'}>ストップウォッチ</button></div>
+        ${T.mode === 'cd' ? `<div class="row wrap" style="margin-top:12px;gap:8px">${presets.map(p => `<button class="btn sm ${T.target === p ? 'primary' : ''}" data-act="t-preset" data-v="${p}" ${idle ? '' : 'disabled'}>${p}分</button>`).join('')}
+          <label class="row" style="gap:6px;font-size:13px;color:var(--mute)">自由に<input id="t-custom" type="number" min="1" max="600" inputmode="numeric" value="${T.target}" style="width:84px" ${idle ? '' : 'disabled'}>分</label></div>` : '<p class="note" style="margin:12px 0 0">終了ボタンを押すまで計測します（最長12時間）。</p>'}
+        <div style="margin-top:14px"><span class="note">終了後の休憩（カウントダウン完了時に自動で開始）</span>
+          <div class="seg" style="margin-top:6px">${[0, 5, 10, 15].map(b => `<button data-act="t-brk" data-v="${b}" class="${T.brk === b ? 'on' : ''}">${b ? b + '分' : 'なし'}</button>`).join('')}</div></div>
+      </section>
+      <section class="panel"><div class="ph"><h3>科目</h3><a class="btn sm ghost" href="#prefs">科目を編集</a></div>
+        <div class="chips">${subs.map(s => `<button class="chip ${T.subj === s.id ? 'on' : ''}" style="--c:${s.color}" data-act="t-subj" data-v="${s.id}" ${idle ? '' : 'disabled'}><i></i>${esc(s.name)}</button>`).join('')}</div></section>
+      <section class="panel"><div class="ph"><h3>環境音・BGM</h3><button class="btn sm" id="snd-pp" data-act="snd-toggle">${AudioEng.cur ? icon('pause') + '停止' : icon('play') + '再生'}</button></div>
+        <div class="sounds">${SOUNDS.map(([k, n, ic]) => `<button class="snd ${AudioEng.cur === k ? 'on' : ''}" data-act="snd" data-snd="${k}" aria-pressed="${AudioEng.cur === k}">${icon(ic)}${n}</button>`).join('')}</div>
+        <div class="row" style="margin-top:14px">${icon('sound')}<input id="snd-vol" type="range" min="0" max="1" step=".01" value="${st.prefs.vol}" aria-label="音量"></div>
+        <div class="row" style="margin-top:12px"><span style="flex:1;font-size:14px">タイマー終了時に音を止める</span><button class="tog ${st.prefs.stopSound ? 'on' : ''}" data-act="pref-tog" data-k="stopSound" aria-pressed="${st.prefs.stopSound}" aria-label="タイマー終了時に音を止める"></button></div>
+        <p class="note" style="margin:10px 0 0">音はすべてブラウザ内でリアルタイムに合成しています（録音素材は使っていません）。</p></section>
+    </div>
+  </div>`;
+};
+
+VIEWS.stats = () => {
+  const st = S(), x = stats(), today = dkey(), mode = UI.statMode;
+  let cols = [], goal = 0, rangeLabel = '';
+  const subs = st.subjects;
+  if (mode === 'day') {
+    for (let i = 6; i >= 0; i--) { const k = addDays(today, -i), sd = x.subjDay[k] || {};
+      cols.push({label: i === 0 ? '今日' : `${parseD(k).getDate()}${WD[parseD(k).getDay()]}`, hl: i === 0, segs: subs.map(s => ({v: sd[s.id] || 0, c: s.color})).concat(Object.keys(sd).filter(id => !subs.find(s => s.id === id)).map(id => ({v: sd[id], c: '#9aa3c0'})))}); }
+    goal = st.dailyGoal; rangeLabel = '直近7日';
+  } else if (mode === 'week') {
+    const ws = weekStart(today);
+    for (let i = 7; i >= 0; i--) { const w0 = addDays(ws, -7 * i); let v = 0; for (let j = 0; j < 7; j++) v += x.byDay[addDays(w0, j)] || 0;
+      cols.push({label: fmtMD(w0), hl: i === 0, segs: [{v, c: i === 0 ? '#22e4ff' : '#3d7bff'}]}); }
+    goal = st.dailyGoal * 7; rangeLabel = '直近8週（週の始まり＝月曜）';
+  } else {
+    const mk = monthOf(today);
+    for (let i = 5; i >= 0; i--) { const m = addMonths(mk, -i); let v = 0; for (const d in x.byDay) if (monthOf(d) === m) v += x.byDay[d];
+      cols.push({label: `${+m.slice(5)}月`, hl: i === 0, segs: [{v, c: i === 0 ? '#a46bff' : '#6b5bd6'}]}); }
+    goal = st.dailyGoal * daysInMonth(mk); rangeLabel = '直近6か月';
+  }
+  const totals = cols.map(c => c.segs.reduce((a, s) => a + s.v, 0)), sum = totals.reduce((a, b) => a + b, 0);
+  const avg = mode === 'day' ? sum / 7 : sum / cols.length;
+  // donut
+  let from = '0000', lbl = '全期間';
+  if (UI.donut === 'week') { from = weekStart(today); lbl = '今週'; } else if (UI.donut === 'month') { from = monthOf(today) + '-01'; lbl = '今月'; }
+  const per = {}; for (const s of x.sessions) if (s.d >= from) per[s.s] = (per[s.s] || 0) + s.m;
+  const items = Object.entries(per).map(([id, v]) => ({id, v, c: subjOf(id).color, n: subjOf(id).name})).sort((a, b) => b.v - a.v);
+  const dtot = items.reduce((a, i) => a + i.v, 0);
+  // calendar
+  const cm = UI.calMonth, first = parseD(cm + '-01'), lead = (first.getDay() + 6) % 7, nd = daysInMonth(cm);
+  let cal = ['月','火','水','木','金','土','日'].map(w => `<span class="h">${w}</span>`).join('');
+  for (let i = 0; i < lead; i++) cal += '<span class="d x"></span>';
+  let studiedDays = 0, goalDaysM = 0, elapsedDays = 0;
+  for (let d = 1; d <= nd; d++) { const k = `${cm}-${pad2(d)}`, v = x.byDay[k] || 0, g = goalFor(k), r = g ? v / g : 0;
+    if (k <= today) elapsedDays++; if (v >= STREAK_MIN) studiedDays++; if (g && v >= g) goalDaysM++;
+    const lvl = v < STREAK_MIN ? 0 : r >= 1 ? 4 : r >= .5 ? 3 : r >= .25 ? 2 : 1;
+    cal += `<span class="d ${lvl ? 'l' + lvl : ''} ${k === today ? 'today' : ''}" title="${fmtMD(k)} ${fmtHM(v)}">${d}</span>`; }
+  const recent = x.sessions.slice().sort((a, b) => b.t - a.t).slice(0, 40);
+  return `<div class="pagehead"><h1>記録・分析</h1><div class="seg">${[['day','日別'],['week','週別'],['month','月別']].map(([k, n]) => `<button data-act="stat-mode" data-v="${k}" class="${mode === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+  <div class="grid3">
+    <section class="panel"><div class="kv"><span class="k">累計勉強時間</span><span class="v">${hmParts(x.total)[0]}<small>時間</small>${hmParts(x.total)[1]}<small>分</small></span></div></section>
+    <section class="panel"><div class="kv"><span class="k">今週 / 今月</span><span class="v">${(x.weekMin / 60).toFixed(1)}<small>h</small> <span class="dim">/</span> ${(x.monthMin / 60).toFixed(1)}<small>h</small></span></div></section>
+    <section class="panel"><div class="kv"><span class="k">${mode === 'day' ? '1日' : mode === 'week' ? '1週' : '1か月'}の平均と目標</span><span class="v">${fmtHM(avg)}</span></div><p class="note" style="margin:4px 0 0">目標 ${fmtHM(goal)} に対して ${goal ? Math.round(avg / goal * 100) : 0}%</p></section>
+  </div>
+  <section class="panel chart"><div class="ph"><div><span class="eyebrow">${rangeLabel}</span><h2>勉強時間の推移</h2></div><span class="pill warn">点線＝目標</span></div>${barChart(cols, goal)}
+    ${mode === 'day' ? `<div class="chips" style="margin-top:10px">${subs.filter(s => cols.some(c => c.segs.find(g => g.c === s.color && g.v > 0))).map(s => `<span class="chip" style="--c:${s.color}"><i></i>${esc(s.name)}</span>`).join('')}</div>` : ''}</section>
+  <div class="grid2">
+    <section class="panel"><div class="ph"><h2>科目別の割合</h2><div class="seg">${[['week','今週'],['month','今月'],['all','全期間']].map(([k, n]) => `<button data-act="donut" data-v="${k}" class="${UI.donut === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+      <div class="row" style="align-items:center;gap:18px;flex-wrap:wrap"><div style="width:150px;flex:none">${donut(items)}</div>
+      <div class="legend" style="flex:1;min-width:150px">${items.length ? items.map(i => `<div class="row"><span class="dot" style="--c:${i.c}"></span><span style="flex:1">${esc(i.n)}</span><span class="disp mute">${fmtHM(i.v)}</span><span class="disp" style="width:42px;text-align:right">${Math.round(i.v / dtot * 100)}%</span></div>`).join('') : `<p class="note">${lbl}の記録はまだありません。</p>`}</div></div></section>
+    <section class="panel"><div class="ph"><div><span class="eyebrow">STREAK</span><h2>連続勉強記録</h2></div><div class="row" style="gap:4px"><button class="btn sm ghost" data-act="cal" data-v="-1" aria-label="前の月">${icon('chevL')}</button><b class="disp" style="font-size:14px">${cm.replace('-', '.')}</b><button class="btn sm ghost" data-act="cal" data-v="1" aria-label="次の月">${icon('chevR')}</button></div></div>
+      <div class="row wrap" style="gap:16px;margin-bottom:12px"><div class="kv"><span class="k">現在</span><span class="v" style="font-size:18px;color:#ffb067">${x.streak}<small>日</small></span></div><div class="kv"><span class="k">最長</span><span class="v" style="font-size:18px">${x.best}<small>日</small></span></div><div class="kv"><span class="k">月間達成率</span><span class="v" style="font-size:18px">${elapsedDays ? Math.round(studiedDays / elapsedDays * 100) : 0}<small>%</small></span></div><div class="kv"><span class="k">目標達成日</span><span class="v" style="font-size:18px">${goalDaysM}<small>日</small></span></div></div>
+      <div class="cal">${cal}</div><p class="note" style="margin:10px 0 0">色が濃いほど目標に近い日。グラデーションは目標達成日です。月間達成率＝その月の経過日数のうち勉強した日の割合。</p></section>
+  </div>
+  <section class="panel"><div class="ph"><h2>過去の勉強記録</h2><span class="note">最新40件</span></div>
+    ${recent.length ? `<div class="list">${recent.map(s => { const sj = subjOf(s.s), t = new Date(s.t); const conf = UI.histConfirm === s.id;
+      return `<div class="li"><span class="dot" style="--c:${sj.color}"></span><div class="t"><b>${esc(sj.name)}</b><span>${fmtMD(s.d)}（${WD[parseD(s.d).getDay()]}）${pad2(t.getHours())}:${pad2(t.getMinutes())}〜 · ${s.k === 'sw' ? 'ストップウォッチ' : 'カウントダウン'}</span></div><span class="disp">${fmtHM(s.m)}</span>
+      ${conf ? `<button class="btn sm danger" data-act="hist-del" data-v="${s.id}" data-m="${monthOf(s.d)}">削除する</button><button class="btn sm ghost" data-act="hist-cancel">戻す</button>` : `<button class="btn sm ghost" data-act="hist-ask" data-v="${s.id}" aria-label="この記録を削除">${icon('trash')}</button>`}</div>`; }).join('')}</div>` : '<div class="empty">まだ記録がありません。タイマーで勉強すると、ここに自動で残ります。</div>'}
+    <p class="note" style="margin:10px 0 0">記録を削除すると、その分の経験値とコインも減ります。</p></section>`;
+};
+
+VIEWS.room = () => {
+  const st = S(), x = stats(), stg = stageFor(x.level), N = STAGES[stg].size, nextS = STAGES[stg + 1];
+  const selIt = st.room.items.find(i => i.id === UI.sel);
+  const placedCount = t => st.room.items.filter(i => i.t === t).length;
+  const inv = F_ORDER.filter(t => (st.owned[t] || 0) - placedCount(t) > 0);
+  let bar = '';
+  if (UI.place) { const pd = F[UI.place.t], ok = placeOk(UI.place), arr = (deg, v, lbl) => `<button class="tool" data-act="rm-nudge" data-v="${v}" aria-label="${lbl}"><span style="display:inline-flex;transform:rotate(${deg}deg)">${icon('arrow')}</span></button>`;
+    bar = `<div class="roombar"><div class="rb-head">${icon('move')}<b>${esc(pd.n)}</b><span class="sp"></span><span class="pill ${ok ? 'good' : 'bad'}">${ok ? 'ここに置けます' : 'ぶつかっています'}</span></div>
+      <div class="rb-move"><div class="pad">${pd.wall ? arr(-90, 'wl', '左へ') + arr(90, 'wr', '右へ') : arr(-45, 'xm', '左上へ') + arr(45, 'ym', '右上へ') + arr(-135, 'yp', '左下へ') + arr(135, 'xp', '右下へ')}</div>
+      <div class="rb-tools">${!pd.wall ? `<button class="tool" data-act="rm-rot-place">${icon('rotate')}向き</button>` : ''}<button class="tool" data-act="rm-cancel">${icon('x')}やめる</button><button class="tool go ${ok ? '' : 'warn'}" data-act="rm-ok">${ok ? icon('check') + 'ここに置く' : icon('move') + '空いている所へ'}</button></div></div>
+      <p class="note" style="margin:6px 4px 0">矢印で1マスずつ動かせます。床をタップしてもその場所へ移動します。<span class="dim"> ver.7</span></p></div>`; }
+  else if (selIt) { const d = F[selIt.t];
+    bar = `<div class="roombar"><div class="rb-head"><b>${esc(d.n)}</b></div>
+      <div class="rb-tools"><button class="tool" data-act="rm-move">${icon('move')}移動</button>${!d.wall ? `<button class="tool" data-act="rm-rot">${icon('rotate')}回転</button>` : ''}<button class="tool ${UI.colorOpen ? 'on' : ''}" data-act="rm-color" aria-pressed="${!!UI.colorOpen}">${icon('palette')}色</button><button class="tool" data-act="rm-store">${icon('box')}しまう</button><button class="tool" data-act="rm-desel">${icon('x')}閉じる</button></div>
+      ${UI.colorOpen ? `<div class="swatches" style="margin-top:8px;padding:0 2px">${d.colors.map((c, i) => `<button class="sw ${(selIt.c || 0) === i ? 'on' : ''}" style="--c:${c}" data-act="rm-setc" data-v="${i}" aria-label="色${i + 1}"></button>`).join('')}</div>` : ''}</div>`; }
+  const tabs = [['inv','持ち物'],['shop','ショップ'],['deco','壁紙・床'],['log','成長記録']];
+  let panel = '';
+  if (UI.roomTab === 'inv') panel = inv.length ? `<div class="shop">${inv.map(t => `<div class="item"><div class="thumb">${thumbSVG(t)}</div><b>${esc(F[t].n)}</b><div class="meta"><span>残り ${(st.owned[t] || 0) - placedCount(t)}個</span></div><button class="btn sm primary" data-act="rm-place" data-v="${t}">置く</button></div>`).join('')}</div>`
+      : `<div class="empty">しまってある家具はありません。<br>ショップで家具を手に入れるか、部屋の家具をタップして「しまう」とここに戻ります。</div>`;
+  if (UI.roomTab === 'shop') panel = `<p class="note" style="margin:0 0 10px">勉強1分＝1コイン。レベルが上がると新しい家具が解放されます。所持コイン <b class="disp" style="color:var(--warn)">${Math.max(0, x.coins).toLocaleString()}</b></p><div class="shop">${F_ORDER.map(t => { const d = F[t], lock = x.level < d.lv, own = st.owned[t] || 0;
+      return `<div class="item ${lock ? 'locked' : ''}"><div class="thumb">${lock ? icon('lock') : thumbSVG(t)}</div><b>${esc(d.n)}</b><div class="meta"><span>${lock ? `LV${d.lv}で解放` : own ? `所持 ${own}` : '未所持'}</span><span class="disp">${d.cost ? d.cost + 'c' : '無料'}</span></div>
+        <button class="btn sm ${lock ? '' : 'primary'}" data-act="rm-buy" data-v="${t}" ${lock || x.coins < d.cost ? 'disabled' : ''}>${lock ? 'ロック中' : x.coins < d.cost ? 'コイン不足' : own ? 'もう1つ買う' : '購入する'}</button></div>`; }).join('')}</div>`;
+  if (UI.roomTab === 'deco') panel = `<h3 style="margin:0 0 8px;font-size:14px">壁紙</h3><div class="themes">${Object.entries(WALLS).map(([k, w]) => `<button class="theme ${st.room.wall === k ? 'on' : ''}" data-act="rm-wall" data-v="${k}" ${x.level < w.lv ? 'disabled' : ''}><i style="--c:${k === 'aurora' ? 'linear-gradient(135deg,#1d2a6b,#3b1f6e,#0f3a4a)' : w.c}"></i>${esc(w.n)}${x.level < w.lv ? ` · LV${w.lv}` : ''}</button>`).join('')}</div>
+      <h3 style="margin:16px 0 8px;font-size:14px">床</h3><div class="themes">${Object.entries(FLOORS).map(([k, f]) => `<button class="theme ${st.room.floor === k ? 'on' : ''}" data-act="rm-floor" data-v="${k}" ${x.level < f.lv ? 'disabled' : ''}><i style="--c:${f.c}"></i>${esc(f.n)}${x.level < f.lv ? ` · LV${f.lv}` : ''}</button>`).join('')}</div>`;
+  if (UI.roomTab === 'log') panel = `<div class="timeline">${STAGES.map((s, i) => { const log = st.roomLog.find(r => r.stage === i); return `<div class="tl ${i > stg ? 'lock' : ''}"><b>LEVEL ${i + 1}：${esc(s.name)}</b><div class="note">${log ? `${fmtDate(log.date)}に到達` : `プレイヤーLV${s.lv}で解放`} · 広さ ${s.size}×${s.size}</div></div>`; }).join('')}</div>`;
+  return `<div class="pagehead"><div><span class="eyebrow">ROOM LEVEL ${stg + 1} / ${STAGES.length}</span><h1>${esc(STAGES[stg].name)}</h1></div>
+    <div style="min-width:200px;flex:1;max-width:320px">${nextS ? `<div class="row" style="justify-content:space-between;font-size:12px"><span class="mute">次の部屋まで</span><span class="disp">LV${x.level} → LV${nextS.lv}</span></div><div class="bar" style="margin-top:6px"><i style="width:${clamp((x.xp - xpForLevel(STAGES[stg].lv)) / (xpForLevel(nextS.lv) - xpForLevel(STAGES[stg].lv)) * 100, 0, 100).toFixed(1)}%"></i></div>` : '<span class="pill good">最終段階に到達</span>'}</div></div>
+  <div class="roomstage" id="roomstage">${roomSVG(st.room, N, {sel: UI.sel, place: UI.place})}
+    <div class="roomtop"><span class="pill cy" style="background:rgba(5,8,18,.7)">${N}×${N}</span>${!UI.place && !selIt ? '<span class="pill" style="background:rgba(5,8,18,.7)">家具をタップ → 移動・回転・色</span>' : ''}</div>${bar}</div>
+  <section class="panel"><div class="seg" style="margin-bottom:14px">${tabs.map(([k, n]) => `<button data-act="rm-tab" data-v="${k}" class="${UI.roomTab === k ? 'on' : ''}">${n}</button>`).join('')}</div>${panel}</section>`;
+};
+
+VIEWS.rank = () => {
+  const st = S(), x = stats(), today = dkey(), wk = weekStart(today), mo = monthOf(today);
+  if (MODE !== 'cloud') return `<div class="pagehead"><h1>ランキング</h1></div><section class="panel"><div class="empty">${icon('users')}<br>ランキングと友達機能は、ログインして使えます。<br>今はこの端末だけに記録しています（config.js の設定を確認してください）。</div></section>`;
+  const val = d => UI.rankPeriod === 'week' ? (d.wk === wk ? d.wMin || 0 : 0) : UI.rankPeriod === 'month' ? (d.mo === mo ? d.mMin || 0 : 0) : (d.tot || 0);
+  let pool = pubDocs.filter(d => d.code && d.uid !== UID); const mine = buildPub(); if (mine) pool.push({uid: UID, ...mine});
+  if (UI.rankScope === 'friends') pool = pool.filter(d => d.uid === UID || st.friends.includes(d.code) || (Array.isArray(d.fr) && d.fr.includes(st.code)));
+  if (UI.rankScope === 'group') pool = st.group ? pool.filter(d => d.group === st.group) : [];
+  const rows = pool.map(d => ({...d, v: val(d)})).sort((a, b) => b.v - a.v || (b.lv || 0) - (a.lv || 0));
+  const meIn = rows.some(r => r.uid === UID);
+  const avColor = id => ['#22e4ff','#a46bff','#3d7bff','#3ee6a0','#ffc24d','#ff6fb0','#ff9350'][hashStr(id) % 7];
+  return `<div class="pagehead"><h1>ランキング</h1><div class="seg">${[['week','週間'],['month','月間'],['total','累計']].map(([k, n]) => `<button data-act="rank-p" data-v="${k}" class="${UI.rankPeriod === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+  <div class="grid2">
+    <section class="panel"><div class="ph"><div class="seg">${[['friends','友達'],['group','グループ'],['all','全員']].map(([k, n]) => `<button data-act="rank-s" data-v="${k}" class="${UI.rankScope === k ? 'on' : ''}">${n}</button>`).join('')}</div><span class="note">${UI.rankPeriod === 'week' ? '月曜はじまり' : UI.rankPeriod === 'month' ? `${+mo.slice(5)}月` : '全期間'}</span></div>
+      ${!st.privacy.share ? '<p class="banner" style="margin:0 0 10px">ランキング参加がオフです。自分は表示されません（下の設定で変更できます）。</p>' : ''}
+      ${UI.rankScope === 'group' && !st.group ? '<div class="empty">グループに参加すると、同じグループの人だけのランキングが見られます。</div>' :
+        rows.length ? `<div>${rows.map((r, i) => `<div class="rk ${i < 3 && r.v > 0 ? 'top' + (i + 1) : ''} ${r.uid === UID ? 'me' : ''}"><span class="n">${i + 1}</span><span class="av" style="--c:${avColor(r.uid)}">${esc((r.nick || '?').slice(0, 1))}</span>
+          <div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.nick || 'ななしの受験生')}${r.uid === UID ? '（あなた）' : ''}</b><span class="note">LV${r.lv || 1} · ${esc(titleFor(r.lv || 1))} · 連続${r.streak || 0}日</span></div>
+          <span class="disp" style="font-size:16px">${fmtHM(r.v)}</span>${r.room && r.uid !== UID ? `<button class="btn sm ghost" data-act="see-room" data-v="${esc(r.uid)}" aria-label="部屋を見る">${icon('eye')}</button>` : ''}</div>`).join('')}</div>`
+        : `<div class="empty">${UI.rankScope === 'friends' ? 'まだ友達がいません。右の「友達を追加」から、友達のコードを登録しよう。' : 'まだ参加者がいません。'}</div>`}
+      ${st.privacy.share && !meIn && UI.rankScope !== 'group' ? '<p class="note">あなたのデータを反映中です…</p>' : ''}
+    </section>
+    <div class="stack">
+      <section class="panel hero"><div class="ph"><div><span class="eyebrow">INVITE</span><h3>友達を招待する</h3></div></div>
+        <p class="note" style="margin:0 0 12px">招待リンクから登録した友達とは、自動でお互いのランキングに表示されます。</p>
+        <div class="row wrap" style="gap:8px"><button class="btn primary" data-act="invite">${icon('users')}招待リンクを送る</button><button class="btn" data-act="invite-copy">${icon('copy')}リンクをコピー</button></div></section>
+      <section class="panel"><div class="ph"><h3>あなたのフレンドコード</h3></div><div class="row"><span class="code" id="mycode">${esc(st.code)}</span><span class="sp"></span><button class="btn sm" data-act="copy-code">${icon('copy')}コピー</button></div>
+        <p class="note" style="margin:8px 0 0">どちらか一方がコードを登録すれば、お互いの「友達」ランキングに表示されます。</p></section>
+      <section class="panel"><div class="ph"><h3>友達を追加</h3></div><form class="row" data-form="add-friend"><input id="fr-code" type="text" maxlength="6" placeholder="例：K7QX2M" autocomplete="off" style="text-transform:uppercase"><button class="btn primary" type="submit">${icon('plus')}追加</button></form>
+        ${st.friends.length ? `<div class="list" style="margin-top:10px">${st.friends.map(c => { const d = pubDocs.find(p => p.code === c); return `<div class="li"><span class="disp" style="letter-spacing:.15em">${esc(c)}</span><div class="t"><b>${d ? esc(d.nick || 'ななしの受験生') : '見つかりません'}</b><span>${d ? `LV${d.lv}` : 'ランキング参加をオフにしている可能性があります'}</span></div><button class="btn sm ghost" data-act="fr-del" data-v="${esc(c)}" aria-label="友達を削除">${icon('x')}</button></div>`; }).join('')}</div>` : ''}</section>
+      <section class="panel"><div class="ph"><h3>グループ</h3>${st.group ? `<span class="pill cy">${esc(st.group)}</span>` : ''}</div><form class="row" data-form="group"><input id="grp" type="text" maxlength="12" placeholder="例：KOBE3A" value="${esc(st.group)}" autocomplete="off" style="text-transform:uppercase"><button class="btn" type="submit">${st.group ? '変更' : '参加'}</button></form>
+        <p class="note" style="margin:8px 0 0">同じグループ名を入れた人どうしでランキングになります。クラスや塾の仲間と決めてください。空欄で保存すると退出します。</p></section>
+      <section class="panel"><div class="ph"><h3>公開する情報</h3></div>
+        <div class="row" style="margin-bottom:12px"><span style="flex:1;font-size:14px">ランキングに参加する<br><span class="note">ニックネーム・レベル・勉強時間・連続日数</span></span><button class="tog ${st.privacy.share ? 'on' : ''}" data-act="priv" data-k="share" aria-pressed="${st.privacy.share}" aria-label="ランキングに参加する"></button></div>
+        <div class="row"><span style="flex:1;font-size:14px">勉強部屋を公開する</span><button class="tog ${st.privacy.room ? 'on' : ''}" data-act="priv" data-k="room" aria-pressed="${st.privacy.room}" aria-label="勉強部屋を公開する" ${st.privacy.share ? '' : 'disabled'}></button></div>
+        <p class="note" style="margin:10px 0 0">科目の内訳・振り返りの文章・志望校は公開されません。</p></section>
+    </div>
+  </div>`;
+};
+
+VIEWS.exams = () => {
+  const st = S(), today = dkey();
+  const list = st.exams.slice().sort((a, b) => a.date.localeCompare(b.date));
+  const ex = nextExam();
+  const ed = UI.editExam;
+  return `<div class="pagehead"><h1>入試カウントダウン</h1></div>
+  ${ex ? `<section class="panel hero" style="text-align:center"><span class="eyebrow">${esc(ex.name)}</span><div class="disp" id="cd-live" style="font-size:clamp(34px,10vw,56px);font-weight:700;margin:8px 0 2px;text-shadow:0 0 30px rgba(164,107,255,.5)">${liveCountdown(ex.date)}</div><p class="note" style="margin:0">${fmtDate(ex.date)} 0:00 まで</p></section>` : ''}
+  <div class="grid2">
+    <section class="panel"><div class="ph"><h2>試験日</h2></div>
+      <div class="list">${list.map(e => { const d = daysUntil(e.date), past = d < 0; const pinned = st.pinnedExam === e.id;
+        if (ed === e.id) return `<form class="li" data-form="exam-edit" data-v="${e.id}" style="flex-wrap:wrap"><input id="ee-name" type="text" value="${esc(e.name)}" maxlength="40" style="flex:2;min-width:150px" aria-label="試験名"><input id="ee-date" type="date" value="${e.date}" style="flex:1;min-width:140px" aria-label="日付"><button class="btn sm primary" type="submit">保存</button><button class="btn sm ghost" type="button" data-act="exam-cancel">戻す</button></form>`;
+        return `<div class="li" style="${past ? 'opacity:.5' : ''}"><div class="t"><b>${esc(e.name)}${pinned ? ' <span class="pill cy">ホームに表示</span>' : ''}</b><span>${fmtDate(e.date)}</span></div><span class="disp" style="font-size:20px;color:${past ? 'var(--dim)' : d <= 30 ? 'var(--warn)' : 'var(--ink)'}">${past ? '終了' : d === 0 ? '今日' : d + '日'}</span>
+        <button class="btn sm ghost" data-act="exam-pin" data-v="${e.id}" aria-label="ホームに表示">${icon('star')}</button><button class="btn sm ghost" data-act="exam-edit" data-v="${e.id}" aria-label="編集">${icon('pen')}</button><button class="btn sm ghost" data-act="exam-del" data-v="${e.id}" aria-label="削除">${icon('trash')}</button></div>`; }).join('') || '<div class="empty">試験日がありません。</div>'}</div>
+      <form class="row wrap" data-form="exam-add" style="margin-top:12px;gap:8px"><input id="ex-name" type="text" placeholder="例：神戸大学 前期 個別試験" maxlength="40" style="flex:2;min-width:180px" aria-label="試験名"><input id="ex-date" type="date" style="flex:1;min-width:140px" aria-label="日付" min="${today}"><button class="btn primary" type="submit">${icon('plus')}追加</button></form>
+      <p class="note" style="margin:10px 0 0">初期値は共通テスト（2027年1月16日・17日）と国公立の前期（2月25日〜）・後期（3月12日〜）。大学ごとの試験日や推薦入試の日程は、必ず各大学の募集要項で確認してから登録してください。</p></section>
+    <section class="panel"><div class="ph"><h2>志望大学・学部</h2></div>
+      <div class="list">${st.targets.map((t, i) => `<div class="li"><span class="disp dim" style="width:20px">${i + 1}</span><div class="t"><b>${esc(t.univ)}</b><span>${t.fac ? esc(t.fac) : '学部未設定'}</span></div><button class="btn sm ghost" data-act="tg-del" data-v="${t.id}" aria-label="削除">${icon('trash')}</button></div>`).join('') || '<div class="empty">志望校を登録すると、目標がはっきりします。</div>'}</div>
+      <form class="row wrap" data-form="tg-add" style="margin-top:12px;gap:8px"><input id="tg-univ" type="text" placeholder="大学名" maxlength="30" style="flex:1;min-width:130px" aria-label="大学名"><input id="tg-fac" type="text" placeholder="学部・学科" maxlength="30" style="flex:1;min-width:130px" aria-label="学部"><button class="btn primary" type="submit">${icon('plus')}追加</button></form>
+      <p class="note" style="margin:10px 0 0">志望校は他の人には公開されません。</p></section>
+  </div>`;
+};
+function liveCountdown(date){
+  const ms = parseD(date) - Date.now(); if (ms <= 0) return '試験当日';
+  const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60;
+  return `${d}<span style="font-size:.45em;color:var(--mute)">日</span> ${pad2(h)}:${pad2(m)}:${pad2(ss)}`;
+}
+
+VIEWS.review = () => {
+  const st = S(), x = stats(), today = dkey(), info = todayInfo(), mk = monthOf(today);
+  const rv = data.months[mk]?.reviews?.[today] || {};
+  const per = {}; for (const s of info.sessions) per[s.s] = (per[s.s] || 0) + s.m;
+  const items = Object.entries(per).sort((a, b) => b[1] - a[1]);
+  const pct = info.goal ? info.total / info.goal : 0;
+  const draft = UI.review || {did: rv.did || '', tomorrow: rv.tomorrow || '', tg: rv.tg || st.dailyGoal};
+  const past = Object.values(data.months).flatMap(m => Object.entries(m.reviews)).filter(([k, r]) => k !== today && r && (r.did || r.tomorrow)).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 10);
+  return `<div class="pagehead"><div><span class="eyebrow">NIGHT REVIEW · ${fmtMD(today)}</span><h1>今日の振り返り</h1></div><span class="pill ${info.reviewed ? 'good' : ''}">${info.reviewed ? '記入済み' : '未記入'}</span></div>
+  <div class="grid3">
+    <section class="panel"><div class="kv"><span class="k">今日の合計</span><span class="v">${fmtHM(info.total)}</span></div></section>
+    <section class="panel"><div class="kv"><span class="k">目標達成</span><span class="v" style="color:${pct >= 1 ? 'var(--good)' : 'var(--ink)'}">${Math.floor(pct * 100)}<small>%</small></span></div><p class="note" style="margin:2px 0 0">目標 ${fmtHM(info.goal)}</p></section>
+    <section class="panel"><div class="kv"><span class="k">獲得経験値 / 連続記録</span><span class="v">+${info.total}<small>XP</small> · ${x.streak}<small>日</small></span></div></section>
+  </div>
+  <div class="grid2">
+    <section class="panel"><div class="ph"><h2>科目別</h2></div>${items.length ? `<div class="legend">${items.map(([id, v]) => `<div class="row"><span class="dot" style="--c:${subjOf(id).color}"></span><span style="flex:1">${esc(subjOf(id).name)}</span><div class="bar" style="flex:2"><i style="width:${(v / items[0][1] * 100).toFixed(0)}%;background:${subjOf(id).color};box-shadow:none"></i></div><span class="disp" style="width:70px;text-align:right">${fmtHM(v)}</span></div>`).join('')}</div>` : '<div class="empty">今日はまだ記録がありません。5分だけでも、記録をつなげてみよう。</div>'}</section>
+    <form class="panel stack" data-form="review" style="gap:12px"><label class="fld" for="rv-did">今日頑張ったこと<textarea id="rv-did" maxlength="600" placeholder="例：数学の確率を10問。条件付き確率の考え方がわかってきた。">${esc(draft.did)}</textarea></label>
+      <label class="fld" for="rv-tom">明日の目標<textarea id="rv-tom" maxlength="400" placeholder="例：英単語100個、数学は絶対値の不等式を5問">${esc(draft.tomorrow)}</textarea></label>
+      <label class="fld" for="rv-tg">明日の目標時間（分）<input id="rv-tg" type="number" min="0" max="1200" step="10" inputmode="numeric" value="${draft.tg}"></label>
+      <button class="btn primary" type="submit">${icon('check')}振り返りを保存</button></form>
+  </div>
+  <section class="panel"><div class="ph"><div><h2>振り返りの通知</h2></div></div>
+    <div class="row wrap"><label class="fld" for="rv-time" style="flex-direction:row;align-items:center;gap:10px">毎晩<input id="rv-time" type="time" value="${esc(st.prefs.reviewTime)}" style="width:130px">にお知らせ</label></div>
+    <p class="note" style="margin:10px 0 0">設定した時刻を過ぎてこのアプリを開くと、ホームと画面上部でお知らせします。アプリを閉じている間にスマホへ通知を出すことはWebページの制限でできないため、スマホのリマインダーやアラームの併用がおすすめです。</p></section>
+  ${past.length ? `<section class="panel"><div class="ph"><h2>これまでの振り返り</h2></div><div class="list">${past.map(([k, r]) => `<div class="li" style="align-items:flex-start"><span class="disp mute" style="width:52px;flex:none">${fmtMD(k)}</span><div class="t" style="white-space:normal"><span style="color:var(--ink);font-size:14px;display:block">${esc(r.did || '—')}</span><span>明日の目標：${esc(r.tomorrow || '—')}</span></div></div>`).join('')}</div></section>` : ''}`;
+};
+
+function badgeIcon(b, on){
+  return `<svg viewBox="0 0 60 60" aria-hidden="true"><defs><linearGradient id="bg${b.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${b.c}"/><stop offset="1" stop-color="${mix(b.c, '#000000', .45)}"/></linearGradient></defs>
+    <path d="M30 3 53 16v28L30 57 7 44V16z" fill="url(#bg${b.id})" stroke="${mix(b.c, '#ffffff', .4)}" stroke-width="1.5" style="${on ? `filter:drop-shadow(0 0 6px ${b.c})` : ''}"/>
+    <path d="M30 13 34 24 46 24 36.5 31 40 43 30 36 20 43 23.5 31 14 24 26 24z" fill="rgba(255,255,255,.88)"/></svg>`;
+}
+VIEWS.badges = () => {
+  const st = S(), x = stats(), got = BADGES.filter(b => st.badges[b.id]).length;
+  return `<div class="pagehead"><h1>実績・称号</h1><span class="pill cy">${got} / ${BADGES.length} 解除</span></div>
+  <section class="panel hero"><div class="row wrap" style="gap:18px"><div class="lvcard"><span class="lvnum">${x.level}</span></div><div class="kv" style="flex:1"><span class="k">現在の称号</span><span class="v" style="font-size:20px">${esc(titleFor(x.level))}</span><span class="note">累計 ${fmtHM(x.total)} · ${x.count}セッション</span></div></div></section>
+  <section class="panel"><div class="ph"><h2>バッジ</h2></div><div class="bgrid">${BADGES.map(b => { const on = !!st.badges[b.id]; return `<div class="bd ${on ? '' : 'off'}">${badgeIcon(b, on)}<b>${esc(b.n)}</b><span>${esc(b.d)}${on ? `<br>${fmtMD(st.badges[b.id])} 解除` : ''}</span></div>`; }).join('')}</div></section>
+  <section class="panel"><div class="ph"><h2>称号一覧</h2><span class="note">レベル＝累計の勉強時間で上がります</span></div><div class="list">${TITLES.map(([l, n], i) => { const nextL = TITLES[i + 1]?.[0]; const on = x.level >= l && (!nextL || x.level < nextL);
+    return `<div class="li" style="${x.level < l ? 'opacity:.45' : ''}"><span class="disp" style="width:60px;color:${on ? 'var(--cyan)' : 'var(--mute)'}">LV${l}〜</span><div class="t"><b>${esc(n)}</b><span>必要な勉強時間：累計 約${Math.round(xpForLevel(l) / 60)}時間</span></div>${on ? '<span class="pill cy">いまここ</span>' : x.level >= l ? icon('check') : icon('lock')}</div>`; }).join('')}</div></section>`;
+};
+
+VIEWS.prefs = () => {
+  const st = S();
+  return `<div class="pagehead"><h1>設定</h1></div>
+  <div class="grid2">
+    <form class="panel stack" data-form="profile" style="gap:12px"><div class="ph" style="margin:0"><h2>プロフィール</h2></div>
+      <label class="fld" for="pf-nick">ニックネーム（ランキングに表示）<input id="pf-nick" type="text" maxlength="20" value="${esc(st.nickname)}" placeholder="例：たける"></label>
+      <label class="fld" for="pf-goal">1日の目標勉強時間（分）<input id="pf-goal" type="number" min="10" max="1200" step="10" inputmode="numeric" value="${st.dailyGoal}"></label>
+      <label class="fld" for="pf-rt">振り返りのお知らせ時刻<input id="pf-rt" type="time" value="${esc(st.prefs.reviewTime)}"></label>
+      <button class="btn primary" type="submit">${icon('check')}保存する</button></form>
+    <section class="panel"><div class="ph"><h2>科目</h2></div>
+      <div class="list">${st.subjects.map(s => `<div class="li"><span class="dot" style="--c:${s.color}"></span><div class="t"><b>${esc(s.name)}</b></div><button class="tog ${s.hidden ? '' : 'on'}" data-act="subj-tog" data-v="${s.id}" aria-pressed="${!s.hidden}" aria-label="${esc(s.name)}を表示"></button></div>`).join('')}</div>
+      <form class="row" data-form="subj-add" style="margin-top:12px"><input id="sj-name" type="text" maxlength="12" placeholder="科目を追加（例：小論文）"><button class="btn" type="submit">${icon('plus')}追加</button></form>
+      <p class="note" style="margin:8px 0 0">オフにした科目はタイマーに表示されなくなります（記録は残ります）。</p></section>
+    <section class="panel"><div class="ph"><h2>アカウント</h2><span class="pill ${MODE === 'cloud' ? 'good' : ''}">${MODE === 'cloud' ? '同期中' : 'この端末のみ'}</span></div>
+      ${MODE === 'cloud' ? `<p style="margin:0 0 6px;font-size:14px">ログイン中：<b>${esc(EMAIL)}</b></p>
+      <p class="note" style="margin:0 0 12px">スマホでもパソコンでも、同じメールアドレスでログインすれば記録と部屋が引き継がれます。</p>
+      <form class="row" data-form="pw" style="margin-bottom:10px"><input id="pw-new" type="password" minlength="6" autocomplete="new-password" placeholder="新しいパスワード（6文字以上）" aria-label="新しいパスワード"><button class="btn" type="submit">変更</button></form>
+      <button class="btn" data-act="logout">${icon('x')}ログアウト</button>`
+      : '<p class="note" style="margin:0">サーバーの設定（config.js）がまだのため、このブラウザだけに保存しています。</p>'}
+      <p class="note" style="margin:12px 0 0">ホーム画面に追加すると、アプリのように全画面で使えます（iPhoneは共有ボタン →「ホーム画面に追加」）。</p></section>
+    <section class="panel"><div class="ph"><h2>データ</h2></div>
+      <div class="row wrap" style="gap:8px"><button class="btn" data-act="export">${icon('download')}記録を書き出す（JSON）</button><button class="btn danger" data-act="wipe">${icon('trash')}${MODE === 'cloud' ? '退会する（アカウントとデータを削除）' : 'すべてのデータを削除'}</button></div>
+      <p class="note" style="margin:10px 0 0">退会すると、アカウント・勉強記録・部屋・ランキング情報がすべて消え、元に戻せません。</p></section>
+  </div>`;
+};
+
+/* ================= onboarding ================= */
+function showOnboarding(){
+  const st = S();
+  showModal(`<div class="eyebrow">WELCOME TO STUDY HARD</div><h3 style="margin-top:8px;font-size:22px">今日の努力が、未来の自分をつくる。</h3>
+    <p class="note" style="font-size:14px">勉強した時間がそのまま経験値に。レベルが上がるほど、自分だけの勉強部屋が豪華になっていきます。</p>
+    <form class="stack" data-form="onboard" style="gap:12px;margin-top:14px">
+      <label class="fld" for="ob-nick">ニックネーム<input id="ob-nick" type="text" maxlength="20" value="${esc(st.nickname)}" placeholder="ランキングに表示される名前" autofocus></label>
+      <label class="fld" for="ob-goal">1日の目標勉強時間<select id="ob-goal">${[60, 120, 180, 240, 300, 360, 480, 600].map(m => `<option value="${m}" ${st.dailyGoal === m ? 'selected' : ''}>${fmtHM(m)}</option>`).join('')}</select></label>
+      <div class="acts" style="margin-top:4px"><button class="btn primary big wide" type="submit">はじめる</button></div></form>`, {sticky: true});
+}
+
+/* ================= actions ================= */
+function selectedItem(){ return S().room.items.find(i => i.id === UI.sel); }
+function roomN(){ return STAGES[stageFor(stats().level)].size; }
+const ACT = {
+  more(){
+    if ($('#sheet')) { $('#sheet').remove(); return; }
+    const el = document.createElement('div');
+    el.innerHTML = `<div class="scrim" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-label="メニュー"><div class="sheet-grid">${['rank','exams','review','badges','prefs','stats'].map(k => `<a href="#${k}" data-act="sheet-close">${icon(ROUTES[k][1])}${ROUTES[k][0]}</a>`).join('')}</div></div>`;
+    el.id = 'sheet'; document.body.appendChild(el);
+  },
+  'sheet-close'(){ $('#sheet')?.remove(); },
+  'modal-close'(){ closeModal(); },
+  't-start': timerStart, 't-pause': timerPause, 't-resume': timerResume,
+  't-finish'(){ finishStudy(false); },
+  't-discard'(){ confirmBox('記録せずにリセットしますか？', 'この計測は保存されません。', 'リセット', timerReset, true); },
+  't-mode'(b){ T.mode = b.dataset.v; saveTimer(); render(); },
+  't-preset'(b){ T.target = +b.dataset.v; saveTimer(); render(); },
+  't-brk'(b){ T.brk = +b.dataset.v; saveTimer(); render(); },
+  't-subj'(b){ T.subj = b.dataset.v; saveTimer(); render(); },
+  snd(b){ const k = b.dataset.snd; if (AudioEng.cur === k) AudioEng.stop(); else { AudioEng.play(k); S().prefs.sound = k; queueWrite('state', 1500); } },
+  'snd-toggle'(){ if (AudioEng.cur) AudioEng.stop(); else AudioEng.play(S().prefs.sound || 'rain'); },
+  'pref-tog'(b){ const k = b.dataset.k; S().prefs[k] = !S().prefs[k]; queueWrite('state'); render(); },
+  'stat-mode'(b){ UI.statMode = b.dataset.v; render(); },
+  donut(b){ UI.donut = b.dataset.v; render(); },
+  cal(b){ UI.calMonth = addMonths(UI.calMonth, +b.dataset.v); render(); },
+  'hist-ask'(b){ UI.histConfirm = b.dataset.v; render(); },
+  'hist-cancel'(){ UI.histConfirm = null; render(); },
+  'hist-del'(b){ const m = data.months[b.dataset.m]; if (!m) return; m.sessions = m.sessions.filter(s => s.id !== b.dataset.v); UI.histConfirm = null; queueWrite('m-' + b.dataset.m, 0); publishPub(); toast('記録を削除しました。', 'trash'); render(); },
+  // room
+  'rm-tab'(b){ UI.roomTab = b.dataset.v; render(); },
+  'rm-desel'(){ UI.sel = null; UI.colorOpen = false; render(); },
+  'rm-cancel'(){ UI.place = null; render(); },
+  'rm-place'(b){ UI.place = initPlace(b.dataset.v); UI.sel = null; render(); $('#roomstage')?.scrollIntoView({behavior: 'smooth', block: 'center'}); },
+  'rm-rot-place'(){ const pl = UI.place; pl.r = ((pl.r || 0) + 1) % 4; clampPlace(pl); render(); },
+  'rm-nudge'(b){ nudgePlace(b.dataset.v); },
+  'rm-ok'(){ commitPlace(); },
+  'rm-move'(){ const it = selectedItem(); if (!it) return;
+    if (!F[it.t].small && F[it.t].surf && S().room.items.some(o => F[o.t].small && itemZ(S().room.items, o) > 0 && surfaceAt(S().room.items, o.x, o.y, o.id)?.item.id === it.id)) { toast('上に置いてある小物を先に移動してください。', 'box'); return; }
+    UI.place = {t: it.t, r: it.r || 0, moveId: it.id, x: it.x, y: it.y, side: it.side}; UI.sel = null; UI.colorOpen = false; render(); $('#roomstage')?.scrollIntoView({behavior: 'smooth', block: 'center'}); },
+  'rm-rot'(){ const it = selectedItem(); if (!it) return; const nr = ((it.r || 0) + 1) % 4;
+    if (!canPlace(S().room.items, roomN(), it.t, it.x, it.y, nr, it.id)) { toast('この位置では回転できません。少し移動してから試してください。', 'rotate'); return; }
+    it.r = nr; queueWrite('state'); publishPub(); render(); },
+  'rm-color'(){ UI.colorOpen = !UI.colorOpen; render(); },
+  'rm-setc'(b){ const it = selectedItem(); if (!it) return; it.c = +b.dataset.v; queueWrite('state'); publishPub(); render(); },
+  'rm-store'(){ const it = selectedItem(); if (!it) return; const items = S().room.items;
+    if (F[it.t].surf && items.some(o => F[o.t].small && surfaceAt(items, o.x, o.y, o.id)?.item.id === it.id)) { toast('上に置いてある小物を先にしまってください。', 'box'); return; }
+    S().room.items = items.filter(i => i.id !== it.id); UI.sel = null; UI.colorOpen = false; queueWrite('state'); publishPub(); toast(`${F[it.t].n}を持ち物にしまいました。`, 'box'); render(); },
+  'rm-buy'(b){ const t = b.dataset.v, d = F[t], x = stats();
+    if (x.level < d.lv || x.coins < d.cost) return;
+    confirmBox(`${d.n}を購入しますか？`, `${d.cost}コインを使います（残り ${x.coins - d.cost}コイン）。購入後は持ち物から部屋に置けます。`, '購入する', () => {
+      const st = S(); st.spent = (st.spent || 0) + d.cost; st.owned[t] = (st.owned[t] || 0) + 1; queueWrite('state');
+      UI.roomTab = 'inv'; UI.place = initPlace(t); render(); $('#roomstage')?.scrollIntoView({behavior: 'smooth', block: 'center'}); toast(`${d.n}を手に入れた！ 置きたい場所をタップしよう。`, 'box', 4500); }); },
+  'rm-wall'(b){ S().room.wall = b.dataset.v; queueWrite('state'); publishPub(); render(); },
+  'rm-floor'(b){ S().room.floor = b.dataset.v; queueWrite('state'); publishPub(); render(); },
+  // rank
+  'rank-p'(b){ UI.rankPeriod = b.dataset.v; render(); },
+  'rank-s'(b){ UI.rankScope = b.dataset.v; render(); },
+  'copy-code'(){ const c = S().code; const done = () => toast('フレンドコードをコピーしました。', 'copy');
+    try { navigator.clipboard.writeText(c).then(done, () => selectCode()); } catch { selectCode(); } },
+  'fr-del'(b){ S().friends = S().friends.filter(c => c !== b.dataset.v); queueWrite('state'); render(); },
+  priv(b){ const k = b.dataset.k; S().privacy[k] = !S().privacy[k]; queueWrite('state'); publishPub(); render(); },
+  'see-room'(b){ const d = pubDocs.find(p => p.uid === b.dataset.v); if (!d || !d.room) return;
+    showModal(`<div class="ph"><div><span class="eyebrow">ROOM LEVEL ${(d.room.stage || 0) + 1}</span><h3>${esc(d.nick || 'ななしの受験生')}の部屋</h3></div><button class="btn sm ghost" data-act="modal-close" aria-label="閉じる">${icon('x')}</button></div><div class="roomstage">${roomSVG(d.room, d.room.size || 5, {})}</div><p class="note">LV${d.lv} · ${esc(titleFor(d.lv))} · 累計 ${fmtHM(d.tot)}</p>`); },
+  // exams
+  'exam-pin'(b){ const st = S(); st.pinnedExam = st.pinnedExam === b.dataset.v ? null : b.dataset.v; queueWrite('state'); render(); },
+  'exam-edit'(b){ UI.editExam = b.dataset.v; render(); },
+  'exam-cancel'(){ UI.editExam = null; render(); },
+  'exam-del'(b){ const e = S().exams.find(x => x.id === b.dataset.v); confirmBox('試験日を削除しますか？', e ? e.name : '', '削除', () => { S().exams = S().exams.filter(x => x.id !== b.dataset.v); queueWrite('state'); render(); }, true); },
+  'tg-del'(b){ S().targets = S().targets.filter(x => x.id !== b.dataset.v); queueWrite('state'); render(); },
+  // prefs
+  'subj-tog'(b){ const s = S().subjects.find(x => x.id === b.dataset.v); if (!s) return; if (!s.hidden && S().subjects.filter(x => !x.hidden).length <= 1) { toast('少なくとも1科目は表示してください。', 'x'); return; } s.hidden = !s.hidden; queueWrite('state'); render(); },
+  export(){
+    const payload = JSON.stringify({app: 'STUDY HARD', exportedAt: new Date().toISOString(), state: data.state, months: data.months}, null, 2);
+    try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([payload], {type: 'application/json'})); a.download = `study-hard-${dkey()}.json`;
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); toast('書き出しました。', 'download'); }
+    catch { toast('書き出せませんでした。', 'x'); }
+  },
+  async logout(){ await flushAll(); try { await SB.auth.signOut(); } catch {} signedOut(); toast('ログアウトしました。', 'check'); },
+  'auth-tab'(b){ UI.authTab = b.dataset.v; UI.authMsg = null; render(); },
+  async invite(){ const url = inviteUrl(), text = `STUDY HARDで一緒に勉強しよう！このリンクから登録すると、ランキングで競えるよ。`;
+    if (navigator.share) { try { await navigator.share({title: 'STUDY HARD', text, url}); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+    ACT['invite-copy'](); },
+  'invite-copy'(){ const t = `STUDY HARDで一緒に勉強しよう！\n${inviteUrl()}`;
+    try { navigator.clipboard.writeText(t).then(() => toast('招待リンクをコピーしました。LINEなどに貼り付けてください。', 'copy', 4500), () => toast(inviteUrl(), 'copy', 8000)); } catch { toast(inviteUrl(), 'copy', 8000); } },
+  wipe(){
+    showModal(`<h3>${MODE === 'cloud' ? '退会しますか？' : 'すべてのデータを削除しますか？'}</h3><p class="note" style="font-size:14px">${MODE === 'cloud' ? 'アカウント・' : ''}勉強記録・振り返り・部屋・コイン・ランキング情報がすべて消え、元に戻せません。続けるには「削除」と入力してください。</p>
+      <input id="wipe-in" type="text" placeholder="削除" autocomplete="off" aria-label="確認の入力"><div class="acts"><button class="btn ghost" data-act="modal-close">やめる</button><button class="btn danger" id="wipe-ok">完全に削除する</button></div>`,
+      {mount: m => m.querySelector('#wipe-ok').addEventListener('click', () => { if (m.querySelector('#wipe-in').value.trim() !== '削除') { toast('「削除」と入力してください。', 'x'); return; } closeModal(); wipeAll(); })});
+  }
+};
+const inviteUrl = () => `${location.origin}${location.pathname}?friend=${S() ? S().code : ''}`;
+function selectCode(){ const el = $('#mycode'); if (!el) return; const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('コードを選択しました。長押しでコピーしてください。', 'copy'); }
+async function wipeAll(){
+  for (const p of pending.values()) clearTimeout(p.timer); pending.clear();
+  if (MODE === 'cloud') {
+    const {error} = await SB.rpc('delete_me');
+    if (error) { toast('退会できませんでした：' + (error.message || '通信エラー'), 'x', 6000); return; }
+    LS.del('sh-cache'); LS.del('sh-local'); LS.del('sh-timer');
+    try { await SB.auth.signOut(); } catch {}
+    signedOut(); toast('退会しました。いままでおつかれさまでした。', 'check', 5000); return;
+  }
+  data.state = normState(defaultState(false)); data.months = {};
+  LS.del('sh-local'); LS.del('sh-timer');
+  Object.assign(T, {state: 'idle', acc: 0, since: null, phase: 'study'}); stopTick();
+  dataV++; cacheLocal(); location.hash = '#home'; render(); toast('すべてのデータを削除しました。', 'trash'); setTimeout(showOnboarding, 400);
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-act]');
+  if (a && a.dataset.act === btnGuard.act && Date.now() - btnGuard.t < 900) { e.preventDefault(); return; }
+  if (a && ACT[a.dataset.act]) { if (a.tagName === 'A') { ACT[a.dataset.act](a, e); return; } e.preventDefault(); ACT[a.dataset.act](a, e); }
+});
+/* ---------- room placement: candidate position + arrows + tap ---------- */
+function placeOk(pl){
+  const items = S().room.items, N = roomN();
+  return F[pl.t].wall ? canPlaceWall(items, N, pl.t, pl.side, pl.x, pl.moveId) : canPlace(items, N, pl.t, pl.x, pl.y, pl.r || 0, pl.moveId);
+}
+function placeDims(pl){ const d = F[pl.t]; return (pl.r % 2) ? [d.D, d.W] : [d.W, d.D]; }
+function clampPlace(pl){
+  const N = roomN(), d = F[pl.t];
+  if (d.wall) { pl.x = clamp(pl.x, 0, N - d.W); return; }
+  const [w, dd] = placeDims(pl); pl.x = clamp(pl.x, 0, N - w); pl.y = clamp(pl.y, 0, N - dd);
+}
+function initPlace(t){
+  const d = F[t], items = S().room.items, N = roomN();
+  if (d.wall) { for (const side of ['R', 'L']) for (let p = 0; p + d.W <= N; p++) if (canPlaceWall(items, N, t, side, p)) return {t, side, x: p, y: 0, r: 0};
+    return {t, side: 'R', x: 0, y: 0, r: 0}; }
+  const cands = []; for (let ax = 0; ax + d.W <= N; ax++) for (let ay = 0; ay + d.D <= N; ay++) cands.push({ax, ay, dist: (ax + d.W / 2 - N / 2) ** 2 + (ay + d.D / 2 - N / 2) ** 2});
+  cands.sort((p, q) => p.dist - q.dist);
+  const f = cands.find(q => canPlace(items, N, t, q.ax, q.ay, 0));
+  return {t, r: 0, x: f ? f.ax : 0, y: f ? f.ay : 0};
+}
+function nudgePlace(dir){
+  const pl = UI.place; if (!pl) return; const N = roomN(), d = F[pl.t];
+  if (d.wall) {
+    if (dir === 'wr') { if (pl.side === 'R') { if (pl.x + 1 + d.W <= N) pl.x++; } else { if (pl.x + 1 + d.W <= N) pl.x++; else { pl.side = 'R'; pl.x = 0; } } }
+    if (dir === 'wl') { if (pl.side === 'R') { if (pl.x - 1 >= 0) pl.x--; else { pl.side = 'L'; pl.x = N - d.W; } } else if (pl.x - 1 >= 0) pl.x--; }
+  } else {
+    if (dir === 'xm') pl.x--; if (dir === 'xp') pl.x++; if (dir === 'ym') pl.y--; if (dir === 'yp') pl.y++;
+    clampPlace(pl);
+  }
+  render();
+}
+function commitPlace(){
+  const pl = UI.place; if (!pl) return;
+  if (!placeOk(pl)) {
+    if (snapToFree(pl)) { render(); toast('近くの空いている場所に動かしました。よければ「ここに置く」を押してください。', 'move', 3800); }
+    else toast('部屋に空きがありません。ほかの家具をしまってから置いてください。', 'x', 4000);
+    return;
+  }
+  const st = S(), d = F[pl.t];
+  if (pl.moveId) { const it = st.room.items.find(i => i.id === pl.moveId); if (it) Object.assign(it, d.wall ? {side: pl.side, x: pl.x} : {x: pl.x, y: pl.y, r: pl.r || 0}); }
+  else st.room.items.push(d.wall ? {id: uid6(), t: pl.t, side: pl.side, x: pl.x, y: 0, r: 0, c: 0} : {id: uid6(), t: pl.t, x: pl.x, y: pl.y, r: pl.r || 0, c: 0});
+  const moved = !!pl.moveId; UI.place = null; UI.sel = null;
+  queueWrite('state', 0); render();
+  toast(moved ? `${d.n}を移動しました。` : `${d.n}を置きました。`, 'check', 2600);
+  try { publishPub(); checkBadges(false); } catch {}
+}
+function snapToFree(pl){
+  const items = S().room.items, N = roomN(), d = F[pl.t];
+  if (d.wall) {
+    const c = []; for (const side of ['R', 'L']) for (let q = 0; q + d.W <= N; q++) c.push({side, q, dist: (side === pl.side ? 0 : N) + Math.abs(q - pl.x)});
+    c.sort((a, b) => a.dist - b.dist); const f = c.find(o => canPlaceWall(items, N, pl.t, o.side, o.q, pl.moveId));
+    if (!f) return false; pl.side = f.side; pl.x = f.q; return true;
+  }
+  const [w, dd] = placeDims(pl), c = [];
+  for (let ax = 0; ax + w <= N; ax++) for (let ay = 0; ay + dd <= N; ay++) c.push({ax, ay, dist: (ax - pl.x) ** 2 + (ay - pl.y) ** 2});
+  c.sort((a, b) => a.dist - b.dist); const f = c.find(o => canPlace(items, N, pl.t, o.ax, o.ay, pl.r || 0, pl.moveId));
+  if (!f) return false; pl.x = f.ax; pl.y = f.ay; return true;
+}
+function svgPoint(svg, cx, cy){
+  const m = svg.getScreenCTM(); if (!m) return null;
+  const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy; return pt.matrixTransform(m.inverse());
+}
+function candidateFromPoint(sx, sy){
+  const pl = UI.place, st = S(), N = roomN(), d = F[pl.t], items = st.room.items;
+  if (d.wall) {
+    const side = sx >= 0 ? 'R' : 'L', u = side === 'R' ? sx / TW : (sx + N * TW) / TW;
+    const p0 = clamp(Math.round(u - d.W / 2), 0, N - d.W);
+    const cands = []; for (let q = 0; q + d.W <= N; q++) cands.push(q);
+    cands.sort((x, y) => Math.abs(x - p0) - Math.abs(y - p0));
+    const q = cands.find(c => canPlaceWall(items, N, pl.t, side, c, pl.moveId));
+    pl.side = side; pl.x = q !== undefined ? q : p0; return true;
+  }
+  const fx = (sx / TW + sy / TH) / 2, fy = (sy / TH - sx / TW) / 2;
+  if (fx < 0 || fy < 0 || fx >= N || fy >= N) return false;
+  const [w, dd] = placeDims(pl), tx = Math.floor(fx), ty = Math.floor(fy), cands = [];
+  for (let i = 0; i < w; i++) for (let j = 0; j < dd; j++) { const ax = tx - i, ay = ty - j; if (ax < 0 || ay < 0 || ax + w > N || ay + dd > N) continue; cands.push({ax, ay, dist: (ax + w / 2 - fx) ** 2 + (ay + dd / 2 - fy) ** 2}); }
+  cands.sort((p, q) => p.dist - q.dist);
+  const c = cands.find(q => canPlace(items, N, pl.t, q.ax, q.ay, pl.r || 0, pl.moveId)) || cands[0];
+  if (!c) return false;
+  pl.x = c.ax; pl.y = c.ay; return true;
+}
+let tapGuard = 0, btnGuard = {act: null, t: 0};
+function roomTap(e, rs){
+  if (e.target.closest('[data-act]') || e.target.closest('.roombar')) return false;
+  const svg = rs.querySelector('svg.roomsvg'); if (!svg) return false;
+  if (UI.place) { const p = svgPoint(svg, e.clientX, e.clientY); if (p && candidateFromPoint(p.x, p.y)) render(); return true; }
+  const it = e.target.closest('[data-i]');
+  if (it) UI.sel = UI.sel === it.dataset.i ? null : it.dataset.i;
+  else if (UI.sel) UI.sel = null;
+  else return false;
+  UI.colorOpen = false; render(); return true;
+}
+function wireRoom(rs){
+  let down = null;
+  rs.addEventListener('pointerdown', e => { down = {x: e.clientX, y: e.clientY, t: Date.now()}; });
+  rs.addEventListener('pointerup', e => {
+    if (!down) return; const d = down; down = null;
+    const tapLike = Math.hypot(e.clientX - d.x, e.clientY - d.y) < 14 && Date.now() - d.t < 900;
+    const btn = e.target.closest('.roombar [data-act]');
+    if (btn) { if (tapLike && !btn.disabled && ACT[btn.dataset.act]) { btnGuard = {act: btn.dataset.act, t: Date.now()}; ACT[btn.dataset.act](btn, e); } return; }
+    if (tapLike && roomTap(e, rs)) tapGuard = Date.now();
+  });
+  rs.addEventListener('click', e => {
+    if (Date.now() - tapGuard < 800) { if (!e.target.closest('[data-act]')) e.stopPropagation(); return; }
+    if (roomTap(e, rs)) e.stopPropagation();
+  });
+}
+document.addEventListener('submit', e => {
+  const f = e.target.closest('[data-form]'); if (!f) return; e.preventDefault();
+  const st = S(), k = f.dataset.form, val = id => (f.querySelector('#' + id)?.value ?? '').trim();
+  if (k === 'auth') { doAuth(f); return; }
+  if (k === 'pw') { const pw = f.querySelector('#pw-new').value; if (pw.length < 6) { toast('パスワードは6文字以上にしてください。', 'x'); return; }
+    SB.auth.updateUser({password: pw}).then(({error}) => { if (error) toast(authMsg(error), 'x', 5000); else { f.reset(); toast('パスワードを変更しました。', 'check'); } }); return; }
+  if (k === 'newpw') { const pw = f.querySelector('#np-new').value; if (pw.length < 6) { toast('パスワードは6文字以上にしてください。', 'x'); return; }
+    SB.auth.updateUser({password: pw}).then(({error}) => { if (error) toast(authMsg(error), 'x', 5000); else { closeModal(); toast('新しいパスワードを設定しました。', 'check'); } }); return; }
+  if (k === 'onboard') { st.nickname = val('ob-nick').slice(0, 20); st.dailyGoal = +val('ob-goal') || 180; st.onboarded = true; queueWrite('state', 0); publishPub(); closeModal(); render(); toast('ようこそ！まずは25分、タイマーを回してみよう。', 'bolt', 4500); }
+  if (k === 'profile') { st.nickname = val('pf-nick').slice(0, 20); st.dailyGoal = clamp(+val('pf-goal') || 180, 10, 1200); if (val('pf-rt')) st.prefs.reviewTime = val('pf-rt'); queueWrite('state'); publishPub(); toast('設定を保存しました。', 'check'); pendingRender = false; render(); }
+  if (k === 'subj-add') { const n = val('sj-name'); if (!n) return; const used = st.subjects.length; st.subjects.push({id: 'c' + uid6(), name: n.slice(0, 12), color: EXTRA_COLORS[used % EXTRA_COLORS.length], hidden: false}); queueWrite('state'); pendingRender = false; render(); toast(`「${n}」を追加しました。`, 'plus'); }
+  if (k === 'add-friend') { const c = val('fr-code').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (c.length !== 6) { toast('6文字のコードを入力してください。', 'x'); return; }
+    if (c === st.code) { toast('それはあなた自身のコードです。', 'x'); return; }
+    if (st.friends.includes(c)) { toast('すでに登録済みです。', 'users'); return; }
+    if (!pubDocs.find(p => p.code === c)) { toast('そのコードの人が見つかりません。相手がランキング参加をオンにしているか確認してください。', 'x', 5000); return; }
+    st.friends.push(c); queueWrite('state'); pendingRender = false; render(); toast('友達を追加しました。', 'users'); }
+  if (k === 'group') { st.group = val('grp').toUpperCase().replace(/[^A-Z0-9\-_]/g, '').slice(0, 12); queueWrite('state'); publishPub(); pendingRender = false; UI.rankScope = st.group ? 'group' : UI.rankScope; render(); toast(st.group ? `グループ「${st.group}」に参加しました。` : 'グループから退出しました。', 'users'); }
+  if (k === 'exam-add') { const n = val('ex-name'), d = val('ex-date'); if (!n || !d) { toast('試験名と日付を入力してください。', 'x'); return; } st.exams.push({id: uid6(), name: n.slice(0, 40), date: d}); queueWrite('state'); pendingRender = false; render(); toast('試験日を追加しました。', 'cal'); }
+  if (k === 'exam-edit') { const e2 = st.exams.find(x => x.id === f.dataset.v), n = val('ee-name'), d = val('ee-date'); if (e2 && n && d) { e2.name = n.slice(0, 40); e2.date = d; queueWrite('state'); } UI.editExam = null; pendingRender = false; render(); }
+  if (k === 'tg-add') { const u = val('tg-univ'); if (!u) { toast('大学名を入力してください。', 'x'); return; } st.targets.push({id: uid6(), univ: u.slice(0, 30), fac: val('tg-fac').slice(0, 30)}); queueWrite('state'); pendingRender = false; render(); }
+  if (k === 'review') {
+    const today = dkey(), mk = monthOf(today), md = monthDoc(mk);
+    md.reviews[today] = {did: val('rv-did').slice(0, 600), tomorrow: val('rv-tom').slice(0, 400), tg: clamp(+val('rv-tg') || 0, 0, 1200), at: Date.now()};
+    UI.review = null; queueWrite('m-' + mk, 0); checkMissions(false); checkBadges(false); pendingRender = false; render(); toast('振り返りを保存しました。今日もおつかれさま。', 'moon', 4000);
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'snd-vol') { S().prefs.vol = +t.value; AudioEng.setVol(+t.value); queueWrite('state', 1500); }
+  if (t.id === 't-custom') { const v = Math.round(+t.value); if (v >= 1 && v <= 600) { T.target = v; saveTimer(); updateTimerUI(); } }
+  if (t.id === 'rv-did' || t.id === 'rv-tom' || t.id === 'rv-tg') UI.review = {did: $('#rv-did')?.value || '', tomorrow: $('#rv-tom')?.value || '', tg: $('#rv-tg')?.value || ''};
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'rv-time' && t.value) { S().prefs.reviewTime = t.value; queueWrite('state'); toast(`毎晩${t.value}にお知らせします。`, 'moon'); }
+  if (t.id === 't-custom') render();
+});
+document.addEventListener('keydown', e => { if (UI.place && route() === 'room' && !/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) { const m = {ArrowLeft: F[UI.place.t].wall ? 'wl' : 'xm', ArrowRight: F[UI.place.t].wall ? 'wr' : 'xp', ArrowUp: 'ym', ArrowDown: 'yp'}[e.key]; if (m) { e.preventDefault(); nudgePlace(m); return; } if (e.key === 'Enter') { e.preventDefault(); commitPlace(); return; } } if (e.key === 'Escape') { if (UI.place) { UI.place = null; render(); } else if (modalOpen && !$('[data-form="onboard"]')) closeModal(); $('#sheet')?.remove(); } });
+
+/* ---------- periodic: live countdown, review reminder, clock, day change ---------- */
+let lastDay = dkey();
+setInterval(() => {
+  if (!S()) return;
+  const cd = $('#cd-live'); if (cd) { const ex = nextExam(); if (ex) cd.innerHTML = liveCountdown(ex.date); }
+}, 1000);
+setInterval(() => {
+  if (!S()) return;
+  const today = dkey();
+  if (today !== lastDay) { lastDay = today; dataV++; scheduleRender(); }
+  if (UI.reviewToasted !== today && nowHM() >= S().prefs.reviewTime && !todayInfo().reviewed && S().onboarded) { UI.reviewToasted = today; toast('振り返りの時間です。今日の記録をまとめよう。', 'moon', 6000); if (route() === 'home') scheduleRender(); }
+  if (route() === 'room' && S().room.items.some(i => i.t === 'clock') && !UI.place && !modalOpen) scheduleRender();
+}, 30000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && T.state === 'run') { requestWake(); tick(); } });
+
+/* ---------- sign-in screen ---------- */
+function authMsg(e){
+  const m = String((e && e.message) || '').toLowerCase();
+  if (m.includes('invalid login')) return 'メールアドレスかパスワードが違います。';
+  if (m.includes('already registered') || m.includes('already been registered') || m.includes('already exists')) return 'このメールアドレスはすでに登録されています。「ログイン」からどうぞ。';
+  if (m.includes('password should') || m.includes('at least 6') || m.includes('weak')) return 'パスワードは6文字以上にしてください。';
+  if (m.includes('not confirmed')) return 'メールの確認がまだです。届いたメールのリンクを押してから、もう一度ログインしてください。';
+  if (m.includes('rate limit') || m.includes('too many') || m.includes('security purposes')) return '短い時間に何度も試したため、少し待ってからもう一度お試しください。';
+  if (m.includes('invalid') && m.includes('email')) return 'メールアドレスの形を確認してください。';
+  if (m.includes('fetch') || m.includes('network')) return '通信できませんでした。電波の状態を確認してください。';
+  return 'うまくいきませんでした：' + ((e && e.message) || '不明なエラー');
+}
+function renderAuth(){
+  const t = UI.authTab, msg = UI.authMsg;
+  const title = t === 'signup' ? '新規登録' : t === 'login' ? 'ログイン' : 'パスワードの再設定';
+  $('#view').innerHTML = `<div class="stack fadein" style="padding-top:12px"><section class="panel hero auth">
+    <span class="eyebrow">STUDY HARD</span><h1>今日の努力が、<br>未来の自分をつくる。</h1>
+    <p class="note" style="margin:0">勉強した時間がそのまま経験値に。自分だけの勉強部屋を育てて、友達とランキングで競おう。</p>
+    <div class="feat"><div>${icon('timer')}勉強タイマー</div><div>${icon('room')}育つ勉強部屋</div><div>${icon('trophy')}友達ランキング</div></div>
+    ${t !== 'reset' ? `<div class="seg" style="margin-top:18px;width:100%;display:grid;grid-template-columns:1fr 1fr"><button data-act="auth-tab" data-v="signup" class="${t === 'signup' ? 'on' : ''}">新規登録</button><button data-act="auth-tab" data-v="login" class="${t === 'login' ? 'on' : ''}">ログイン</button></div>` : `<h2 style="margin:18px 0 0;font-size:17px">${title}</h2>`}
+    <form data-form="auth" novalidate>
+      ${t === 'signup' ? '<label class="fld" for="au-nick">ニックネーム（ランキングに表示）<input id="au-nick" type="text" maxlength="20" autocomplete="nickname" placeholder="例：たける"></label>' : ''}
+      <label class="fld" for="au-email">メールアドレス<input id="au-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required></label>
+      ${t !== 'reset' ? `<label class="fld" for="au-pw">パスワード（6文字以上）<input id="au-pw" type="password" minlength="6" autocomplete="${t === 'signup' ? 'new-password' : 'current-password'}" required></label>` : '<p class="note" style="margin:0">登録したメールアドレスに、パスワードを設定し直すためのリンクを送ります。</p>'}
+      ${msg ? `<div class="msg ${msg.ok ? 'ok' : ''}" role="status">${esc(msg.text)}</div>` : ''}
+      <button class="btn primary big wide" type="submit" ${UI.authBusy ? 'disabled' : ''}>${UI.authBusy ? '通信中…' : t === 'signup' ? '登録してはじめる' : t === 'login' ? 'ログイン' : 'リンクを送る'}</button>
+    </form>
+    <div class="row wrap" style="justify-content:center;margin-top:10px">${t === 'reset' ? '<button class="btn sm ghost" data-act="auth-tab" data-v="login">ログインに戻る</button>' : '<button class="btn sm ghost" data-act="auth-tab" data-v="reset">パスワードを忘れた</button>'}</div>
+    </section>
+    ${LS.get('sh-pending-friend') ? '<p class="banner">友達からの招待リンクで開きました。登録すると、その友達とランキングで競えます。</p>' : ''}</div>`;
+}
+async function doAuth(f){
+  if (UI.authBusy) return;
+  const t = UI.authTab, email = (f.querySelector('#au-email')?.value || '').trim(), pw = f.querySelector('#au-pw')?.value || '';
+  const nick = (f.querySelector('#au-nick')?.value || '').trim();
+  if (!email) { UI.authMsg = {text: 'メールアドレスを入力してください。'}; render(); return; }
+  if (t !== 'reset' && pw.length < 6) { UI.authMsg = {text: 'パスワードは6文字以上にしてください。'}; render(); return; }
+  UI.authBusy = true; UI.authMsg = null; render();
+  try {
+    if (t === 'login') {
+      const {data: d, error} = await SB.auth.signInWithPassword({email, password: pw});
+      if (error) throw error;
+      UI.authBusy = false; await startCloud(d.user); return;
+    }
+    if (t === 'signup') {
+      UI.signupNick = nick.slice(0, 20);
+      const {data: d, error} = await SB.auth.signUp({email, password: pw, options: {emailRedirectTo: location.origin + location.pathname}});
+      if (error) throw error;
+      if (d.session) { UI.authBusy = false; await startCloud(d.user); return; }
+      if (d.user && Array.isArray(d.user.identities) && d.user.identities.length === 0) throw new Error('already registered');
+      UI.authTab = 'login'; UI.authMsg = {ok: true, text: '確認メールを送りました。メールのリンクを押したあと、ここからログインしてください。'};
+    }
+    if (t === 'reset') {
+      const {error} = await SB.auth.resetPasswordForEmail(email, {redirectTo: location.origin + location.pathname});
+      if (error) throw error;
+      UI.authMsg = {ok: true, text: 'パスワード再設定のメールを送りました。メールのリンクを開いてください。'};
+    }
+  } catch (e) { UI.authMsg = {text: authMsg(e)}; }
+  UI.authBusy = false; render();
+  setTimeout(() => { const v = $('#au-email'); if (v && !v.value) v.value = email; }, 0);
+}
+function showNewPassword(){
+  showModal(`<h3>新しいパスワードを設定</h3><p class="note" style="font-size:14px">6文字以上で入力してください。</p>
+    <form class="stack" data-form="newpw" style="gap:12px"><input id="np-new" type="password" minlength="6" autocomplete="new-password" aria-label="新しいパスワード" autofocus>
+    <div class="acts"><button class="btn primary" type="submit">設定する</button></div></form>`, {sticky: true});
+}
+const _render = render;
+render = function(){
+  document.body.classList.toggle('authmode', MODE === 'auth');
+  if (MODE === 'auth') { renderAuth(); return; }
+  if (!S()) { $('#view').innerHTML = '<div class="empty" style="padding-top:80px">読み込み中…</div>'; return; }
+  _render();
+  if (route() === 'rank') refreshPub();
+  const rs = $('#roomstage'); if (rs) wireRoom(rs);
+};
+document.addEventListener('visibilitychange', () => { if (!document.hidden && MODE === 'cloud' && !pending.size) { pullCloud(false); refreshPub(true); } });
+window.addEventListener('pagehide', () => { if (MODE === 'cloud' && pending.size) flushAll(); });
+
+window.addEventListener('error', e => { try { toast('エラーが起きました：' + (e.message || '不明') + '（ページを開き直してください）', 'x', 6000); } catch {} });
+boot();
+})();
+</script>
+</body>
+</html>

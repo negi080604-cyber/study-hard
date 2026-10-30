@@ -1,0 +1,16 @@
+{
+  "name": "STUDY HARD",
+  "short_name": "STUDY HARD",
+  "description": "今日の努力が、未来の自分をつくる。受験生のための学習管理アプリ。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#04050b",
+  "theme_color": "#04050b",
+  "lang": "ja",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
