@@ -338,6 +338,7 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
 <div id="modal-root"></div>
 
 <script src="vendor/supabase.js"></script>
+<script>window.supabase || document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"><\/script>');</script>
 <script src="config.js"></script>
 <script>
 (() => {
@@ -669,6 +670,7 @@ const SECRET_KEY = !!(CFG.supabaseKey && isSecretKey(CFG.supabaseKey));
 const CONFIGURED = !!(window.supabase && CFG.supabaseUrl && CFG.supabaseKey && !/YOUR_/.test(CFG.supabaseUrl + CFG.supabaseKey) && !SECRET_KEY);
 async function boot(){
   try { const q = new URLSearchParams(location.search).get('friend'); if (q) { LS.set('sh-pending-friend', q.toUpperCase().slice(0, 6)); history.replaceState(null, '', location.pathname + location.hash); } } catch {}
+  if (!CONFIGURED && !LS.get('sh-local-ok')) { MODE = 'setup'; setSync('local'); $('#synctxt').textContent = '設定前'; render(); return; }
   if (!CONFIGURED) {
     MODE = 'local'; setSync('local');
     const loc = LS.get('sh-local');
@@ -686,6 +688,23 @@ async function boot(){
   let session = null;
   try { session = (await SB.auth.getSession()).data.session; } catch {}
   if (session) await startCloud(session.user); else showAuth();
+}
+function setupProblem(){
+  if (location.protocol === 'file:') return ['ファイルを直接開いています', 'zipの中の index.html を直接開いても、ログインは使えません。Vercelで公開したURL（https://〜.vercel.app）を開いてください。', '手順書のステップ7'];
+  if (!window.supabase) return ['vendor/supabase.js が読み込めていません', 'GitHubに vendor フォルダ（中に supabase.js）がアップロードされていない可能性があります。GitHubのファイル一覧に vendor があるか確認し、なければフォルダごとアップロードしてください。', '手順書のステップ5'];
+  if (!window.STUDY_HARD_CONFIG) return ['config.js が読み込めていません', 'config.js がないか、書きかえたときに記号が消えて壊れています。手順書の見本と同じ形（シングルクォート \' や { } , を消さない）になっているか確認してください。', '手順書のステップ6'];
+  if (SECRET_KEY) return ['秘密のキーが入っています', 'config.js に secret / service_role のキーが入っています。危険なので使っていません。Publishable key（anon public）に入れかえてください。', '手順書のステップ4・6'];
+  return ['config.js の値がまだ例のままです', 'config.js の supabaseUrl と supabaseKey を、Supabaseでメモした2つの値に書きかえてください。', '手順書のステップ4・6'];
+}
+function renderSetup(){
+  const [title, body, step] = setupProblem();
+  $('#view').innerHTML = `<div class="stack fadein" style="padding-top:12px"><section class="panel hero auth">
+    <span class="eyebrow">SETUP</span><h1>ログイン画面を出す準備ができていません</h1>
+    <div class="msg" role="status"><b>${esc(title)}</b><br>${esc(body)}</div>
+    <p class="note" style="margin:12px 0 0">見直す場所：${esc(step)}。直してGitHubで保存すると、1分ほどでこのページに反映されます（開き直してください）。</p>
+    <div class="note" style="margin-top:12px;font-family:var(--f-disp)">チェック：ライブラリ ${window.supabase ? 'OK' : 'NG'} ／ config.js ${window.STUDY_HARD_CONFIG ? '読み込みOK' : 'NG'} ／ 値 ${CONFIGURED ? 'OK' : 'NG'}</div>
+    <button class="btn ghost wide" data-act="use-local" style="margin-top:16px">設定せずに、この端末だけで使う</button>
+  </section></div>`;
 }
 function showAuth(){ MODE = 'auth'; setSync('boot'); $('#synctxt').textContent = '未ログイン'; render(); }
 function signedOut(){
@@ -1744,6 +1763,7 @@ const ACT = {
     catch { toast('書き出せませんでした。', 'x'); }
   },
   async logout(){ await flushAll(); try { await SB.auth.signOut(); } catch {} signedOut(); toast('ログアウトしました。', 'check'); },
+  'use-local'(){ LS.set('sh-local-ok', true); MODE = 'boot'; boot(); },
   'auth-tab'(b){ UI.authTab = b.dataset.v; UI.authMsg = null; render(); },
   async invite(){ const url = inviteUrl(), text = `STUDY HARDで一緒に勉強しよう！このリンクから登録すると、ランキングで競えるよ。`;
     if (navigator.share) { try { await navigator.share({title: 'STUDY HARD', text, url}); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
@@ -2007,8 +2027,9 @@ function showNewPassword(){
 }
 const _render = render;
 render = function(){
-  document.body.classList.toggle('authmode', MODE === 'auth');
+  document.body.classList.toggle('authmode', MODE === 'auth' || MODE === 'setup');
   if (MODE === 'auth') { renderAuth(); return; }
+  if (MODE === 'setup') { renderSetup(); return; }
   if (!S()) { $('#view').innerHTML = '<div class="empty" style="padding-top:80px">読み込み中…</div>'; return; }
   _render();
   if (route() === 'rank') refreshPub();
