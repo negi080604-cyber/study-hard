@@ -311,6 +311,27 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
 .feat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
 .feat div{padding:10px 6px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);text-align:center;font-size:11.5px;color:var(--mute)}
 .feat .ic{display:block;margin:0 auto 4px;color:var(--cyan)}
+.bubble{position:absolute;z-index:3;left:50%;top:40%;transform:translate(-50%,calc(-100% - 12px));width:max-content;max-width:min(250px,72%);padding:9px 13px;border-radius:14px;background:rgba(10,14,30,.94);border:1px solid var(--line-2);box-shadow:0 10px 30px -10px rgba(0,0,0,.8),0 0 24px -10px rgba(34,228,255,.6);font-size:13px;line-height:1.6;color:var(--ink);cursor:pointer;animation:bub .35s cubic-bezier(.2,1.4,.4,1)}
+.bubble b{display:block;font-size:11px;color:var(--cyan);letter-spacing:.06em;margin-bottom:1px}
+.bubble::after{content:"";position:absolute;left:var(--tail,50%);bottom:-7px;width:12px;height:12px;background:rgba(10,14,30,.94);border-right:1px solid var(--line-2);border-bottom:1px solid var(--line-2);transform:translateX(-50%) rotate(45deg)}
+@keyframes bub{from{opacity:0;transform:translate(-50%,calc(-100% - 4px)) scale(.9)}}
+.stars5{display:flex;gap:6px}
+.stars5 button{width:40px;height:40px;border-radius:11px;border:1px solid var(--line-2);background:rgba(0,0,0,.3);color:var(--dim);display:grid;place-items:center}
+.stars5 button.on{color:#ffc24d;border-color:rgba(255,194,77,.6);background:rgba(255,194,77,.12)}
+.stars5 .ic{width:22px;height:22px}
+.todo{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.todo:first-child{border-top:0}
+.todo .mcheck{cursor:pointer;background:none}
+.todo.done .mcheck{background:linear-gradient(135deg,var(--cyan),var(--violet));border:0;color:#04050b}
+.todo.done span.t{color:var(--mute);text-decoration:line-through}
+.rvchip{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:99px;font-size:11.5px;border:1px solid var(--line-2);color:var(--mute);margin-right:4px}
+details.rv{border-top:1px solid var(--line);padding:10px 0}
+details.rv:first-child{border-top:0}
+details.rv summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+details.rv summary::-webkit-details-marker{display:none}
+details.rv dl{margin:8px 0 0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13.5px}
+details.rv dt{color:var(--mute)}
+details.rv dd{margin:0;white-space:pre-wrap;min-width:0}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 
@@ -539,6 +560,7 @@ const F = {
   trophycase:{n:'トロフィーケース', lv:25, cost:1300, W:2, D:1, colors:['#1c2133','#6b4a32'], parts:[[0,0,0,2,1,.5,'m'],[.2,.3,.5,.3,.3,.4,'!#ffc24d'],[.85,.3,.5,.3,.3,.55,'!#d8dde8'],[1.5,.3,.5,.3,.3,.35,'!#cd7f4a'],[.25,.35,1.6,.2,.2,.3,'!#a46bff'],[1.5,.35,1.6,.2,.2,.28,'!#22e4ff'],[0,0,1.5,2,1,.06,'m'],[0,0,.5,2,1,2.2,'~#bcd4ff'],[0,0,2.7,2,1,.1,'m']]}
 };
 Object.assign(F, {
+  buddy:{n:'ルームメイト', lv:1, cost:0, buddy:true, W:1, D:1, colors:['#3d7bff','#ff6fb0','#3ee6a0','#ffc24d','#a46bff','#eef0f6'], parts:[[.33,.42,0,.14,.2,.08,'#2b3045'],[.53,.42,0,.14,.2,.08,'#2b3045'],[.34,.45,.08,.12,.12,.62,'#2a3550'],[.54,.45,.08,.12,.12,.62,'#2a3550'],[.22,.45,.72,.08,.12,.08,'#f2c9a8'],[.7,.45,.72,.08,.12,.08,'#f2c9a8'],[.22,.43,.8,.08,.16,.5,'m'],[.7,.43,.8,.08,.16,.5,'m'],[.3,.4,.7,.4,.24,.62,'m'],[.45,.47,1.32,.1,.1,.06,'#f2c9a8'],[.33,.35,1.38,.34,.08,.3,'#2a1d14'],[.35,.37,1.38,.3,.3,.34,'#f2c9a8'],[.4,.67,1.5,.05,.005,.06,'#1c2133'],[.55,.67,1.5,.05,.005,.06,'#1c2133'],[.44,.67,1.42,.12,.005,.02,'#e07a7a'],[.33,.35,1.66,.34,.34,.12,'#2a1d14']]},
   mug:{n:'マグカップ', lv:1, cost:20, small:true, W:1, D:1, colors:['#eef0f6','#ff6fb0','#3fb8ff','#2b3045'], parts:[[.4,.42,0,.2,.2,.22,'m'],[.6,.48,.06,.05,.08,.1,'m'],[.42,.44,.21,.16,.16,.01,'#4a2c1a']]},
   books_stack:{n:'参考書の山', lv:2, cost:40, small:true, W:1, D:1, colors:['#6fcf6a','#a98bff','#eef0f6'], parts:[[.2,.25,0,.6,.45,.1,'#d9576e'],[.22,.27,.1,.56,.42,.09,'#3fb8ff'],[.18,.24,.19,.62,.46,.11,'#ffc24d'],[.24,.28,.3,.54,.4,.08,'m']]},
   cactus:{n:'サボテン', lv:2, cost:50, small:true, W:1, D:1, colors:['#b5653e','#eef0f6','#2b3045'], parts:[[.38,.38,0,.24,.24,.18,'m'],[.44,.44,.18,.12,.12,.4,'#3bb47a'],[.56,.46,.3,.08,.06,.12,'#3bb47a'],[.36,.48,.36,.08,.06,.1,'#3bb47a']]},
@@ -564,7 +586,7 @@ Object.assign(F, {
   crystal:{n:'クリスタルタワー', lv:40, cost:5000, W:1, D:1, glow:'#a46bff', colors:['#a46bff','#22e4ff','#ff6fb0'], parts:[[.2,.2,0,.6,.6,.15,'#151a28'],[.22,.5,.15,.18,.18,.8,'~m'],[.6,.24,.15,.16,.16,.7,'~m'],[.43,.43,.4,.14,.14,1,'!m'],[.35,.35,.15,.3,.3,1.6,'~m']]}
 });
 const F_ORDER_OLD = ['desk_basic','chair_basic','lamp_small','poster','banner','carpet','desk_pro','chair_gaming','bookshelf','plant','window','desklight','pc','monitor','clock','sofa','bed','trophy','neon','aquarium','bigwindow','hologram','trophycase'];
-const F_ORDER = Object.keys(F).sort((a, b) => F[a].lv - F[b].lv || F[a].cost - F[b].cost);
+const F_ORDER = Object.keys(F).filter(t => !F[t].buddy).sort((a, b) => F[a].lv - F[b].lv || F[a].cost - F[b].cost);
 const WALLS = {
   midnight:{n:'ミッドナイト', lv:1, c:'#151b30'}, slate:{n:'スレート', lv:1, c:'#2b303e'}, ivory:{n:'アイボリー', lv:3, c:'#d5d1c8'},
   wood:{n:'ウッドパネル', lv:5, c:'#5a4030'}, neongrid:{n:'ネオングリッド', lv:8, c:'#0b1020'}, sakura:{n:'桜', lv:12, c:'#3a2033'}, aurora:{n:'オーロラ', lv:18, c:'#2a1d55'},
@@ -606,7 +628,7 @@ function defaultState(owner){
     owned: {desk_basic:1, chair_basic:1, lamp_small:1},
     spent: 0, bonus: 0, badges: {}, missions: {}, roomLog: [{stage: 0, date: today}],
     seenLevel: 1, prefs: {reviewTime: '22:00', stopSound: true, vol: .5, sound: 'rain'},
-    privacy: {share: true, room: true}, friends: [], groups: [], group: '', created: Date.now()
+    privacy: {share: true, room: true}, friends: [], groups: [], group: '', buddy: {name: 'ミライ', added: false}, created: Date.now()
   };
 }
 function normState(s){
@@ -616,6 +638,7 @@ function normState(s){
   o.prefs = Object.assign({}, d.prefs, s.prefs || {});
   o.privacy = Object.assign({}, d.privacy, s.privacy || {});
   o.room = Object.assign({}, d.room, s.room || {});
+  o.buddy = Object.assign({}, d.buddy, s.buddy || {});
   if (!Array.isArray(o.room.items)) o.room.items = [];
   for (const k of ['subjects','exams','targets','friends','roomLog','groups']) if (!Array.isArray(o[k])) o[k] = d[k];
   if (o.group && !o.groups.some(g => g.c === o.group)) o.groups.push({c: o.group, n: o.group}); o.group = '';
@@ -808,7 +831,14 @@ async function refreshPub(force){
   if (pg && S()) { LS.del('sh-pending-group'); joinGroup(pg, true); }
   dataV++; scheduleRender(); publishPub();
 }
+function ensureBuddy(){
+  const st = S(); if (st.buddy.added) return;
+  st.owned.buddy = Math.max(1, st.owned.buddy || 0);
+  if (!st.room.items.some(i => i.t === 'buddy')) { const pl = initPlace('buddy'); if (placeOk(pl)) st.room.items.push({id: 'buddy', t: 'buddy', x: pl.x, y: pl.y, r: 0, c: 0}); }
+  st.buddy.added = true; queueWrite('state');
+}
 function afterDataReady(){
+  ensureBuddy();
   render();
   checkRoomStage(true); checkBadges(true); checkMissions(true);
   setTimeout(publishPub, 2500);
@@ -858,7 +888,7 @@ function stats(){
   let best = 0, run = 0, prev = null;
   for (const d of days) { run = (prev && addDays(prev, 1) === d) ? run + 1 : 1; best = Math.max(best, run); prev = d; }
   let goalDays = 0; for (const d of Object.keys(byDay)) { const g = goalFor(d); if (g > 0 && byDay[d] >= g) goalDays++; }
-  let reviews = 0; for (const m of Object.values(data.months)) reviews += Object.values(m.reviews).filter(r => r && (r.did || r.tomorrow)).length;
+  let reviews = 0; for (const m of Object.values(data.months)) reviews += Object.values(m.reviews).filter(hasReview).length;
   const ws = weekStart(today), mk = monthOf(today);
   let weekMin = 0, monthMin = 0;
   for (const d in byDay) { if (d >= ws && d <= today) weekMin += byDay[d]; if (monthOf(d) === mk) monthMin += byDay[d]; }
@@ -875,8 +905,10 @@ function todayInfo(){
   const ss = x.sessions.filter(s => s.d === today);
   const rv = data.months[monthOf(today)]?.reviews?.[today];
   return { total: x.today, goal: goalFor(today), maxSession: ss.reduce((a, s) => Math.max(a, s.m), 0), subjCount: new Set(ss.map(s => s.s)).size,
-    morning: ss.some(s => new Date(s.t).getHours() < 12), reviewed: !!(rv && (rv.did || rv.tomorrow)), sessions: ss };
+    morning: ss.some(s => new Date(s.t).getHours() < 12), reviewed: hasReview(rv), sessions: ss };
 }
+const hasReview = r => !!(r && (r.did || r.tomorrow || r.bad || r.improve || r.ach != null || (Array.isArray(r.todo) && r.todo.length)));
+const MOODS = [['絶好調','#3ee6a0'],['いい感じ','#22e4ff'],['ふつう','#9aa3c0'],['つかれた','#ffc24d'],['しんどい','#ff6fb0']];
 const subjOf = id => S().subjects.find(s => s.id === id) || {id, name: '削除した科目', color: '#6b7390'};
 
 /* ================= checks: badges / missions / stages ================= */
@@ -981,7 +1013,7 @@ function render(){
   v.innerHTML = `<div class="stack fadein">${VIEWS[r]()}</div>`;
   if (r === 'timer') updateTimerUI();
 }
-window.addEventListener('hashchange', () => { UI.sel = null; UI.place = null; render(); window.scrollTo(0, 0); });
+window.addEventListener('hashchange', () => { UI.sel = null; UI.place = null; if (route() === 'room') UI.buddyIdx = 0; render(); window.scrollTo(0, 0); });
 
 /* ================= charts ================= */
 function ringSVG(pct, size = 176, stroke = 12, id = 'rg'){
@@ -1453,12 +1485,16 @@ VIEWS.home = () => {
       <p class="note" style="margin:8px 0 0">${ex ? fmtDate(ex.date) : '入試カウントダウンから追加できます'}</p></a>
   </div>
 
+  ${(() => { const td = todayTodos(); return td.list.length ? `<section class="panel"><div class="ph"><div><span class="eyebrow">TODAY'S PLAN</span><h2>今日やること</h2></div><span class="pill ${td.list.every(t => t.done) ? 'good' : ''}">${td.list.filter(t => t.done).length}/${td.list.length}</span></div>
+    <div>${td.list.map((t, i) => `<div class="todo ${t.done ? 'done' : ''}"><button class="mcheck" data-act="todo-tog" data-v="${i}" aria-label="${esc(t.t)}を${t.done ? '未完了に戻す' : '完了にする'}">${t.done ? icon('check') : ''}</button><span class="t" style="flex:1;min-width:0;font-size:14px">${esc(t.t)}</span></div>`).join('')}</div>
+    <p class="note" style="margin:8px 0 0">昨日の振り返りで決めたことです。</p></section>` : ''; })()}
   <div class="grid2">
     <section class="panel"><div class="ph"><div><span class="eyebrow">DAILY MISSION</span><h2>今日のミッション</h2></div><span class="pill">${done.length}/${missionsFor(today).length}</span></div>
       <div>${missionsFor(today).map(id => { const m = MISSIONS[id], ok = done.includes(id); return `<div class="mission ${ok ? 'done' : ''}"><span class="mcheck">${ok ? icon('check') : ''}</span><span class="mt">${m.t}</span><span class="pill ${ok ? 'good' : ''}">${icon('coin')}${m.r}</span></div>`; }).join('')}</div>
       <p class="note" style="margin:10px 0 0">達成すると自動でコインがもらえます。コインは部屋の家具に使えます。</p></section>
     <a class="panel roomcard" href="#room"><div class="ph"><div><span class="eyebrow">MY ROOM · LEVEL ${stg + 1}</span><h2>${esc(STAGES[stg].name)}</h2></div>${icon('chevR')}</div>
-      <div class="rv">${roomSVG(st.room, STAGES[stg].size, {})}</div></a>
+      <div class="rv">${roomSVG(st.room, STAGES[stg].size, {})}</div>
+      ${st.room.items.some(i => i.t === 'buddy') ? `<p class="note" style="margin:8px 0 0"><b style="color:var(--cyan)">${esc(st.buddy.name)}</b>「${esc((buddyLines()[1] || buddyLines()[0]))}」</p>` : ''}</a>
   </div>
 
   <section class="panel"><span class="eyebrow">WORDS OF THE DAY</span><p class="quote" style="margin:8px 0 0">${esc(q[0])}<cite>— ${esc(q[1])}</cite></p></section>
@@ -1577,12 +1613,12 @@ VIEWS.room = () => {
       <div class="rb-tools">${!pd.wall ? `<button class="tool" data-act="rm-rot-place">${icon('rotate')}向き</button>` : ''}<button class="tool" data-act="rm-cancel">${icon('x')}やめる</button><button class="tool go ${ok ? '' : 'warn'}" data-act="rm-ok">${ok ? icon('check') + 'ここに置く' : icon('move') + '空いている所へ'}</button></div></div>
       <p class="note" style="margin:6px 4px 0">矢印で1マスずつ動かせます。床をタップしてもその場所へ移動します。<span class="dim"> ver.7</span></p></div>`; }
   else if (selIt) { const d = F[selIt.t];
-    bar = `<div class="roombar"><div class="rb-head"><b>${esc(d.n)}</b></div>
-      <div class="rb-tools"><button class="tool" data-act="rm-move">${icon('move')}移動</button>${!d.wall ? `<button class="tool" data-act="rm-rot">${icon('rotate')}回転</button>` : ''}<button class="tool ${UI.colorOpen ? 'on' : ''}" data-act="rm-color" aria-pressed="${!!UI.colorOpen}">${icon('palette')}色</button><button class="tool" data-act="rm-store">${icon('box')}しまう</button><button class="tool" data-act="rm-desel">${icon('x')}閉じる</button></div>
+    bar = `<div class="roombar"><div class="rb-head"><b>${esc(d.buddy ? st.buddy.name + '（ルームメイト）' : d.n)}</b></div>
+      <div class="rb-tools">${d.buddy ? `<button class="tool go" data-act="buddy-talk">${icon('sound')}話す</button><button class="tool" data-act="buddy-name">${icon('pen')}名前</button>` : ''}<button class="tool" data-act="rm-move">${icon('move')}移動</button>${!d.wall ? `<button class="tool" data-act="rm-rot">${icon('rotate')}回転</button>` : ''}<button class="tool ${UI.colorOpen ? 'on' : ''}" data-act="rm-color" aria-pressed="${!!UI.colorOpen}">${icon('palette')}色</button><button class="tool" data-act="rm-store">${icon('box')}しまう</button><button class="tool" data-act="rm-desel">${icon('x')}閉じる</button></div>
       ${UI.colorOpen ? `<div class="swatches" style="margin-top:8px;padding:0 2px">${d.colors.map((c, i) => `<button class="sw ${(selIt.c || 0) === i ? 'on' : ''}" style="--c:${c}" data-act="rm-setc" data-v="${i}" aria-label="色${i + 1}"></button>`).join('')}</div>` : ''}</div>`; }
   const tabs = [['inv','持ち物'],['shop','ショップ'],['deco','壁紙・床'],['log','成長記録']];
   let panel = '';
-  if (UI.roomTab === 'inv') panel = inv.length ? `<div class="shop">${inv.map(t => `<div class="item"><div class="thumb">${thumbSVG(t)}</div><b>${esc(F[t].n)}</b><div class="meta"><span>残り ${(st.owned[t] || 0) - placedCount(t)}個</span></div><button class="btn sm primary" data-act="rm-place" data-v="${t}">置く</button></div>`).join('')}</div>`
+  if (UI.roomTab === 'inv') panel = inv.length ? `<div class="shop">${inv.map(t => `<div class="item"><div class="thumb">${thumbSVG(t)}</div><b>${esc(F[t].buddy ? st.buddy.name : F[t].n)}</b><div class="meta"><span>残り ${(st.owned[t] || 0) - placedCount(t)}個</span></div><button class="btn sm primary" data-act="rm-place" data-v="${t}">置く</button></div>`).join('')}</div>`
       : `<div class="empty">しまってある家具はありません。<br>ショップで家具を手に入れるか、部屋の家具をタップして「しまう」とここに戻ります。</div>`;
   if (UI.roomTab === 'shop') panel = `<p class="note" style="margin:0 0 10px">勉強1分＝1コイン。レベルが上がると新しい家具が解放されます。所持コイン <b class="disp" style="color:var(--warn)">${Math.max(0, x.coins).toLocaleString()}</b></p>
       <div class="seg" style="margin-bottom:12px">${[['all','すべて'],['floor','家具'],['small','机の上の小物'],['wall','壁'],['rug','床']].map(([k, n]) => `<button data-act="shop-cat" data-v="${k}" class="${(UI.shopCat || 'all') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
@@ -1595,6 +1631,7 @@ VIEWS.room = () => {
   return `<div class="pagehead"><div><span class="eyebrow">ROOM LEVEL ${stg + 1} / ${STAGES.length}</span><h1>${esc(STAGES[stg].name)}</h1></div>
     <div style="min-width:200px;flex:1;max-width:320px">${nextS ? `<div class="row" style="justify-content:space-between;font-size:12px"><span class="mute">次の部屋まで</span><span class="disp">LV${x.level} → LV${nextS.lv}</span></div><div class="bar" style="margin-top:6px"><i style="width:${clamp((x.xp - xpForLevel(STAGES[stg].lv)) / (xpForLevel(nextS.lv) - xpForLevel(STAGES[stg].lv)) * 100, 0, 100).toFixed(1)}%"></i></div>` : '<span class="pill good">最終段階に到達</span>'}</div></div>
   <div class="roomstage" id="roomstage">${roomSVG(st.room, N, {sel: UI.sel, place: UI.place})}
+    ${buddyBubble()}
     <div class="roomtop"><span class="pill cy" style="background:rgba(5,8,18,.7)">${N}×${N}</span>${!UI.place && !selIt ? '<span class="pill" style="background:rgba(5,8,18,.7)">家具をタップ → 移動・回転・色</span>' : ''}</div>${bar}</div>
   <section class="panel"><div class="seg" style="margin-bottom:14px">${tabs.map(([k, n]) => `<button data-act="rm-tab" data-v="${k}" class="${UI.roomTab === k ? 'on' : ''}">${n}</button>`).join('')}</div>${panel}</section>`;
 };
@@ -1720,31 +1757,87 @@ function liveCountdown(date){
   return `${d}<span style="font-size:.45em;color:var(--mute)">日</span> ${pad2(h)}:${pad2(m)}:${pad2(ss)}`;
 }
 
+function rvDraft(){
+  const st = S(), today = dkey(), info = todayInfo(), rv = data.months[monthOf(today)]?.reviews?.[today] || {};
+  if (UI.review && UI.review.day === today) return UI.review;
+  const pct = info.goal ? info.total / info.goal : 0;
+  UI.review = {day: today, ach: rv.ach != null ? rv.ach : Math.min(100, Math.round(pct * 10) * 10), focus: rv.focus || 0, mood: rv.mood != null ? rv.mood : -1,
+    did: rv.did || '', bad: rv.bad || '', improve: rv.improve || '', tomorrow: rv.tomorrow || '', tg: rv.tg || st.dailyGoal,
+    todo: Array.isArray(rv.todo) && rv.todo.length ? rv.todo.map(t => ({t: t.t, done: !!t.done})) : [{t: '', done: false}]};
+  return UI.review;
+}
+function syncRvDraft(){
+  const d = UI.review; if (!d) return; const v = id => { const el = $('#' + id); return el ? el.value : null; };
+  for (const [k, id] of [['did','rv-did'],['bad','rv-bad'],['improve','rv-imp'],['tomorrow','rv-tom']]) { const x = v(id); if (x !== null) d[k] = x; }
+  const tg = v('rv-tg'); if (tg !== null) d.tg = tg; const ach = v('rv-ach'); if (ach !== null) d.ach = +ach;
+  d.todo.forEach((t, i) => { const x = v('rv-todo-' + i); if (x !== null) t.t = x; });
+}
+function todayTodos(){ const y = addDays(dkey(), -1), r = data.months[monthOf(y)]?.reviews?.[y]; return {key: y, list: r && Array.isArray(r.todo) ? r.todo.filter(t => t && t.t) : []}; }
+function achChart(days){
+  const W = 340, H = 150, L = 30, B = 22, T = 12, R = 8, n = days.length;
+  const xp = i => L + (W - L - R) * (n === 1 ? .5 : i / (n - 1)), yp = v => T + (H - T - B) * (1 - v / 100);
+  let g = '';
+  for (const t of [0, 50, 100]) g += `<line x1="${L}" x2="${W - R}" y1="${yp(t)}" y2="${yp(t)}" stroke="rgba(150,180,255,.09)"/><text x="${L - 6}" y="${yp(t) + 3.5}" text-anchor="end" font-size="10" fill="#8e98b9" font-family="Chakra Petch">${t}%</text>`;
+  let path = '', prev = false;
+  days.forEach((d, i) => { if (d.ach == null) { prev = false; return; } path += `${prev ? 'L' : 'M'}${xp(i).toFixed(1)} ${yp(d.ach).toFixed(1)} `; prev = true; });
+  g += `<path d="${path}" fill="none" stroke="#22e4ff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  days.forEach((d, i) => { if (d.ach != null) g += `<circle cx="${xp(i).toFixed(1)}" cy="${yp(d.ach).toFixed(1)}" r="${i === n - 1 ? 4.5 : 3}" fill="${i === n - 1 ? '#a46bff' : '#22e4ff'}" stroke="#04050b" stroke-width="1.5"/>`;
+    if (i % 2 === (n - 1) % 2) g += `<text x="${xp(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="9.5" fill="${i === n - 1 ? '#22e4ff' : '#8e98b9'}" font-family="Chakra Petch">${fmtMD(d.k)}</text>`; });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="達成度の推移">${g}</svg>`;
+}
 VIEWS.review = () => {
-  const st = S(), x = stats(), today = dkey(), info = todayInfo(), mk = monthOf(today);
-  const rv = data.months[mk]?.reviews?.[today] || {};
+  const st = S(), x = stats(), today = dkey(), info = todayInfo();
   const per = {}; for (const s of info.sessions) per[s.s] = (per[s.s] || 0) + s.m;
   const items = Object.entries(per).sort((a, b) => b[1] - a[1]);
-  const pct = info.goal ? info.total / info.goal : 0;
-  const draft = UI.review || {did: rv.did || '', tomorrow: rv.tomorrow || '', tg: rv.tg || st.dailyGoal};
-  const past = Object.values(data.months).flatMap(m => Object.entries(m.reviews)).filter(([k, r]) => k !== today && r && (r.did || r.tomorrow)).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 10);
+  const pct = info.goal ? info.total / info.goal : 0, d = rvDraft(), td = todayTodos();
+  const allRv = Object.values(data.months).flatMap(m => Object.entries(m.reviews)).filter(([, r]) => hasReview(r));
+  const rvMap = Object.fromEntries(allRv);
+  const days = []; for (let i = 13; i >= 0; i--) { const k = addDays(today, -i); days.push({k, ach: rvMap[k] && rvMap[k].ach != null ? rvMap[k].ach : null, focus: (rvMap[k] && rvMap[k].focus) || 0}); }
+  const withAch = days.filter(q => q.ach != null), avgAch = withAch.length ? Math.round(withAch.reduce((a, q) => a + q.ach, 0) / withAch.length) : null;
+  const withF = days.filter(q => q.focus), avgF = withF.length ? (withF.reduce((a, q) => a + q.focus, 0) / withF.length).toFixed(1) : null;
+  const past = allRv.filter(([k]) => k !== today).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 14);
+  const stars = (act, cur) => `<div class="stars5" role="group" aria-label="集中度">${[1,2,3,4,5].map(i => `<button type="button" class="${i <= cur ? 'on' : ''}" data-act="${act}" data-v="${i}" aria-label="${i}">${icon('star')}</button>`).join('')}</div>`;
   return `<div class="pagehead"><div><span class="eyebrow">NIGHT REVIEW · ${fmtMD(today)}</span><h1>今日の振り返り</h1></div><span class="pill ${info.reviewed ? 'good' : ''}">${info.reviewed ? '記入済み' : '未記入'}</span></div>
   <div class="grid3">
-    <section class="panel"><div class="kv"><span class="k">今日の合計</span><span class="v">${fmtHM(info.total)}</span></div></section>
-    <section class="panel"><div class="kv"><span class="k">目標達成</span><span class="v" style="color:${pct >= 1 ? 'var(--good)' : 'var(--ink)'}">${Math.floor(pct * 100)}<small>%</small></span></div><p class="note" style="margin:2px 0 0">目標 ${fmtHM(info.goal)}</p></section>
+    <section class="panel"><div class="kv"><span class="k">今日の合計</span><span class="v">${fmtHM(info.total)}</span></div><p class="note" style="margin:2px 0 0">目標 ${fmtHM(info.goal)}（${Math.floor(pct * 100)}%）</p></section>
+    <section class="panel"><div class="kv"><span class="k">今日やること</span><span class="v">${td.list.filter(t => t.done).length}<small>/ ${td.list.length}</small></span></div><p class="note" style="margin:2px 0 0">${td.list.length ? '昨日の振り返りで決めたこと' : '今夜決めると、明日ホームに出ます'}</p></section>
     <section class="panel"><div class="kv"><span class="k">獲得経験値 / 連続記録</span><span class="v">+${info.total}<small>XP</small> · ${x.streak}<small>日</small></span></div></section>
   </div>
+  <form class="panel stack" data-form="review" style="gap:16px">
+    <div class="ph" style="margin:0"><h2>今日をふりかえる</h2></div>
+    <div><div class="row" style="justify-content:space-between"><span class="note" style="font-size:13px">達成度（自分で何点？）</span><b class="disp" id="rv-ach-v" style="font-size:22px;color:var(--cyan)">${d.ach}%</b></div>
+      <input id="rv-ach" type="range" min="0" max="100" step="5" value="${d.ach}" aria-label="達成度">
+      <p class="note" style="margin:2px 0 0">勉強時間だけで見ると ${Math.min(100, Math.round(pct * 100))}% です。内容も考えて、自分でつけてみよう。</p></div>
+    <div class="grid2" style="gap:14px">
+      <div><span class="note" style="font-size:13px;display:block;margin-bottom:6px">集中度</span>${stars('rv-focus', d.focus)}</div>
+      <div><span class="note" style="font-size:13px;display:block;margin-bottom:6px">気分・体調</span><div class="chips">${MOODS.map(([n, c], i) => `<button type="button" class="chip ${d.mood === i ? 'on' : ''}" style="--c:${c}" data-act="rv-mood" data-v="${i}"><i></i>${n}</button>`).join('')}</div></div>
+    </div>
+    <div class="grid2" style="gap:14px">
+      <label class="fld" for="rv-did">できたこと・頑張ったこと<textarea id="rv-did" maxlength="600" placeholder="例：数学の確率を10問。条件付き確率の考え方がわかってきた。">${esc(d.did)}</textarea></label>
+      <label class="fld" for="rv-bad">うまくいかなかったこと<textarea id="rv-bad" maxlength="600" placeholder="例：英語長文で時間が足りなかった。スマホを見てしまった。">${esc(d.bad)}</textarea></label>
+    </div>
+    <label class="fld" for="rv-imp">明日はこう変える（改善）<textarea id="rv-imp" maxlength="400" placeholder="例：長文は1題15分で区切る。スマホは別の部屋に置く。">${esc(d.improve)}</textarea></label>
+    <div class="grid2" style="gap:14px">
+      <label class="fld" for="rv-tom">明日の目標<textarea id="rv-tom" maxlength="400" placeholder="例：英単語100個、数学は絶対値の不等式を5問">${esc(d.tomorrow)}</textarea></label>
+      <label class="fld" for="rv-tg">明日の目標時間（分）<input id="rv-tg" type="number" min="0" max="1200" step="10" inputmode="numeric" value="${esc(d.tg)}"></label>
+    </div>
+    <div><span class="note" style="font-size:13px;display:block;margin-bottom:6px">明日やること（チェックリスト・最大8個）</span>
+      <div class="stack" style="gap:8px">${d.todo.map((t, i) => `<div class="row" style="gap:8px"><input id="rv-todo-${i}" type="text" maxlength="60" value="${esc(t.t)}" placeholder="例：英単語 p.40〜60" aria-label="やること${i + 1}"><button type="button" class="btn sm ghost" data-act="rv-todo-del" data-v="${i}" aria-label="削除">${icon('x')}</button></div>`).join('')}</div>
+      ${d.todo.length < 8 ? `<button type="button" class="btn sm" data-act="rv-todo-add" style="margin-top:8px">${icon('plus')}追加</button>` : ''}
+      <p class="note" style="margin:6px 0 0">ここに書いたことは、明日のホーム画面にチェックリストとして出ます。</p></div>
+    <button class="btn primary big" type="submit">${icon('check')}振り返りを保存</button>
+  </form>
   <div class="grid2">
-    <section class="panel"><div class="ph"><h2>科目別</h2></div>${items.length ? `<div class="legend">${items.map(([id, v]) => `<div class="row"><span class="dot" style="--c:${subjOf(id).color}"></span><span style="flex:1">${esc(subjOf(id).name)}</span><div class="bar" style="flex:2"><i style="width:${(v / items[0][1] * 100).toFixed(0)}%;background:${subjOf(id).color};box-shadow:none"></i></div><span class="disp" style="width:70px;text-align:right">${fmtHM(v)}</span></div>`).join('')}</div>` : '<div class="empty">今日はまだ記録がありません。5分だけでも、記録をつなげてみよう。</div>'}</section>
-    <form class="panel stack" data-form="review" style="gap:12px"><label class="fld" for="rv-did">今日頑張ったこと<textarea id="rv-did" maxlength="600" placeholder="例：数学の確率を10問。条件付き確率の考え方がわかってきた。">${esc(draft.did)}</textarea></label>
-      <label class="fld" for="rv-tom">明日の目標<textarea id="rv-tom" maxlength="400" placeholder="例：英単語100個、数学は絶対値の不等式を5問">${esc(draft.tomorrow)}</textarea></label>
-      <label class="fld" for="rv-tg">明日の目標時間（分）<input id="rv-tg" type="number" min="0" max="1200" step="10" inputmode="numeric" value="${draft.tg}"></label>
-      <button class="btn primary" type="submit">${icon('check')}振り返りを保存</button></form>
+    <section class="panel"><div class="ph"><h2>今日の科目別</h2></div>${items.length ? `<div class="legend">${items.map(([id, v]) => `<div class="row"><span class="dot" style="--c:${subjOf(id).color}"></span><span style="flex:1">${esc(subjOf(id).name)}</span><div class="bar" style="flex:2"><i style="width:${(v / items[0][1] * 100).toFixed(0)}%;background:${subjOf(id).color};box-shadow:none"></i></div><span class="disp" style="width:70px;text-align:right">${fmtHM(v)}</span></div>`).join('')}</div>` : '<div class="empty">今日はまだ記録がありません。5分だけでも、記録をつなげてみよう。</div>'}</section>
+    <section class="panel chart"><div class="ph"><div><span class="eyebrow">LAST 14 DAYS</span><h2>達成度の推移</h2></div></div>
+      ${withAch.length ? achChart(days) : '<div class="empty">振り返りで達成度をつけると、ここにグラフが出ます。</div>'}
+      <div class="row wrap" style="gap:18px;margin-top:8px"><div class="kv"><span class="k">平均達成度</span><span class="v" style="font-size:18px">${avgAch != null ? avgAch + '<small>%</small>' : '—'}</span></div><div class="kv"><span class="k">平均集中度</span><span class="v" style="font-size:18px">${avgF != null ? avgF + '<small>/ 5</small>' : '—'}</span></div><div class="kv"><span class="k">記入した日</span><span class="v" style="font-size:18px">${days.filter(q => rvMap[q.k]).length}<small>/ 14日</small></span></div></div></section>
   </div>
-  <section class="panel"><div class="ph"><div><h2>振り返りの通知</h2></div></div>
+  <section class="panel"><div class="ph"><h2>振り返りのお知らせ</h2></div>
     <div class="row wrap"><label class="fld" for="rv-time" style="flex-direction:row;align-items:center;gap:10px">毎晩<input id="rv-time" type="time" value="${esc(st.prefs.reviewTime)}" style="width:130px">にお知らせ</label></div>
-    <p class="note" style="margin:10px 0 0">設定した時刻を過ぎてこのアプリを開くと、ホームと画面上部でお知らせします。アプリを閉じている間にスマホへ通知を出すことはWebページの制限でできないため、スマホのリマインダーやアラームの併用がおすすめです。</p></section>
-  ${past.length ? `<section class="panel"><div class="ph"><h2>これまでの振り返り</h2></div><div class="list">${past.map(([k, r]) => `<div class="li" style="align-items:flex-start"><span class="disp mute" style="width:52px;flex:none">${fmtMD(k)}</span><div class="t" style="white-space:normal"><span style="color:var(--ink);font-size:14px;display:block">${esc(r.did || '—')}</span><span>明日の目標：${esc(r.tomorrow || '—')}</span></div></div>`).join('')}</div></section>` : ''}`;
+    <p class="note" style="margin:10px 0 0">設定した時刻を過ぎてアプリを開くと、ホームと画面上部でお知らせします。アプリを閉じている間の通知はWebサイトの制限で出せないため、スマホのリマインダーとの併用がおすすめです。</p></section>
+  ${past.length ? `<section class="panel"><div class="ph"><h2>これまでの振り返り</h2><span class="note">タップで詳しく</span></div><div>${past.map(([k, r]) => `<details class="rv"><summary><span class="disp mute" style="min-width:64px">${fmtMD(k)}（${WD[parseD(k).getDay()]}）</span>${r.ach != null ? `<span class="rvchip" style="color:var(--cyan)">達成 ${r.ach}%</span>` : ''}${r.focus ? `<span class="rvchip" style="color:#ffc24d">集中 ${'★'.repeat(r.focus)}</span>` : ''}${r.mood != null && r.mood >= 0 ? `<span class="rvchip" style="color:${MOODS[r.mood][1]}">${MOODS[r.mood][0]}</span>` : ''}<span class="rvchip">${fmtHM(x.byDay[k] || 0)}</span></summary>
+      <dl>${r.did ? `<dt>できたこと</dt><dd>${esc(r.did)}</dd>` : ''}${r.bad ? `<dt>うまくいかなかった</dt><dd>${esc(r.bad)}</dd>` : ''}${r.improve ? `<dt>改善</dt><dd>${esc(r.improve)}</dd>` : ''}${r.tomorrow ? `<dt>翌日の目標</dt><dd>${esc(r.tomorrow)}</dd>` : ''}${Array.isArray(r.todo) && r.todo.length ? `<dt>やること</dt><dd>${r.todo.filter(t => t.t).map(t => `${t.done ? '✓' : '・'} ${esc(t.t)}`).join('\n')}</dd>` : ''}</dl></details>`).join('')}</div></section>` : ''}`;
 };
 
 function badgeIcon(b, on){
@@ -1828,6 +1921,15 @@ const ACT = {
   'hist-cancel'(){ UI.histConfirm = null; render(); },
   'hist-del'(b){ const m = data.months[b.dataset.m]; if (!m) return; m.sessions = m.sessions.filter(s => s.id !== b.dataset.v); UI.histConfirm = null; queueWrite('m-' + b.dataset.m, 0); publishPub(); toast('記録を削除しました。', 'trash'); render(); },
   // room
+  'buddy-talk'(){ UI.buddyIdx = (UI.buddyIdx || 0) + 1; render(); },
+  'buddy-name'(){ const st = S();
+    showModal(`<h3>ルームメイトの名前</h3><form class="stack" data-form="buddy-name" style="gap:12px"><input id="bn-name" type="text" maxlength="12" value="${esc(st.buddy.name)}" aria-label="名前" autofocus><div class="acts"><button class="btn ghost" type="button" data-act="modal-close">やめる</button><button class="btn primary" type="submit">決定</button></div></form>`); },
+  'rv-focus'(b){ syncRvDraft(); const d = rvDraft(); d.focus = +b.dataset.v; render(); },
+  'rv-mood'(b){ syncRvDraft(); const d = rvDraft(); d.mood = d.mood === +b.dataset.v ? -1 : +b.dataset.v; render(); },
+  'rv-todo-add'(){ syncRvDraft(); const d = rvDraft(); if (d.todo.length < 8) d.todo.push({t: '', done: false}); render(); setTimeout(() => $('#rv-todo-' + (d.todo.length - 1))?.focus(), 0); },
+  'rv-todo-del'(b){ syncRvDraft(); const d = rvDraft(); d.todo.splice(+b.dataset.v, 1); if (!d.todo.length) d.todo.push({t: '', done: false}); render(); },
+  'todo-tog'(b){ const {key} = todayTodos(), r = data.months[monthOf(key)]?.reviews?.[key]; if (!r) return; const items = r.todo.filter(t => t && t.t), t = items[+b.dataset.v]; if (!t) return;
+    t.done = !t.done; queueWrite('m-' + monthOf(key), 300); render(); if (t.done && items.every(x => x.done)) toast('今日やることを全部クリア！おみごと。', 'check', 4000); },
   'shop-cat'(b){ UI.shopCat = b.dataset.v; render(); },
   'rm-tab'(b){ UI.roomTab = b.dataset.v; render(); },
   'rm-desel'(){ UI.sel = null; UI.colorOpen = false; render(); },
@@ -1933,6 +2035,71 @@ document.addEventListener('click', e => {
   if (a && a.dataset.act === btnGuard.act && Date.now() - btnGuard.t < 900) { e.preventDefault(); return; }
   if (a && ACT[a.dataset.act]) { if (a.tagName === 'A') { ACT[a.dataset.act](a, e); return; } e.preventDefault(); ACT[a.dataset.act](a, e); }
 });
+/* ---------- roommate: comments about the room and the day ---------- */
+function buddyLines(){
+  const st = S(), x = stats(), info = todayInfo(), items = st.room.items.filter(i => F[i.t]), N = roomN(), stg = stageFor(x.level), h = new Date().getHours();
+  const has = (...ts) => items.some(i => ts.includes(i.t)), cnt = ts => items.filter(i => ts.includes(i.t)).length;
+  const lights = items.filter(i => F[i.t].glow).length, plants = cnt(['plant','cactus','bonsai']), walls = items.filter(i => F[i.t].wall).length;
+  const desks = cnt(['desk_basic','desk_pro','standing_desk','gold_desk']), chairs = cnt(['chair_basic','chair_gaming']);
+  const used = new Set(); for (const i of items) { const d = F[i.t]; if (d.wall || d.small || d.rug) continue; const [w, dd] = footprint(i); for (let a = 0; a < w; a++) for (let b = 0; b < dd; b++) used.add((i.x + a) + ',' + (i.y + b)); }
+  const fill = used.size / (N * N), L = [];
+  L.push(h < 5 ? 'こんな時間まで起きてるの？　睡眠も勉強のうちだよ。' : h < 10 ? 'おはよう！朝の頭はいちばん冴えてるよ。' : h < 17 ? 'こんにちは。今日も一緒にがんばろう。' : h < 22 ? 'おかえり！今日はどうだった？' : 'もう夜だね。きりのいいところで休もう。');
+  if (info.total === 0) L.push('今日はまだ勉強してないみたい。まずは5分だけ、タイマーを回してみよう。');
+  else if (info.goal && info.total >= info.goal) L.push(`今日の目標${fmtHM(info.goal)}、達成だね！部屋もよろこんでるよ。`);
+  else if (info.goal) L.push(`今日は${fmtHM(info.total)}勉強したね。目標まであと${fmtHM(info.goal - info.total)}！`);
+  if (x.streak >= 3) L.push(`${x.streak}日連続で勉強してる！毎日つづけるのが一番の近道だよ。`);
+  if (!desks) L.push('あれ、机がない…。持ち物から机を置くと、勉強部屋っぽくなるよ。');
+  else if (!chairs && !has('standing_desk')) L.push('机はあるけど椅子がないね。立ちっぱなしはつかれちゃう。');
+  if (fill < .12) L.push('まだ広々としてるね。家具を増やすと、もっと居心地がよくなりそう。');
+  else if (fill > .55) L.push('ちょっと物が多いかも？　動けるスペースがあると気分もすっきりするよ。');
+  else L.push('家具の配置、いい感じ！ちょうどいい広さだね。');
+  if (!lights) L.push('部屋がちょっと暗いかな。照明があると目が疲れにくいよ。');
+  else if (lights >= 3) L.push('明るくて、すごく勉強しやすい部屋だね！');
+  if (!plants) L.push('緑があるとリラックスできるらしいよ。サボテンなら小さくて置きやすいかも。');
+  else L.push(plants >= 3 ? 'ここ、ちょっとした植物園みたい。空気がおいしい！' : '植物があると落ち着くね。');
+  if (has('bookshelf','books_stack','shelf_wall')) L.push('本があると、いかにも勉強部屋って感じ！');
+  if (!walls) L.push('壁がちょっとさびしいかも。カレンダーや合格祈願の掛け軸はどう？');
+  if (has('banner')) L.push('合格祈願の掛け軸、毎日見てると気合が入るね。ぼくも応援してる！');
+  if (has('calendar')) { const ex = nextExam(); if (ex) L.push(`カレンダーを見ると…${ex.name}まであと${daysUntil(ex.date)}日。一日一日を大事にしよう。`); }
+  if (has('kotatsu')) L.push('こたつ、あったかいね…。でも寝落ちには気をつけて！');
+  if (has('bed') && (h >= 22 || h < 5)) L.push('ベッドが呼んでる…。ちゃんと寝るのも作戦だよ。');
+  if (has('arcade','tv')) L.push('ゲームや動画は、勉強が終わったあとのごほうびにしようね。');
+  if (has('window','bigwindow')) L.push('窓からの景色がきれい。たまに遠くを見ると目が休まるよ。');
+  if (has('whiteboard')) L.push('ホワイトボードに今日やることを書くと、頭が整理されるよ。');
+  if (has('piano')) L.push('ピアノ、息抜きにちょっと弾くと集中力が戻るらしいよ。');
+  if (has('fridge','mug')) L.push('水分補給も忘れずにね。脳は水が大好きなんだ。');
+  if (has('neon')) L.push('STUDY HARD のネオン、見るたびにテンション上がる！');
+  if (has('robot')) L.push('ロボットくん、なかなか頼りになりそう。ぼくの後輩かな？');
+  if (has('crystal')) L.push('クリスタルタワー…！ここまで来た人はなかなかいないよ。');
+  if (st.room.floor === 'tatami') L.push('畳のにおいって、なんだか落ち着くよね。');
+  if (st.room.wall === 'space') L.push('宇宙の壁紙、未来に向かってる感じがしてかっこいい。');
+  if (st.room.wall === 'sakura') L.push('桜の壁紙、合格したらほんものの桜を見に行こう！');
+  const nextS = STAGES[stg + 1];
+  L.push(nextS ? `あとレベル${nextS.lv - x.level}で、部屋が「${nextS.name}」に広がるよ。` : '部屋は最終段階！ここまで積み上げたの、本当にすごいよ。');
+  const buyable = F_ORDER.filter(t => x.level >= F[t].lv && F[t].cost > 0 && !st.owned[t] && x.coins >= F[t].cost);
+  if (buyable.length) L.push(`コインが${Math.max(0, x.coins)}枚たまってるよ。「${F[buyable[buyable.length - 1]].n}」が買えるね。`);
+  if (!info.reviewed && nowHM() >= st.prefs.reviewTime) L.push('寝る前に、今日の振り返りを書いておこう。明日の自分が助かるよ。');
+  return L;
+}
+function buddyBubble(){
+  const st = S(); if (UI.place || !st.room.items.some(i => i.t === 'buddy')) return '';
+  const L = buddyLines(), line = L[(UI.buddyIdx || 0) % L.length];
+  return `<div class="bubble" id="buddy-bubble" role="status" hidden><b>${esc(st.buddy.name)}</b>${esc(line)}</div>`;
+}
+function placeBubble(){
+  const rs = $('#roomstage'), b = $('#buddy-bubble'); if (!rs || !b) return;
+  const bi = S().room.items.find(i => i.t === 'buddy'); if (!bi) return;
+  const els = [...rs.querySelectorAll(`svg [data-i="${bi.id}"]`)]; if (!els.length) return;
+  let top = 1e9, l = 1e9, r = -1e9; for (const el of els) { const q = el.getBoundingClientRect(); if (!q.width && !q.height) continue; top = Math.min(top, q.top); l = Math.min(l, q.left); r = Math.max(r, q.right); }
+  if (top === 1e9) return;
+  const R = rs.getBoundingClientRect(); b.hidden = false;
+  const bw = b.offsetWidth, bh = b.offsetHeight, cx = (l + r) / 2 - R.left;
+  const left = clamp(cx, bw / 2 + 8, R.width - bw / 2 - 8);
+  b.style.left = left + 'px'; b.style.top = Math.max(bh + 16, top - R.top) + 'px';
+  b.style.setProperty('--tail', clamp(50 + (cx - left) / bw * 100, 12, 88) + '%');
+}
+window.addEventListener('resize', () => { if (route() === 'room') placeBubble(); });
+
 /* ---------- room placement: candidate position + arrows + tap ---------- */
 function placeOk(pl){
   const items = S().room.items, N = roomN();
@@ -2016,11 +2183,14 @@ function candidateFromPoint(sx, sy){
 }
 let tapGuard = 0, btnGuard = {act: null, t: 0};
 function roomTap(e, rs){
+  if (e.target.closest('#buddy-bubble')) { UI.buddyIdx = (UI.buddyIdx || 0) + 1; render(); return true; }
   if (e.target.closest('[data-act]') || e.target.closest('.roombar')) return false;
   const svg = rs.querySelector('svg.roomsvg'); if (!svg) return false;
   if (UI.place) { const p = svgPoint(svg, e.clientX, e.clientY); if (p && candidateFromPoint(p.x, p.y)) render(); return true; }
   const it = e.target.closest('[data-i]');
-  if (it) UI.sel = UI.sel === it.dataset.i ? null : it.dataset.i;
+  const isBuddy = it && S().room.items.some(i => i.id === it.dataset.i && i.t === 'buddy');
+  if (isBuddy) { if (UI.sel === it.dataset.i) UI.buddyIdx = (UI.buddyIdx || 0) + 1; UI.sel = it.dataset.i; }
+  else if (it) UI.sel = UI.sel === it.dataset.i ? null : it.dataset.i;
   else if (UI.sel) UI.sel = null;
   else return false;
   UI.colorOpen = false; render(); return true;
@@ -2044,6 +2214,7 @@ document.addEventListener('submit', e => {
   const f = e.target.closest('[data-form]'); if (!f) return; e.preventDefault();
   const st = S(), k = f.dataset.form, val = id => (f.querySelector('#' + id)?.value ?? '').trim();
   if (k === 'auth') { doAuth(f); return; }
+  if (k === 'buddy-name') { const n = val('bn-name').slice(0, 12); if (n) { st.buddy.name = n; queueWrite('state'); } closeModal(); render(); if (n) toast(`ルームメイトの名前を「${n}」にしました。`, 'check'); return; }
   if (k === 'pw') { const pw = f.querySelector('#pw-new').value; if (pw.length < 6) { toast('パスワードは6文字以上にしてください。', 'x'); return; }
     SB.auth.updateUser({password: pw}).then(({error}) => { if (error) toast(authMsg(error), 'x', 5000); else { f.reset(); toast('パスワードを変更しました。', 'check'); } }); return; }
   if (k === 'newpw') { const pw = f.querySelector('#np-new').value; if (pw.length < 6) { toast('パスワードは6文字以上にしてください。', 'x'); return; }
@@ -2069,7 +2240,9 @@ document.addEventListener('submit', e => {
   if (k === 'tg-add') { const u = val('tg-univ'); if (!u) { toast('大学名を入力してください。', 'x'); return; } st.targets.push({id: uid6(), univ: u.slice(0, 30), fac: val('tg-fac').slice(0, 30)}); queueWrite('state'); pendingRender = false; render(); }
   if (k === 'review') {
     const today = dkey(), mk = monthOf(today), md = monthDoc(mk);
-    md.reviews[today] = {did: val('rv-did').slice(0, 600), tomorrow: val('rv-tom').slice(0, 400), tg: clamp(+val('rv-tg') || 0, 0, 1200), at: Date.now()};
+    syncRvDraft(); const dr = rvDraft();
+    md.reviews[today] = {did: dr.did.trim().slice(0, 600), bad: dr.bad.trim().slice(0, 600), improve: dr.improve.trim().slice(0, 400), tomorrow: dr.tomorrow.trim().slice(0, 400),
+      tg: clamp(+dr.tg || 0, 0, 1200), ach: clamp(+dr.ach || 0, 0, 100), focus: dr.focus || 0, mood: dr.mood, todo: dr.todo.filter(t => t.t.trim()).slice(0, 8).map(t => ({t: t.t.trim().slice(0, 60), done: false})), at: Date.now()};
     UI.review = null; queueWrite('m-' + mk, 0); checkMissions(false); checkBadges(false); pendingRender = false; render(); toast('振り返りを保存しました。今日もおつかれさま。', 'moon', 4000);
   }
 });
@@ -2077,7 +2250,7 @@ document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'snd-vol') { S().prefs.vol = +t.value; AudioEng.setVol(+t.value); queueWrite('state', 1500); }
   if (t.id === 't-custom') { const v = Math.round(+t.value); if (v >= 1 && v <= 600) { T.target = v; saveTimer(); updateTimerUI(); } }
-  if (t.id === 'rv-did' || t.id === 'rv-tom' || t.id === 'rv-tg') UI.review = {did: $('#rv-did')?.value || '', tomorrow: $('#rv-tom')?.value || '', tg: $('#rv-tg')?.value || ''};
+  if (/^rv-(did|bad|imp|tom|tg|ach|todo-\d+)$/.test(t.id)) { syncRvDraft(); if (t.id === 'rv-ach') { const o = $('#rv-ach-v'); if (o) o.textContent = t.value + '%'; } }
 });
 document.addEventListener('change', e => {
   const t = e.target;
@@ -2175,8 +2348,7 @@ render = function(){
   if (!S()) { $('#view').innerHTML = '<div class="empty" style="padding-top:80px">読み込み中…</div>'; return; }
   _render();
   if (route() === 'rank') refreshPub();
-  const rs = $('#roomstage'); if (rs) wireRoom(rs);
-};
+  const rs = $('#roomstage'); if (rs) { wireRoom(rs); requestAnimationFrame(placeBubble); } };
 document.addEventListener('visibilitychange', () => { if (!document.hidden && MODE === 'cloud' && !pending.size) { pullCloud(false); refreshPub(true); } });
 window.addEventListener('pagehide', () => { if (MODE === 'cloud' && pending.size) flushAll(); });
 
