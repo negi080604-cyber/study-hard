@@ -236,6 +236,11 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
 .item b{font-size:13px;font-weight:500}
 .item .meta{font-size:11.5px;color:var(--mute);display:flex;justify-content:space-between;gap:6px}
 .item.locked{opacity:.55}
+.roomsvg .pp{animation:pbreath 3.6s ease-in-out infinite}.roomsvg .pz{animation:pbreath 5.5s ease-in-out infinite}
+.roomsvg .blink{animation:pblink 5s steps(1) infinite}
+@keyframes pbreath{0%,100%{transform:translateY(0)}50%{transform:translateY(-.9px)}}
+@keyframes pblink{0%,95%{opacity:1}96%,98%{opacity:0}99%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.roomsvg .pp,.roomsvg .pz,.roomsvg .blink{animation:none}}
 .housestage svg{display:block;width:100%;height:auto;max-height:62vh}
 .hcell{cursor:pointer}.hcell:hover polygon{filter:brightness(1.25)}
 .roomsel{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none}.roomsel::-webkit-scrollbar{display:none}.roomsel button{white-space:nowrap;flex:none}
@@ -656,99 +661,147 @@ function randomLook(gender, seed){
     wc: {top: r(4), bottom: r(3), shoes: r(3)}};
 }
 const wcol = (L, slot) => { const it = WEAR[slot].items[(L.wear || {})[slot]] || WEAR[slot].items[DEF_WEAR[slot]]; const cols = it.colors || ['#888888']; return cols[((L.wc || {})[slot] || 0) % cols.length]; };
-function upperParts(L){
+/* ---- people: proportions closer to a real person; boxes never intersect so depth sorting stays clean ---- */
+function headParts(L){
   const sk = SKINS[L.skin || 0], hc = HAIRC[L.hc || 0], w = Object.assign({}, DEF_WEAR, L.wear || {}), P = [], b = (...a) => P.push(a);
-  const tc = w.top === 'astronaut' ? '#eef0f6' : wcol(L, 'top'), dark = mix(tc, '#000000', .25);
-  if (w.acc === 'cape') b(.29, .34, .45, .42, .04, .9, wcol(L, 'acc'));
-  if (w.acc === 'wings') { b(.1, .32, .95, .2, .04, .62, '~#dce8ff'); b(.7, .32, .95, .2, .04, .62, '~#dce8ff'); }
-  if (w.acc === 'backpack') b(.33, .29, .85, .34, .12, .42, wcol(L, 'acc'));
-  if (w.top === 'astronaut') { b(.27, .37, .68, .46, .3, .66, tc); b(.18, .42, .78, .09, .18, .52, tc); b(.73, .42, .78, .09, .18, .52, tc); b(.4, .67, .95, .2, .005, .14, '!#22e4ff'); }
-  else {
-    b(.3, .4, .7, .4, .24, .62, tc);
-    if (w.top === 'tshirt') { for (const ax of [.22, .7]) { b(ax, .43, 1.1, .08, .16, .22, tc); b(ax + .005, .44, .8, .07, .14, .3, sk); } }
-    else { b(.22, .43, .8, .08, .16, .52, tc); b(.7, .43, .8, .08, .16, .52, tc); }
-    b(.22, .45, .72, .08, .12, .08, sk); b(.7, .45, .72, .08, .12, .08, sk);
-    if (w.top === 'uniform' || w.top === 'suit') { b(.45, .64, .95, .1, .005, .37, '#f4f6fb'); b(.485, .645, .98, .03, .005, .3, w.top === 'suit' ? '#3d7bff' : '#c8102e'); }
-    if (w.top === 'sailor') { b(.32, .62, 1.17, .36, .03, .15, tc === '#eef0f6' ? '#1d2a6b' : '#eef0f6'); b(.46, .645, 1.02, .08, .005, .13, '#c8102e'); }
-    if (w.top === 'jersey') { b(.305, .64, .7, .03, .005, .62, '#eef0f6'); b(.665, .64, .7, .03, .005, .62, '#eef0f6'); }
-    if (w.top === 'hoodie') { b(.36, .36, 1.24, .28, .06, .18, tc); b(.38, .64, .76, .24, .005, .12, dark); }
-    if (w.top === 'sweater') b(.3, .4, .7, .4, .245, .05, dark);
-    if (w.top === 'kimono') { b(.3, .4, .92, .4, .245, .1, '#d6b25e'); b(.44, .64, 1.15, .12, .005, .15, '#f4f6fb'); }
-  }
-  b(.45, .47, 1.32, .1, .1, .06, sk);
-  if (w.acc === 'scarf') { b(.32, .42, 1.26, .36, .22, .1, wcol(L, 'acc')); b(.36, .64, 1.0, .08, .03, .26, wcol(L, 'acc')); }
-  // hair behind the head first
-  const H = L.hair || 'short';
-  if (H === 'long') b(.32, .33, 1.05, .36, .1, .65, hc);
-  else if (H === 'pony') { b(.33, .35, 1.4, .34, .08, .3, hc); b(.44, .27, 1.15, .12, .08, .42, hc); }
-  else if (H === 'bob') b(.32, .33, 1.3, .36, .1, .42, hc);
-  else b(.33, .35, 1.4, .34, .08, .3, hc);
-  b(.35, .37, 1.38, .3, .3, .34, sk);
-  b(.4, .67, 1.5, .05, .005, .06, '#1c2133'); b(.55, .67, 1.5, .05, .005, .06, '#1c2133'); b(.44, .67, 1.42, .12, .005, .02, '#e07a7a');
-  if (L.gender === 'girl') { b(.365, .67, 1.43, .04, .004, .03, '#f4a3a3'); b(.595, .67, 1.43, .04, .004, .03, '#f4a3a3'); }
-  if (H === 'long' || H === 'bob') { b(.32, .37, H === 'long' ? 1.12 : 1.3, .04, .25, H === 'long' ? .58 : .4, hc); b(.64, .37, H === 'long' ? 1.12 : 1.3, .04, .25, H === 'long' ? .58 : .4, hc); }
-  const hat = ['cap','beanie','crown'].includes(w.head);
-  b(.33, .35, 1.66, .34, .34, .12, hc); b(.35, .62, 1.62, .3, .06, .06, hc);
-  if (H === 'spiky' && !hat) { b(.36, .4, 1.78, .08, .08, .07, hc); b(.46, .46, 1.78, .08, .08, .09, hc); b(.56, .4, 1.78, .08, .08, .07, hc); }
-  if (w.acc === 'glasses') { b(.385, .675, 1.48, .1, .005, .08, '~#bcd4ff'); b(.525, .675, 1.48, .1, .005, .08, '~#bcd4ff'); b(.485, .676, 1.52, .04, .004, .015, '#1c2133'); }
+  const skD = mix(sk, '#7a4a30', .22), girl = L.gender === 'girl', H = L.hair || 'short', astro = w.top === 'astronaut';
+  const hat = ['cap', 'beanie'].includes(w.head) && !astro;
+  b(.455, .47, 1.15, .09, .08, .05, skD);                    // neck
+  b(.39, .4, 1.2, .22, .22, .06, sk);                        // jaw
+  b(.37, .37, 1.26, .26, .26, .23, sk);                      // head
+  b(.35, .47, 1.33, .02, .07, .08, skD); b(.63, .47, 1.33, .02, .07, .08, skD);   // ears
+  // face (front plane y=.63)
+  b(.405, .63, 1.355, .055, .005, .045, '^#fbfbff'); b(.54, .63, 1.355, .055, .005, .045, '^#fbfbff');
+  b(.42, .635, 1.355, .03, .004, .045, '^#2a1c14'); b(.555, .635, 1.355, .03, .004, .045, '^#2a1c14');
+  b(.426, .639, 1.38, .012, .003, .012, '^#ffffff'); b(.561, .639, 1.38, .012, .003, .012, '^#ffffff');
+  if (girl) { b(.398, .63, 1.4, .02, .005, .012, '^#1c1410'); b(.597, .63, 1.4, .02, .005, .012, '^#1c1410'); }
+  b(.4, .63, 1.42, .065, .005, .016, mix(hc, '#000000', .15)); b(.535, .63, 1.42, .065, .005, .016, mix(hc, '#000000', .15));
+  b(.48, .63, 1.3, .04, .022, .045, mix(sk, '#b0705a', .18));
+  b(.46, .63, 1.245, .08, .005, .018, girl ? '#d0566a' : '#b9675e');
+  b(.392, .63, 1.29, .045, .004, .025, girl ? '#f39aa6' : mix(sk, '#e08080', .2)); b(.563, .63, 1.29, .045, .004, .025, girl ? '#f39aa6' : mix(sk, '#e08080', .2));
+  // hair (crown sits on top of the head; back/sides wrap outside it)
+  if (!hat) b(.355, .355, 1.49, .29, .29, .08, hc);
+  b(.37, .645, 1.46, .26, .025, .08, hc);                    // bangs
+  const side = (z, h, y = .38, d = .2) => { b(.345, y, z, .025, d, h, hc); b(.63, y, z, .025, d, h, hc); };
+  if (H === 'long') { b(.35, .31, .98, .3, .06, .51, hc); side(1.16, .33, .38, .22); b(.345, .6, 1.0, .025, .03, .49, hc); b(.63, .6, 1.0, .025, .03, .49, hc); }
+  else if (H === 'bob') { b(.35, .31, 1.2, .3, .06, .29, hc); side(1.22, .27, .38, .23); }
+  else if (H === 'pony') { b(.36, .33, 1.3, .28, .04, .19, hc); side(1.38, .11, .4, .14); b(.455, .29, 1.4, .09, .04, .08, w.head === 'ribbon' ? wcol(L, 'head') : '#c4304a'); b(.46, .26, 1.0, .08, .05, .4, hc); }
+  else { b(.36, .33, 1.3, .28, .04, .19, hc); side(1.4, .09, .4, .12);
+    if (H === 'spiky' && !hat && w.head !== 'crown') { b(.38, .4, 1.57, .07, .07, .07, hc); b(.465, .46, 1.57, .07, .07, .1, hc); b(.55, .42, 1.57, .07, .07, .08, hc); b(.43, .55, 1.57, .07, .06, .06, hc); } }
+  if (w.acc === 'glasses') { b(.395, .642, 1.345, .075, .005, .065, '~#bcd4ff'); b(.53, .642, 1.345, .075, .005, .065, '~#bcd4ff'); b(.47, .643, 1.375, .06, .004, .012, '#1c2133'); b(.325, .55, 1.375, .02, .09, .012, '#1c2133'); b(.655, .55, 1.375, .02, .09, .012, '#1c2133'); }
   const hcl = WEAR.head.items[w.head] && WEAR.head.items[w.head].colors ? wcol(L, 'head') : '#ffffff';
-  if (w.head === 'cap') { b(.32, .34, 1.7, .36, .36, .12, hcl); b(.36, .7, 1.71, .28, .14, .03, hcl); }
-  if (w.head === 'beanie') { b(.32, .34, 1.64, .36, .36, .22, hcl); b(.47, .49, 1.86, .06, .06, .06, '#ffffff'); }
-  if (w.head === 'hachimaki') { b(.34, .36, 1.58, .32, .32, .06, '#f4f6fb'); b(.47, .68, 1.585, .06, .005, .05, '#c8102e'); b(.48, .3, 1.46, .04, .06, .14, '#f4f6fb'); }
-  if (w.head === 'ribbon') { b(.56, .42, 1.76, .16, .06, .08, hcl); b(.61, .43, 1.73, .06, .04, .14, hcl); }
-  if (w.head === 'headphones') { b(.33, .48, 1.78, .34, .06, .04, '#1c2133'); b(.3, .44, 1.42, .05, .16, .17, hcl); b(.65, .44, 1.42, .05, .16, .17, hcl); }
-  if (w.head === 'crown') { b(.38, .4, 1.78, .24, .24, .08, '!#ffc24d'); b(.38, .4, 1.86, .05, .05, .06, '!#ffc24d'); b(.475, .475, 1.86, .05, .05, .08, '!#ff5c7a'); b(.57, .57, 1.86, .05, .05, .06, '!#ffc24d'); }
-  if (w.top === 'astronaut') b(.31, .33, 1.34, .38, .38, .5, '~#bcd4ff');
+  if (w.head === 'cap' && !astro) { b(.345, .345, 1.49, .31, .3, .11, hcl); b(.37, .645, 1.54, .26, .13, .025, hcl); b(.48, .48, 1.6, .04, .04, .02, mix(hcl, '#000000', .3)); }
+  if (w.head === 'beanie' && !astro) { b(.34, .34, 1.49, .32, .3, .05, mix(hcl, '#ffffff', .25)); b(.35, .35, 1.54, .3, .29, .11, hcl); b(.47, .47, 1.65, .06, .06, .05, '#ffffff'); }
+  if (w.head === 'hachimaki') { b(.37, .672, 1.45, .26, .006, .045, '#f4f6fb'); b(.475, .678, 1.455, .05, .004, .035, '#c8102e'); b(.46, .27, 1.33, .03, .04, .13, '#f4f6fb'); b(.51, .27, 1.35, .03, .04, .11, '#f4f6fb'); }
+  if (w.head === 'ribbon' && H !== 'pony') { b(.55, .42, 1.57, .14, .05, .07, hcl); b(.6, .43, 1.64, .05, .04, .04, hcl); }
+  if (w.head === 'headphones') { b(.35, .48, 1.57, .3, .05, .04, '#1c2133'); b(.31, .44, 1.33, .035, .14, .15, hcl); b(.655, .44, 1.33, .035, .14, .15, hcl); }
+  if (w.head === 'crown') { b(.39, .39, 1.57, .22, .22, .07, '!#ffc24d'); b(.39, .39, 1.64, .05, .05, .05, '!#ffc24d'); b(.475, .475, 1.64, .05, .05, .07, '!#ff5c7a'); b(.56, .56, 1.64, .05, .05, .05, '!#ffc24d'); }
+  if (astro) b(.3, .3, 1.15, .4, .4, .5, '~#bcd4ff');
   return P;
 }
-function legParts(L, pose, seatZ){
+function bodyParts(L, pose = 'stand', seatZ = .78){
   const sk = SKINS[L.skin || 0], w = Object.assign({}, DEF_WEAR, L.wear || {}), P = [], b = (...a) => P.push(a);
-  const astro = w.top === 'astronaut', bc = astro ? '#eef0f6' : wcol(L, 'bottom');
-  const sc = w.shoes === 'goldshoes' ? '!#ffc24d' : astro ? '#d8dde8' : wcol(L, 'shoes');
+  const girl = L.gender === 'girl', astro = w.top === 'astronaut', sit = pose === 'sit', dz = sit ? seatZ - .7 : 0;
+  const tc = astro ? '#eef0f6' : wcol(L, 'top'), tD = mix(tc, '#000000', .22), tL = mix(tc, '#ffffff', .18);
+  const bc = astro ? '#eef0f6' : wcol(L, 'bottom'), bD = mix(bc, '#000000', .2);
+  const sc = w.shoes === 'goldshoes' ? '!#ffc24d' : astro ? '#d8dde8' : wcol(L, 'shoes'), sole = w.shoes === 'goldshoes' ? '#b8892a' : '#2a2a33';
   const bot = astro ? 'pants' : w.top === 'kimono' ? 'kimono' : w.bottom;
-  if (pose === 'sit') {
+  const longLeg = bot === 'pants' || bot === 'jeans', drape = bot === 'longskirt' || bot === 'kimono';
+  const sh = w.shoes === 'boots' ? .2 : w.shoes === 'slippers' ? .045 : .075;
+  const legX = [.375, .515], Z = z => z + dz, F0 = .58;
+  // ---------- legs ----------
+  if (sit) {
     const z = seatZ;
-    b(.33, .76, 0, .14, .2, .08, sc); b(.53, .76, 0, .14, .2, .08, sc);
-    const shin = bot === 'pants' || bot === 'jeans' ? bc : sk;
-    b(.34, .78, .08, .12, .1, z - .08, shin); b(.54, .78, .08, .12, .1, z - .08, shin);
-    if (bot === 'skirt' || bot === 'longskirt' || bot === 'kimono') b(.29, .4, z, .42, .46, .14, bot === 'kimono' ? wcol(L, 'top') : bc);
-    else { const tc = bot === 'shorts' ? bc : bc; b(.34, .42, z, .12, .44, .12, tc); b(.54, .42, z, .12, .44, .12, tc); }
-    return P;
+    for (const lx of legX) {
+      b(lx - .005, .73, 0, .12, .26, .025, sole); b(lx, .735, .025, .11, .22, sh - .025, sc);
+      b(lx + .01, .78, sh, .09, .09, z - sh, longLeg ? bc : sk);
+      if (longLeg) b(lx, .42, z, .11, .46, .1, bc);
+      else if (bot === 'shorts') { b(lx, .42, z, .11, .2, .1, bc); b(lx, .62, z, .11, .26, .1, sk); }
+    }
+    if (bot === 'skirt') { b(.355, .41, z, .29, .3, .1, bc); for (const lx of legX) b(lx, .71, z, .11, .17, .1, sk); }
+    if (drape) { b(.355, .41, z, .29, .47, .1, bot === 'kimono' ? tc : bc); b(.36, .885, .1, .28, .03, z - .1 + .1, bot === 'kimono' ? tc : bc); }
+  } else {
+    for (const lx of legX) {
+      b(lx - .005, .41, 0, .12, .27, .025, sole); b(lx, .415, .025, .11, .23, sh - .025, sc);
+      if (w.shoes === 'sneakers') b(lx + .01, .645, .03, .09, .005, .02, '#ffffff');
+      if (drape) continue;
+      b(lx + .01, .45, sh, .09, .09, .37 - sh, longLeg ? bc : sk);          // shin
+      b(lx + .005, .445, .37, .1, .1, .04, longLeg ? bD : sk);              // knee
+      if (bot === 'skirt') b(lx, .44, .41, .11, .11, .09, sk);
+      else if (bot === 'shorts') { b(lx, .44, .41, .11, .11, .12, sk); b(lx - .005, .435, .53, .12, .12, .11, bc); }
+      else b(lx, .44, .41, .11, .11, .23, bc);                              // thigh
+    }
+    if (bot === 'skirt') b(.345, .405, .5, .31, .19, .24, bc);
+    if (drape) { b(.345, .405, .06, .31, .19, .68, bot === 'kimono' ? tc : bc); if (bot === 'kimono') b(.36, .596, .1, .02, .004, .6, mix(tc, '#000000', .25)); }
+    else if (bot !== 'skirt') b(.36, .425, .64, .28, .15, .1, bc);         // hips
   }
-  const sh = w.shoes === 'boots' ? .22 : w.shoes === 'slippers' ? .05 : .08;
-  b(.33, .42, 0, .14, .22, sh, sc); b(.53, .42, 0, .14, .22, sh, sc);
-  if (bot === 'kimono') { b(.35, .46, sh, .1, .1, Math.max(.02, .2 - sh), sk); b(.3, .4, .2, .4, .24, .5, wcol(L, 'top')); }
-  else if (bot === 'shorts') { b(.35, .46, sh, .1, .1, .45 - sh, sk); b(.55, .46, sh, .1, .1, .45 - sh, sk); b(.34, .45, .45, .12, .12, .25, bc); b(.54, .45, .45, .12, .12, .25, bc); }
-  else if (bot === 'skirt') { b(.35, .46, sh, .1, .1, .5 - sh, sk); b(.55, .46, sh, .1, .1, .5 - sh, sk); b(.29, .38, .45, .42, .28, .3, bc); }
-  else if (bot === 'longskirt') { if (sh < .18) { b(.35, .46, sh, .1, .1, .18 - sh, sk); b(.55, .46, sh, .1, .1, .18 - sh, sk); } b(.29, .38, .18, .42, .28, .57, bc); }
-  else { b(.34, .45, sh, .12, .12, .7 - sh, bc); b(.54, .45, sh, .12, .12, .7 - sh, bc); }
+  // ---------- torso ----------
+  const armX = astro ? [.24, .69] : girl ? [.275, .655] : [.255, .675];
+  if (astro) { b(.31, .41, Z(.64), .38, .19, .51, tc); b(.42, .6, Z(.95), .16, .005, .1, '!#22e4ff'); b(.37, .29, Z(.78), .26, .12, .36, '#c9ccd6'); }
+  else {
+    const wz = sit ? Z(.8) : Z(.74), wh = sit ? .1 : .16;
+    b(girl ? .375 : .37, .43, wz, girl ? .25 : .26, .14, wh, tc);                               // waist
+    b(girl ? .35 : .335, .42, Z(.9), girl ? .3 : .33, .16, .16, tc);                           // chest
+    b(girl ? .345 : .325, .43, Z(1.06), girl ? .31 : .35, .14, .09, tc);                       // shoulders
+    if (w.top !== 'kimono' && w.top !== 'tshirt') b(.37, .57, wz, .26, .006, .03, tD);        // hem line
+  }
+  // ---------- arms ----------
+  const longSleeve = w.top !== 'tshirt';
+  for (const ax of armX) {
+    if (longSleeve) b(ax, .445, Z(.9), .07, .11, .25, tc); else { b(ax, .445, Z(1.0), .07, .11, .15, tc); b(ax + .003, .45, Z(.9), .065, .1, .1, sk); }
+    if (sit) { b(ax + .003, .46, Z(.84), .065, .26, .06, longSleeve ? tc : sk); b(ax + .005, .72, Z(.835), .06, .08, .07, sk); }
+    else { b(ax + .003, .45, Z(.66), .065, .1, .24, longSleeve ? tc : sk); b(ax + .005, .455, Z(.585), .06, .09, .075, sk); }
+  }
+  // ---------- outfit details ----------
+  const fz = Z(0);
+  if (w.top === 'hoodie') { b(.4, .36, fz + 1.08, .2, .06, .12, tc); b(.4, F0, fz + .76, .2, .005, .1, tD); b(.465, F0, fz + .98, .012, .005, .08, '#f4f6fb'); b(.525, F0, fz + 1.0, .012, .005, .06, '#f4f6fb'); }
+  else if (w.top === 'uniform' || w.top === 'suit') { b(.45, F0, fz + .97, .1, .005, .18, '#f4f6fb'); b(.485, F0 + .006, fz + .92, .03, .004, .21, w.top === 'suit' ? '#3d7bff' : '#c8102e'); b(.39, .571, fz + .78, .03, .005, .03, '#d6b25e'); b(.39, F0, fz + .93, .03, .005, .03, '#d6b25e'); }
+  else if (w.top === 'sailor') { const cc = tc === '#eef0f6' ? '#1d2a6b' : '#eef0f6'; b(.34, .4, fz + .98, .32, .02, .17, cc); b(.41, F0, fz + 1.02, .18, .005, .12, cc); b(.46, F0 + .006, fz + .95, .08, .004, .1, '#c8102e'); }
+  else if (w.top === 'jersey') { for (const ax of armX) b(ax + .03, .556, Z(.66), .012, .005, .49, '#eef0f6'); b(.497, F0, fz + .9, .006, .005, .25, '#d8dde8'); }
+  else if (w.top === 'sweater') { b(.37, .571, fz + (sit ? .8 : .74), .26, .006, .04, tD); b(.42, F0, fz + 1.1, .16, .005, .05, tD); }
+  else if (w.top === 'tshirt') b(.44, F0, fz + 1.08, .12, .005, .05, mix(sk, '#000000', .08));
+  else if (w.top === 'kimono') { b(.37, .571, fz + .8, .26, .008, .1, '#d6b25e'); b(.44, F0, fz + 1.0, .12, .006, .15, '#f4f6fb'); b(.46, F0 + .007, fz + 1.0, .08, .004, .15, tL); }
+  if (w.acc === 'backpack') { b(.36, .3, fz + .8, .28, .12, .34, wcol(L, 'acc')); b(.38, .29, fz + .85, .24, .01, .12, mix(wcol(L, 'acc'), '#000000', .25)); b(.37, F0 + .01, fz + .95, .04, .005, .2, '#2b3045'); b(.59, F0 + .01, fz + .95, .04, .005, .2, '#2b3045'); }
+  if (w.acc === 'scarf') { b(.4, .575, fz + 1.1, .2, .03, .07, wcol(L, 'acc')); b(.53, .59, fz + .86, .07, .02, .24, wcol(L, 'acc')); }
+  if (w.acc === 'cape') b(.32, .38, sit ? fz + .8 : .3, .36, .035, sit ? .35 : .85, wcol(L, 'acc'));
+  if (w.acc === 'wings') { b(.1, .37, fz + .78, .22, .03, .5, '~#dce8ff'); b(.68, .37, fz + .78, .22, .03, .5, '~#dce8ff'); }
   return P;
 }
 function babyParts(L){
   const sk = SKINS[L.skin || 0], hc = HAIRC[L.hc || 0], tc = wcol(L, 'top');
-  return [[.34, .36, 0, .32, .32, .24, tc], [.3, .5, 0, .1, .1, .14, tc], [.6, .5, 0, .1, .1, .14, tc], [.36, .38, .24, .28, .28, .26, sk], [.41, .66, .36, .04, .005, .05, '#1c2133'], [.55, .66, .36, .04, .005, .05, '#1c2133'], [.44, .4, .5, .12, .12, .05, hc]];
+  return [[.33, .35, 0, .34, .34, .1, tc], [.36, .55, 0, .1, .17, .07, tc], [.54, .55, 0, .1, .17, .07, tc], [.37, .69, 0, .08, .06, .06, sk], [.55, .69, 0, .08, .06, .06, sk],
+    [.35, .37, .1, .3, .26, .2, tc], [.29, .44, .12, .07, .12, .14, tc], [.64, .44, .12, .07, .12, .14, tc], [.29, .5, .07, .07, .08, .06, sk], [.64, .5, .07, .07, .08, .06, sk],
+    [.35, .35, .3, .3, .3, .28, sk], [.34, .45, .4, .02, .07, .07, mix(sk, '#7a4a30', .2)], [.64, .45, .4, .02, .07, .07, mix(sk, '#7a4a30', .2)],
+    [.395, .65, .42, .05, .005, .05, '^#2a1c14'], [.555, .65, .42, .05, .005, .05, '^#2a1c14'], [.405, .652, .45, .015, .004, .015, '^#ffffff'], [.565, .652, .45, .015, .004, .015, '^#ffffff'],
+    [.375, .65, .37, .04, .004, .025, '#f39aa6'], [.585, .65, .37, .04, .004, .025, '#f39aa6'], [.47, .65, .35, .06, .005, .02, '#d0566a'],
+    [.36, .36, .58, .28, .28, .03, hc], [.47, .52, .61, .05, .04, .05, hc]];
 }
 const scaleParts = (P, s) => s === 1 ? P : P.map(([x, y, z, w, d, h, c]) => [.5 + (x - .5) * s, .5 + (y - .5) * s, z * s, w * s, d * s, h * s, c]);
 function personParts(L, pose = 'stand', o = {}){
   if (o.stage === 0) return babyParts(L);
-  const s = o.stage === 1 ? .62 : o.stage === 2 ? .84 : 1;
-  if (pose === 'sit') {
-    const dz = (o.seatZ || .78) - .7;
-    const up = upperParts(L).map(([x, y, z, w, d, h, c]) => [x, y, z + dz, w, d, h, c]);
-    return scaleParts([...legParts(L, 'sit', o.seatZ || .78), ...up], s).map(([x, y, z, w, d, h, c]) => [x, Math.min(1 - d, 1 - y - d + .08), z, w, d, h, c]);
-  }
-  return scaleParts([...legParts(L, 'stand'), ...upperParts(L)], s);
+  const s = o.stage === 1 ? .6 : o.stage === 2 ? .86 : 1, hk = o.stage === 1 ? 1.32 : o.stage === 2 ? 1.08 : 1;
+  const sit = pose === 'sit', seatZ = o.seatZ || .78, dz = sit ? seatZ - .7 : 0, hb = 1.15 + dz;
+  const head = headParts(L).map(([x, y, z, w, d, h, c]) => [.5 + (x - .5) * hk, .5 + (y - .5) * hk, hb + (z + dz - hb) * hk, w * hk, d * hk, h * hk, c]);
+  const all = scaleParts([...bodyParts(L, pose, seatZ), ...head], s);
+  return sit ? all.map(([x, y, z, w, d, h, c]) => [x, Math.min(1 - d, 1 - y - d + .1), z, w, d, h, c]) : all;
 }
 function sleepParts(L, sd, cx, blanket, small){
-  const sk = SKINS[L.skin || 0], hc = HAIRC[L.hc || 0], k = small ? .7 : 1, hz = sd.head, by = sd.by;
-  return [[cx - .16 * k, by - .05, hz, .32 * k, .1, .22 * k, hc], [cx - .15 * k, by, hz, .3 * k, .28 * k, .26 * k, sk], [cx - .09 * k, by + .16 * k, hz + .26 * k, .05, .04, .005, '#1c2133'], [cx + .04 * k, by + .16 * k, hz + .26 * k, .05, .04, .005, '#1c2133'],
-    [cx - .3 * k, by + .3 * k, sd.body, .6 * k, sd.len * (small ? .75 : 1), .14, blanket]];
+  const sk = SKINS[L.skin || 0], hc = HAIRC[L.hc || 0], k = small ? .72 : 1, hz = sd.head, by = sd.by, dark = mix(sk, '#000000', .55), hh = .2 * k;
+  const long = L.hair === 'long' || L.hair === 'bob' || L.hair === 'pony';
+  const P = [[cx - (long ? .2 : .15) * k, by - .07, hz, (long ? .4 : .3) * k, .07, (long ? .06 : hh), hc],        // hair behind the head on the pillow
+    [cx - .13 * k, by, hz, .26 * k, .25 * k, hh, sk],                                                                  // face up
+    [cx - .13 * k, by, hz + hh, .26 * k, .06 * k, .015, hc],                                                           // bangs
+    [cx - .085 * k, by + .1 * k, hz + hh, .06 * k, .02, .004, dark], [cx + .025 * k, by + .1 * k, hz + hh, .06 * k, .02, .004, dark],   // closed eyes
+    [cx - .02 * k, by + .18 * k, hz + hh, .04 * k, .015, .005, '#c97a7a'],
+    [cx - .3 * k, by + .25 * k, sd.body, .6 * k, sd.len * (small ? .75 : 1), .13, blanket], [cx - .26 * k, by + .25 * k, sd.body + .13, .52 * k, .07, .03, mix(blanket, '#ffffff', .4)]];
+  if (long) P.push([cx - .2 * k, by, hz, .07 * k, .22 * k, .04, hc], [cx + .13 * k, by, hz, .07 * k, .22 * k, .04, hc]);
+  return P;
 }
 const PERSON_T = ['buddy', 'partner', 'kid'];
 Object.assign(F, {
   partner:{n:'パートナー', lv:1, cost:0, buddy:true, person:true, W:1, D:1, colors:['#888888'], parts:[]},
   kid:{n:'子ども', lv:1, cost:0, buddy:true, person:true, W:1, D:1, colors:['#888888'], parts:[]},
-  futon:{n:'布団', lv:2, cost:80, W:1, D:2, sleep:{head:.17, body:.18, by:.1, len:1.35, slots:[.5]}, colors:['#7ab0e8','#ffb0c8','#c9b79a'], parts:[[.05,.05,0,.9,1.9,.12,'#f4f6fb'],[.2,.1,.12,.6,.25,.08,'#ffffff'],[.05,.5,.12,.9,1.45,.06,'m']]},
+  futon:{n:'布団', lv:2, cost:80, W:1, D:2, sleep:{head:.2, body:.18, by:.14, len:1.35, slots:[.5]}, colors:['#7ab0e8','#ffb0c8','#c9b79a'], parts:[[.05,.05,0,.9,1.9,.12,'#f4f6fb'],[.2,.1,.12,.6,.25,.08,'#ffffff'],[.05,.5,.12,.9,1.45,.06,'m']]},
   pendant:{n:'ペンダントライト', lv:2, cost:70, hang:true, W:1, D:1, glow:'#ffe2ad', colors:['#2b3045','#eef0f6','#c79a4a'], parts:[[.48,.48,3,.04,.04,.8,'#1c2133'],[.3,.3,2.7,.4,.4,.3,'m'],[.38,.38,2.68,.24,.24,.03,'!#fff3c4']]},
   garland:{n:'ガーランドライト', lv:3, cost:90, wall:true, W:2, H:.5, zb:3, colors:['#ffd66b','#ff8fb8','#7dd3fc']},
   ceiling:{n:'シーリングライト', lv:5, cost:160, hang:true, W:1, D:1, glow:'#f4f8ff', colors:['#eef0f6','#c9b79a'], parts:[[.12,.12,3.7,.76,.76,.06,'m'],[.18,.18,3.6,.64,.64,.1,'!#f4f8ff']]},
@@ -761,7 +814,7 @@ Object.assign(F, {
   tree:{n:'庭の木', lv:22, cost:500, W:1, D:1, colors:['#2f9e6a','#ff9fc4','#e8792f'], parts:[[.42,.42,0,.16,.16,1.2,'#6b4a32'],[.1,.1,1.1,.8,.8,.7,'m'],[.25,.25,1.8,.5,.5,.45,'ml']]},
   flowerbed:{n:'花壇', lv:22, cost:250, W:2, D:1, colors:['#ff6fb0','#c4304a','#a46bff'], parts:[[0,.1,0,2,.8,.3,'#8a6a4a'],[.05,.15,.3,1.9,.7,.03,'#4a3426'],[.15,.3,.33,.12,.12,.2,'m'],[.45,.5,.33,.12,.12,.25,'#ffc24d'],[.75,.25,.33,.12,.12,.22,'m'],[1.05,.55,.33,.12,.12,.2,'#eef0f6'],[1.35,.3,.33,.12,.12,.24,'m'],[1.65,.5,.33,.12,.12,.2,'#ffc24d']]}
 });
-F.bed.sleep = {head: .78, body: .79, by: .22, len: 1.6, slots: [.55, 1.45]};
+F.bed.sleep = {head: .85, body: .79, by: .26, len: 1.6, slots: [.55, 1.45]};
 F.buddy.person = true;
 const ROOM_KINDS = {
   study:{n:'勉強部屋', lv:1, cost:0},
@@ -839,13 +892,13 @@ function personBoxes(it, items, room, poses){
   if (ps.pose === 'sleep') {
     const bed = ps.host, sd = F[bed.t].sleep, [W, D] = [F[bed.t].W, F[bed.t].D], blanket = resolveCol('m', F[bed.t], bed.c || 0).c;
     const parts = sleepParts(info.look, sd, sd.slots[ps.slot], mix(blanket, '#ffffff', .12), info.stage === 0 || info.stage === 1);
-    return parts.map(p => rotPart(p, W, D, bed.r || 0)).map(q => ({x: bed.x + q[0], y: bed.y + q[1], z: q[2], w: q[3], d: q[4], h: q[5], ...resolveCol(q[6], F[it.t], 0), iid: it.id}));
+    return parts.map(p => rotPart(p, W, D, bed.r || 0)).map(q => ({x: bed.x + q[0], y: bed.y + q[1], z: q[2], w: q[3], d: q[4], h: q[5], ...resolveCol(q[6], F[it.t], 0), iid: it.id, anim: 'pz'}));
   }
   if (ps.pose === 'sit') {
     const ch = ps.host, seatZ = ch.t === 'chair_gaming' ? .73 : .78;
-    return personParts(info.look, 'sit', {seatZ, stage: info.stage}).map(p => rotPart(p, 1, 1, ch.r || 0)).map(q => ({x: ch.x + q[0], y: ch.y + q[1], z: q[2], w: q[3], d: q[4], h: q[5], ...resolveCol(q[6], F[it.t], 0), iid: it.id}));
+    return personParts(info.look, 'sit', {seatZ, stage: info.stage}).map(p => rotPart(p, 1, 1, ch.r || 0)).map(q => ({x: ch.x + q[0], y: ch.y + q[1], z: q[2], w: q[3], d: q[4], h: q[5], ...resolveCol(q[6], F[it.t], 0), iid: it.id, anim: 'pp'}));
   }
-  return personParts(info.look, 'stand', {stage: info.stage}).map(p => rotPart(p, 1, 1, it.r || 0)).map(q => ({x: it.x + q[0], y: it.y + q[1], z: z0 + q[2], w: q[3], d: q[4], h: q[5], ...resolveCol(q[6], F[it.t], 0), iid: it.id}));
+  return personParts(info.look, 'stand', {stage: info.stage}).map(p => rotPart(p, 1, 1, it.r || 0)).map(q => ({x: it.x + q[0], y: it.y + q[1], z: z0 + q[2], w: q[3], d: q[4], h: q[5], ...resolveCol(q[6], F[it.t], 0), iid: it.id, anim: 'pp'}));
 }
 function personThumb(look, stage){
   const boxes = personParts(look, 'stand', {stage}).map(p => ({x: p[0], y: p[1], z: p[2], w: p[3], d: p[4], h: p[5], ...resolveCol(p[6], F.buddy, 0)}));
@@ -1455,9 +1508,10 @@ function rotPart(p, W, D, r){
 }
 function resolveCol(key, def, ci){
   const main = def.colors[ci % def.colors.length]; let emi = false, tr = false;
+  let blink = false; if (key[0] === '^') { blink = true; key = key.slice(1); }
   if (key[0] === '!') { emi = true; key = key.slice(1); } else if (key[0] === '~') { tr = true; key = key.slice(1); }
   const c = key === 'm' ? main : key === 'md' ? mix(main, '#000000', .3) : key === 'ml' ? mix(main, '#ffffff', .25) : key === 'a' ? (def.accent || '#22e4ff') : key;
-  return {c, emi, tr};
+  return blink ? {c, emi, tr, blink} : {c, emi, tr};
 }
 function surfaceAt(items, x, y, excludeId){
   for (const o of items) { if (o.id === excludeId) continue; const d = F[o.t]; if (!d || d.wall || d.rug || d.small || d.hang) continue;
@@ -1664,7 +1718,7 @@ function roomSVG(room, N, opts = {}){
   }
   const sorted = sortBoxes(boxes);
   const noPtr = place ? ' pointer-events="none"' : '';
-  for (const b of sorted) s += `<g data-i="${b.iid}" class="${sel === b.iid ? 'sel' : ''}${gcls(b.iid)}"${noPtr}>${boxSVG(b)}</g>`;
+  for (const b of sorted) s += `<g data-i="${b.iid}" class="${sel === b.iid ? 'sel' : ''}${gcls(b.iid)}${b.anim ? ' ' + b.anim : ''}"${b.anim ? ` style="animation-delay:-${(hashStr(b.iid) % 40) / 10}s"` : ''}${noPtr}>${b.blink ? `<g class="blink" style="animation-delay:-${(hashStr(b.iid) % 50) / 10}s">${boxSVG(b)}</g>` : boxSVG(b)}</g>`;
   // night / lights
   if (LS0.shade > 0) {
     const hex = [P(-cap, -cap, WALL_H), P(N, -cap, WALL_H), P(N, 0, 0), P(N, N, 0), P(0, N, 0), P(-cap, N, WALL_H)];
