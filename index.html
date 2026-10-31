@@ -236,6 +236,16 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
 .item b{font-size:13px;font-weight:500}
 .item .meta{font-size:11.5px;color:var(--mute);display:flex;justify-content:space-between;gap:6px}
 .item.locked{opacity:.55}
+.housestage svg{display:block;width:100%;height:auto;max-height:62vh}
+.hcell{cursor:pointer}.hcell:hover polygon{filter:brightness(1.25)}
+.roomsel{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none}.roomsel::-webkit-scrollbar{display:none}.roomsel button{white-space:nowrap;flex:none}
+.wearhead{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.wearprev{width:120px;height:170px;flex:none;border-radius:14px;border:1px solid var(--line);background:radial-gradient(70% 60% at 50% 45%,rgba(61,123,255,.2),transparent 70%),#05070f;display:grid;place-items:center;padding:8px}
+.wearprev svg{width:100%;height:100%}
+.fam-av{width:40px;height:54px;flex:none;display:grid;place-items:center}.fam-av svg{width:100%;height:100%}
+.sw.sm{width:24px;height:24px}
+.item.equipped{box-shadow:inset 0 0 0 1.5px var(--cyan)}
+.lightbtn{background:rgba(5,8,18,.7);cursor:pointer;font:inherit;font-size:12.5px;padding:6px 11px;color:var(--mute)}.lightbtn.on{color:#ffe2ad;border-color:rgba(255,226,173,.5)}.lightbtn svg{width:14px;height:14px}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:var(--c)}
 .sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--cyan)}
@@ -463,6 +473,8 @@ const IC = {
   chevL:'<path d="M15 6l-6 6 6 6"/>', chevR:'<path d="M9 6l6 6-6 6"/>',
   eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   arrow:'<path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/>',
+  bulb:'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>',
+  shirt:'<path d="M8 3 3 6.5l2 4 2-1V21h10V9.5l2 1 2-4L16 3a4 4 0 0 1-8 0z"/>',
   chat:'<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
   send:'<path d="M4 12 20 4l-6 16-3-7z"/><path d="M11 13l9-9"/>',
   drop:'<path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z"/>',
@@ -551,7 +563,11 @@ const BADGES = [
   {id:'review7', n:'振り返り名人', d:'振り返りを7回書いた', c:'#e57bff', chk:s => s.reviews >= 7},
   {id:'lv10', n:'レベル10', d:'レベル10に到達', c:'#3fb8ff', chk:s => s.level >= 10},
   {id:'lv25', n:'レベル25', d:'レベル25に到達', c:'#a46bff', chk:s => s.level >= 25},
-  {id:'decor', n:'インテリア好き', d:'家具を6個置いた', c:'#ff9350', chk:s => s.placed >= 6}
+  {id:'decor', n:'インテリア好き', d:'家具を6個置いた', c:'#ff9350', chk:s => s.placed >= 6},
+  {id:'family', n:'ふたり暮らし', d:'パートナーと暮らしはじめた', c:'#ff6fb0', chk:s => s.fam >= 1},
+  {id:'baby', n:'家族がふえた', d:'子どもが生まれた', c:'#ffc24d', chk:s => s.kids >= 1},
+  {id:'grown', n:'旅立ちの日', d:'子どもが独り立ちした', c:'#3ee6a0', chk:s => s.grown >= 1},
+  {id:'house', n:'マイホーム', d:'家に部屋を3つ増築した', c:'#22e4ff', chk:s => s.rooms >= 3}
 ];
 
 /* ---------- furniture catalog ----------
@@ -618,17 +634,344 @@ Object.assign(F, {
   gold_desk:{n:'黄金の机', lv:32, cost:3000, W:2, D:1, surf:1.26, colors:['#ffc24d','#e8ebf2'], parts:[[.05,.05,0,.12,.9,1.1,'md'],[1.83,.05,0,.12,.9,1.1,'md'],[.17,.42,.2,1.66,.1,.6,'md'],[0,0,1.1,2,1,.16,'!m']]},
   crystal:{n:'クリスタルタワー', lv:40, cost:5000, W:1, D:1, glow:'#a46bff', colors:['#a46bff','#22e4ff','#ff6fb0'], parts:[[.2,.2,0,.6,.6,.15,'#151a28'],[.22,.5,.15,.18,.18,.8,'~m'],[.6,.24,.15,.16,.16,.7,'~m'],[.43,.43,.4,.14,.14,1,'!m'],[.35,.35,.15,.3,.3,1.6,'~m']]}
 });
+/* ================= LIFE: characters, wardrobe, family, house ================= */
+const SKINS = ['#f6d3b3','#e8b48f','#c98f68','#8d5a3b'];
+const HAIRC = ['#2a1d14','#5a3a22','#a8742f','#e3c07a','#1c2133','#c4304a','#7a5cff'];
+const HAIRS = {boy: [['short','ショート'],['spiky','ツンツン'],['bob','マッシュ']], girl: [['long','ロング'],['bob','ボブ'],['pony','ポニーテール'],['short','ショート']]};
+const WEAR = {
+  head:{n:'頭', items:{none:{n:'なし',lv:1,cost:0}, cap:{n:'キャップ',lv:1,cost:60,colors:['#3d7bff','#c4304a','#1c2133','#eef0f6']}, hachimaki:{n:'合格はちまき',lv:2,cost:50}, beanie:{n:'ニット帽',lv:3,cost:90,colors:['#ffc24d','#3ee6a0','#a46bff','#1c2133']}, ribbon:{n:'リボン',lv:3,cost:70,colors:['#ff6fb0','#c4304a','#3fb8ff','#eef0f6']}, headphones:{n:'ヘッドホン',lv:8,cost:200,colors:['#22e4ff','#ff6fb0','#eef0f6']}, crown:{n:'王冠',lv:30,cost:3000}}},
+  top:{n:'服', items:{hoodie:{n:'パーカー',lv:1,cost:0,colors:['#3d7bff','#ff6fb0','#3ee6a0','#ffc24d','#a46bff','#eef0f6','#2b3045']}, tshirt:{n:'Tシャツ',lv:1,cost:40,colors:['#eef0f6','#2b3045','#c4304a','#3fb8ff']}, uniform:{n:'制服（ブレザー）',lv:3,cost:150,colors:['#1d2a6b','#2b3045','#6b4a32']}, sailor:{n:'セーラー服',lv:3,cost:150,colors:['#eef0f6','#1d2a6b']}, jersey:{n:'ジャージ',lv:5,cost:100,colors:['#1d2a6b','#c4304a','#2f5c55']}, sweater:{n:'セーター',lv:5,cost:120,colors:['#c9b79a','#7a2f45','#2f5c55']}, kimono:{n:'着物',lv:18,cost:900,colors:['#c8102e','#1d2a6b','#ff8fb8']}, suit:{n:'スーツ',lv:25,cost:1500,colors:['#1c2133','#2a3550','#5a5f70']}, astronaut:{n:'宇宙服',lv:40,cost:4000}}},
+  bottom:{n:'ズボン・スカート', items:{pants:{n:'長ズボン',lv:1,cost:0,colors:['#2a3550','#1c2133','#6b5a3a']}, skirt:{n:'スカート',lv:1,cost:0,colors:['#2a3550','#c4304a','#3b4058','#ff8fb8']}, shorts:{n:'短パン',lv:1,cost:40,colors:['#2a3550','#c9b79a','#2f5c55']}, jeans:{n:'ジーンズ',lv:3,cost:80,colors:['#3a5a8a','#1d2a6b']}, longskirt:{n:'ロングスカート',lv:5,cost:100,colors:['#c9b79a','#2b3045','#7a2f45']}}},
+  shoes:{n:'靴', items:{sneakers:{n:'スニーカー',lv:1,cost:0,colors:['#eef0f6','#2b3045','#c4304a']}, slippers:{n:'スリッパ',lv:1,cost:30,colors:['#ff6fb0','#3fb8ff','#eef0f6']}, loafers:{n:'ローファー',lv:3,cost:80,colors:['#3a2418','#1c2133']}, boots:{n:'ブーツ',lv:8,cost:150,colors:['#6b4a32','#1c2133']}, goldshoes:{n:'黄金の靴',lv:32,cost:2000}}},
+  acc:{n:'アクセサリー', items:{none:{n:'なし',lv:1,cost:0}, glasses:{n:'メガネ',lv:2,cost:60}, backpack:{n:'リュック',lv:3,cost:100,colors:['#c4304a','#1c2133','#3ee6a0']}, scarf:{n:'マフラー',lv:5,cost:90,colors:['#c4304a','#ffc24d','#3fb8ff','#eef0f6']}, cape:{n:'マント',lv:20,cost:1200,colors:['#c4304a','#1c2133','#a46bff']}, wings:{n:'天使の羽',lv:30,cost:3500}}}
+};
+const WEAR_SLOTS = ['head','top','bottom','shoes','acc'];
+const DEF_WEAR = {head: 'none', top: 'hoodie', bottom: 'pants', shoes: 'sneakers', acc: 'none'};
+function defaultLook(gender = 'boy'){ return {gender, hair: gender === 'girl' ? 'long' : 'short', hc: 0, skin: 0, wear: {...DEF_WEAR, bottom: gender === 'girl' ? 'skirt' : 'pants'}, wc: {}}; }
+function randomLook(gender, seed){
+  let s = hashStr(String(seed)) || 1; const r = n => { s = (Math.imul(s, 1103515245) + 12345) >>> 0; return (s >>> 8) % n; };
+  const hairs = HAIRS[gender].map(h => h[0]);
+  return {gender, hair: hairs[r(hairs.length)], hc: r(4), skin: r(3),
+    wear: {head: 'none', top: ['hoodie','sweater','tshirt','jersey'][r(4)], bottom: gender === 'girl' ? ['skirt','longskirt','jeans'][r(3)] : ['pants','jeans','shorts'][r(3)], shoes: 'sneakers', acc: r(4) === 0 ? 'glasses' : 'none'},
+    wc: {top: r(4), bottom: r(3), shoes: r(3)}};
+}
+const wcol = (L, slot) => { const it = WEAR[slot].items[(L.wear || {})[slot]] || WEAR[slot].items[DEF_WEAR[slot]]; const cols = it.colors || ['#888888']; return cols[((L.wc || {})[slot] || 0) % cols.length]; };
+function upperParts(L){
+  const sk = SKINS[L.skin || 0], hc = HAIRC[L.hc || 0], w = Object.assign({}, DEF_WEAR, L.wear || {}), P = [], b = (...a) => P.push(a);
+  const tc = w.top === 'astronaut' ? '#eef0f6' : wcol(L, 'top'), dark = mix(tc, '#000000', .25);
+  if (w.acc === 'cape') b(.29, .34, .45, .42, .04, .9, wcol(L, 'acc'));
+  if (w.acc === 'wings') { b(.1, .32, .95, .2, .04, .62, '~#dce8ff'); b(.7, .32, .95, .2, .04, .62, '~#dce8ff'); }
+  if (w.acc === 'backpack') b(.33, .29, .85, .34, .12, .42, wcol(L, 'acc'));
+  if (w.top === 'astronaut') { b(.27, .37, .68, .46, .3, .66, tc); b(.18, .42, .78, .09, .18, .52, tc); b(.73, .42, .78, .09, .18, .52, tc); b(.4, .67, .95, .2, .005, .14, '!#22e4ff'); }
+  else {
+    b(.3, .4, .7, .4, .24, .62, tc);
+    if (w.top === 'tshirt') { for (const ax of [.22, .7]) { b(ax, .43, 1.1, .08, .16, .22, tc); b(ax + .005, .44, .8, .07, .14, .3, sk); } }
+    else { b(.22, .43, .8, .08, .16, .52, tc); b(.7, .43, .8, .08, .16, .52, tc); }
+    b(.22, .45, .72, .08, .12, .08, sk); b(.7, .45, .72, .08, .12, .08, sk);
+    if (w.top === 'uniform' || w.top === 'suit') { b(.45, .64, .95, .1, .005, .37, '#f4f6fb'); b(.485, .645, .98, .03, .005, .3, w.top === 'suit' ? '#3d7bff' : '#c8102e'); }
+    if (w.top === 'sailor') { b(.32, .62, 1.17, .36, .03, .15, tc === '#eef0f6' ? '#1d2a6b' : '#eef0f6'); b(.46, .645, 1.02, .08, .005, .13, '#c8102e'); }
+    if (w.top === 'jersey') { b(.305, .64, .7, .03, .005, .62, '#eef0f6'); b(.665, .64, .7, .03, .005, .62, '#eef0f6'); }
+    if (w.top === 'hoodie') { b(.36, .36, 1.24, .28, .06, .18, tc); b(.38, .64, .76, .24, .005, .12, dark); }
+    if (w.top === 'sweater') b(.3, .4, .7, .4, .245, .05, dark);
+    if (w.top === 'kimono') { b(.3, .4, .92, .4, .245, .1, '#d6b25e'); b(.44, .64, 1.15, .12, .005, .15, '#f4f6fb'); }
+  }
+  b(.45, .47, 1.32, .1, .1, .06, sk);
+  if (w.acc === 'scarf') { b(.32, .42, 1.26, .36, .22, .1, wcol(L, 'acc')); b(.36, .64, 1.0, .08, .03, .26, wcol(L, 'acc')); }
+  // hair behind the head first
+  const H = L.hair || 'short';
+  if (H === 'long') b(.32, .33, 1.05, .36, .1, .65, hc);
+  else if (H === 'pony') { b(.33, .35, 1.4, .34, .08, .3, hc); b(.44, .27, 1.15, .12, .08, .42, hc); }
+  else if (H === 'bob') b(.32, .33, 1.3, .36, .1, .42, hc);
+  else b(.33, .35, 1.4, .34, .08, .3, hc);
+  b(.35, .37, 1.38, .3, .3, .34, sk);
+  b(.4, .67, 1.5, .05, .005, .06, '#1c2133'); b(.55, .67, 1.5, .05, .005, .06, '#1c2133'); b(.44, .67, 1.42, .12, .005, .02, '#e07a7a');
+  if (L.gender === 'girl') { b(.365, .67, 1.43, .04, .004, .03, '#f4a3a3'); b(.595, .67, 1.43, .04, .004, .03, '#f4a3a3'); }
+  if (H === 'long' || H === 'bob') { b(.32, .37, H === 'long' ? 1.12 : 1.3, .04, .25, H === 'long' ? .58 : .4, hc); b(.64, .37, H === 'long' ? 1.12 : 1.3, .04, .25, H === 'long' ? .58 : .4, hc); }
+  const hat = ['cap','beanie','crown'].includes(w.head);
+  b(.33, .35, 1.66, .34, .34, .12, hc); b(.35, .62, 1.62, .3, .06, .06, hc);
+  if (H === 'spiky' && !hat) { b(.36, .4, 1.78, .08, .08, .07, hc); b(.46, .46, 1.78, .08, .08, .09, hc); b(.56, .4, 1.78, .08, .08, .07, hc); }
+  if (w.acc === 'glasses') { b(.385, .675, 1.48, .1, .005, .08, '~#bcd4ff'); b(.525, .675, 1.48, .1, .005, .08, '~#bcd4ff'); b(.485, .676, 1.52, .04, .004, .015, '#1c2133'); }
+  const hcl = WEAR.head.items[w.head] && WEAR.head.items[w.head].colors ? wcol(L, 'head') : '#ffffff';
+  if (w.head === 'cap') { b(.32, .34, 1.7, .36, .36, .12, hcl); b(.36, .7, 1.71, .28, .14, .03, hcl); }
+  if (w.head === 'beanie') { b(.32, .34, 1.64, .36, .36, .22, hcl); b(.47, .49, 1.86, .06, .06, .06, '#ffffff'); }
+  if (w.head === 'hachimaki') { b(.34, .36, 1.58, .32, .32, .06, '#f4f6fb'); b(.47, .68, 1.585, .06, .005, .05, '#c8102e'); b(.48, .3, 1.46, .04, .06, .14, '#f4f6fb'); }
+  if (w.head === 'ribbon') { b(.56, .42, 1.76, .16, .06, .08, hcl); b(.61, .43, 1.73, .06, .04, .14, hcl); }
+  if (w.head === 'headphones') { b(.33, .48, 1.78, .34, .06, .04, '#1c2133'); b(.3, .44, 1.42, .05, .16, .17, hcl); b(.65, .44, 1.42, .05, .16, .17, hcl); }
+  if (w.head === 'crown') { b(.38, .4, 1.78, .24, .24, .08, '!#ffc24d'); b(.38, .4, 1.86, .05, .05, .06, '!#ffc24d'); b(.475, .475, 1.86, .05, .05, .08, '!#ff5c7a'); b(.57, .57, 1.86, .05, .05, .06, '!#ffc24d'); }
+  if (w.top === 'astronaut') b(.31, .33, 1.34, .38, .38, .5, '~#bcd4ff');
+  return P;
+}
+function legParts(L, pose, seatZ){
+  const sk = SKINS[L.skin || 0], w = Object.assign({}, DEF_WEAR, L.wear || {}), P = [], b = (...a) => P.push(a);
+  const astro = w.top === 'astronaut', bc = astro ? '#eef0f6' : wcol(L, 'bottom');
+  const sc = w.shoes === 'goldshoes' ? '!#ffc24d' : astro ? '#d8dde8' : wcol(L, 'shoes');
+  const bot = astro ? 'pants' : w.top === 'kimono' ? 'kimono' : w.bottom;
+  if (pose === 'sit') {
+    const z = seatZ;
+    b(.33, .76, 0, .14, .2, .08, sc); b(.53, .76, 0, .14, .2, .08, sc);
+    const shin = bot === 'pants' || bot === 'jeans' ? bc : sk;
+    b(.34, .78, .08, .12, .1, z - .08, shin); b(.54, .78, .08, .12, .1, z - .08, shin);
+    if (bot === 'skirt' || bot === 'longskirt' || bot === 'kimono') b(.29, .4, z, .42, .46, .14, bot === 'kimono' ? wcol(L, 'top') : bc);
+    else { const tc = bot === 'shorts' ? bc : bc; b(.34, .42, z, .12, .44, .12, tc); b(.54, .42, z, .12, .44, .12, tc); }
+    return P;
+  }
+  const sh = w.shoes === 'boots' ? .22 : w.shoes === 'slippers' ? .05 : .08;
+  b(.33, .42, 0, .14, .22, sh, sc); b(.53, .42, 0, .14, .22, sh, sc);
+  if (bot === 'kimono') { b(.35, .46, sh, .1, .1, Math.max(.02, .2 - sh), sk); b(.3, .4, .2, .4, .24, .5, wcol(L, 'top')); }
+  else if (bot === 'shorts') { b(.35, .46, sh, .1, .1, .45 - sh, sk); b(.55, .46, sh, .1, .1, .45 - sh, sk); b(.34, .45, .45, .12, .12, .25, bc); b(.54, .45, .45, .12, .12, .25, bc); }
+  else if (bot === 'skirt') { b(.35, .46, sh, .1, .1, .5 - sh, sk); b(.55, .46, sh, .1, .1, .5 - sh, sk); b(.29, .38, .45, .42, .28, .3, bc); }
+  else if (bot === 'longskirt') { if (sh < .18) { b(.35, .46, sh, .1, .1, .18 - sh, sk); b(.55, .46, sh, .1, .1, .18 - sh, sk); } b(.29, .38, .18, .42, .28, .57, bc); }
+  else { b(.34, .45, sh, .12, .12, .7 - sh, bc); b(.54, .45, sh, .12, .12, .7 - sh, bc); }
+  return P;
+}
+function babyParts(L){
+  const sk = SKINS[L.skin || 0], hc = HAIRC[L.hc || 0], tc = wcol(L, 'top');
+  return [[.34, .36, 0, .32, .32, .24, tc], [.3, .5, 0, .1, .1, .14, tc], [.6, .5, 0, .1, .1, .14, tc], [.36, .38, .24, .28, .28, .26, sk], [.41, .66, .36, .04, .005, .05, '#1c2133'], [.55, .66, .36, .04, .005, .05, '#1c2133'], [.44, .4, .5, .12, .12, .05, hc]];
+}
+const scaleParts = (P, s) => s === 1 ? P : P.map(([x, y, z, w, d, h, c]) => [.5 + (x - .5) * s, .5 + (y - .5) * s, z * s, w * s, d * s, h * s, c]);
+function personParts(L, pose = 'stand', o = {}){
+  if (o.stage === 0) return babyParts(L);
+  const s = o.stage === 1 ? .62 : o.stage === 2 ? .84 : 1;
+  if (pose === 'sit') {
+    const dz = (o.seatZ || .78) - .7;
+    const up = upperParts(L).map(([x, y, z, w, d, h, c]) => [x, y, z + dz, w, d, h, c]);
+    return scaleParts([...legParts(L, 'sit', o.seatZ || .78), ...up], s).map(([x, y, z, w, d, h, c]) => [x, Math.min(1 - d, 1 - y - d + .08), z, w, d, h, c]);
+  }
+  return scaleParts([...legParts(L, 'stand'), ...upperParts(L)], s);
+}
+function sleepParts(L, sd, cx, blanket, small){
+  const sk = SKINS[L.skin || 0], hc = HAIRC[L.hc || 0], k = small ? .7 : 1, hz = sd.head, by = sd.by;
+  return [[cx - .16 * k, by - .05, hz, .32 * k, .1, .22 * k, hc], [cx - .15 * k, by, hz, .3 * k, .28 * k, .26 * k, sk], [cx - .09 * k, by + .16 * k, hz + .26 * k, .05, .04, .005, '#1c2133'], [cx + .04 * k, by + .16 * k, hz + .26 * k, .05, .04, .005, '#1c2133'],
+    [cx - .3 * k, by + .3 * k, sd.body, .6 * k, sd.len * (small ? .75 : 1), .14, blanket]];
+}
+const PERSON_T = ['buddy', 'partner', 'kid'];
+Object.assign(F, {
+  partner:{n:'パートナー', lv:1, cost:0, buddy:true, person:true, W:1, D:1, colors:['#888888'], parts:[]},
+  kid:{n:'子ども', lv:1, cost:0, buddy:true, person:true, W:1, D:1, colors:['#888888'], parts:[]},
+  futon:{n:'布団', lv:2, cost:80, W:1, D:2, sleep:{head:.17, body:.18, by:.1, len:1.35, slots:[.5]}, colors:['#7ab0e8','#ffb0c8','#c9b79a'], parts:[[.05,.05,0,.9,1.9,.12,'#f4f6fb'],[.2,.1,.12,.6,.25,.08,'#ffffff'],[.05,.5,.12,.9,1.45,.06,'m']]},
+  pendant:{n:'ペンダントライト', lv:2, cost:70, hang:true, W:1, D:1, glow:'#ffe2ad', colors:['#2b3045','#eef0f6','#c79a4a'], parts:[[.48,.48,3,.04,.04,.8,'#1c2133'],[.3,.3,2.7,.4,.4,.3,'m'],[.38,.38,2.68,.24,.24,.03,'!#fff3c4']]},
+  garland:{n:'ガーランドライト', lv:3, cost:90, wall:true, W:2, H:.5, zb:3, colors:['#ffd66b','#ff8fb8','#7dd3fc']},
+  ceiling:{n:'シーリングライト', lv:5, cost:160, hang:true, W:1, D:1, glow:'#f4f8ff', colors:['#eef0f6','#c9b79a'], parts:[[.12,.12,3.7,.76,.76,.06,'m'],[.18,.18,3.6,.64,.64,.1,'!#f4f8ff']]},
+  kitchen:{n:'キッチン', lv:10, cost:400, W:2, D:1, surf:1.2, colors:['#eef0f6','#6b4a32','#2b3045'], parts:[[0,.05,0,2,.9,1.1,'m'],[.05,.95,.15,.9,.01,.8,'md'],[1.05,.95,.15,.9,.01,.8,'md'],[0,0,1.1,2,1,.1,'#d8dde8'],[.3,.25,1.16,.5,.45,.05,'#8a93a8'],[.52,.12,1.2,.06,.06,.32,'#c9ccd6'],[1.25,.25,1.2,.5,.45,.02,'#1c2133'],[1.4,.35,1.22,.2,.2,.01,'!#ff5c3a']]},
+  dining:{n:'ダイニングテーブル', lv:10, cost:350, W:2, D:1, surf:1, colors:['#9a7552','#eef0f6','#3b4058'], parts:[...LEGS(2,1,.9,.1), [0,0,.9,2,1,.1,'m'],[.3,.3,1,.3,.3,.02,'#ffffff'],[1.4,.4,1,.3,.3,.02,'#ffffff']]},
+  tv_stand:{n:'テレビ', lv:10, cost:450, W:2, D:1, colors:['#2b3045','#9a7552','#eef0f6'], parts:[[.1,.3,0,1.8,.6,.45,'m'],[.15,.45,.5,1.7,.08,1,'#0b0d14'],[.2,.53,.55,1.6,.005,.9,'!#3fb8ff']]},
+  crib:{n:'ベビーベッド', lv:12, cost:300, W:1, D:1, sleep:{head:.41, body:.41, by:.15, len:.5, slots:[.5], baby:true}, colors:['#eef0f6','#cdb38c','#ffc0d6'], parts:[[.05,.05,0,.06,.06,.85,'m'],[.89,.05,0,.06,.06,.85,'m'],[.05,.89,0,.06,.06,.85,'m'],[.89,.89,0,.06,.06,.85,'m'],[.05,.05,.25,.9,.9,.1,'ml'],[.1,.1,.35,.8,.8,.06,'#f4f6fb'],[.05,.05,.41,.9,.04,.4,'~m'],[.05,.91,.41,.9,.04,.4,'~m']]},
+  toybox:{n:'おもちゃ箱', lv:12, cost:150, W:1, D:1, colors:['#3fb8ff','#ff6fb0','#3ee6a0'], parts:[[.15,.2,0,.7,.6,.45,'m'],[.12,.17,.45,.76,.66,.06,'md'],[.25,.3,.51,.15,.15,.15,'#ffc24d'],[.5,.35,.51,.16,.16,.16,'#c4304a']]},
+  bathtub:{n:'お風呂（浴槽）', lv:20, cost:900, W:2, D:1, colors:['#eef0f6','#c9a77a','#ffc0d6'], parts:[[0,.05,0,2,.9,.65,'m'],[.12,.15,.5,1.76,.7,.1,'~#7dd3fc'],[1.8,.1,.65,.08,.1,.25,'#c9ccd6']]},
+  tree:{n:'庭の木', lv:22, cost:500, W:1, D:1, colors:['#2f9e6a','#ff9fc4','#e8792f'], parts:[[.42,.42,0,.16,.16,1.2,'#6b4a32'],[.1,.1,1.1,.8,.8,.7,'m'],[.25,.25,1.8,.5,.5,.45,'ml']]},
+  flowerbed:{n:'花壇', lv:22, cost:250, W:2, D:1, colors:['#ff6fb0','#c4304a','#a46bff'], parts:[[0,.1,0,2,.8,.3,'#8a6a4a'],[.05,.15,.3,1.9,.7,.03,'#4a3426'],[.15,.3,.33,.12,.12,.2,'m'],[.45,.5,.33,.12,.12,.25,'#ffc24d'],[.75,.25,.33,.12,.12,.22,'m'],[1.05,.55,.33,.12,.12,.2,'#eef0f6'],[1.35,.3,.33,.12,.12,.24,'m'],[1.65,.5,.33,.12,.12,.2,'#ffc24d']]}
+});
+F.bed.sleep = {head: .78, body: .79, by: .22, len: 1.6, slots: [.55, 1.45]};
+F.buddy.person = true;
+const ROOM_KINDS = {
+  study:{n:'勉強部屋', lv:1, cost:0},
+  living:{n:'リビング', lv:10, cost:800, size:7, wall:'ivory', floor:'wood', start:[['tv_stand',2,0,0],['carpet',2,1,0],['sofa',2,3,2],['plant',0,0,0],['pendant',3,2,0],['lamp_small',5,0,0]]},
+  kitchen:{n:'キッチン', lv:12, cost:900, size:6, wall:'ivory', floor:'darktile', start:[['kitchen',1,0,0],['fridge',3,0,0],['dining',1,3,0],['chair_basic',1,4,0],['chair_basic',2,4,0],['pendant',2,3,0]]},
+  bedroom:{n:'寝室', lv:14, cost:900, size:6, wall:'midnight', floor:'grey', start:[['bed',0,0,0],['lamp_small',2,0,0],['carpet',2,3,0]]},
+  kids:{n:'子ども部屋', lv:16, cost:1000, size:6, wall:'sakura', floor:'wood', start:[['futon',0,0,0],['crib',2,0,0],['toybox',4,0,0],['desk_basic',3,3,0],['chair_basic',3,4,0]]},
+  bath:{n:'お風呂', lv:20, cost:1200, size:5, wall:'slate', floor:'checker', start:[['bathtub',0,0,0],['plant',4,0,0]]},
+  garden:{n:'庭', lv:22, cost:1500, size:8, wall:'garden', floor:'grass', start:[['tree',1,1,0],['tree',6,1,0],['flowerbed',2,5,0],['beanbag',5,5,0]]},
+  library:{n:'図書室', lv:26, cost:1800, size:7, wall:'wood', floor:'marble', start:[['bookshelf',0,0,0],['bookshelf',2,0,0],['desk_pro',2,3,0],['chair_basic',2,4,0],['arclamp',5,3,0]]},
+  observatory:{n:'天体観測室', lv:30, cost:2500, size:6, wall:'space', floor:'stars', start:[['telescope',2,1,0],['sofa',2,4,0]]}
+};
+const PLOT = [[0,0],[1,0],[0,1],[1,1],[2,0],[2,1],[0,2],[1,2],[2,2]];
+const PLOT_LV = [1, 10, 15, 15, 22, 22, 30, 30, 30];
+const plotOpen = lv => PLOT_LV.filter(l => lv >= l).length;
+function curEntry(){ const st = S(); if (!UI.roomId || UI.roomId === 'study' || UI.roomId === 'house') return null; return (st.house.rooms || []).find(r => r.id === UI.roomId) || null; }
+const CR = () => { const e = curEntry(); return e ? e.room : S().room; };
+const studySize = () => STAGES[stageFor(stats().level)].size;
+const sizeOf = e => e ? (ROOM_KINDS[e.kind].size || 6) : studySize();
+const allRooms = () => [S().room, ...((S().house || {}).rooms || []).map(r => r.room)];
+const allItems = () => allRooms().flatMap(r => r.items || []);
+function roomNameOf(id){ if (!id || id === 'study') return '勉強部屋'; const e = S().house.rooms.find(r => r.id === id); return e ? (e.name || ROOM_KINDS[e.kind].n) : '勉強部屋'; }
+function initPlaceIn(room, N, t){
+  const d = F[t], items = room.items;
+  if (d.wall) { for (const side of ['R', 'L']) for (let p = 0; p + d.W <= N; p++) if (canPlaceWall(items, N, t, side, p)) return {t, side, x: p, y: 0, r: 0, ok: true}; return {t, side: 'R', x: 0, y: 0, r: 0, ok: false}; }
+  const c = []; for (let ax = 0; ax + d.W <= N; ax++) for (let ay = 0; ay + d.D <= N; ay++) c.push({ax, ay, dist: (ax + d.W / 2 - N / 2) ** 2 + (ay + d.D / 2 - N / 2) ** 2});
+  c.sort((p, q) => p.dist - q.dist); const f = c.find(q => canPlace(items, N, t, q.ax, q.ay, 0));
+  return {t, r: 0, x: f ? f.ax : 0, y: f ? f.ay : 0, ok: !!f};
+}
+function putInto(room, N, t, extra = {}){
+  const pl = initPlaceIn(room, N, t); if (!pl.ok) return false;
+  room.items.push(Object.assign(F[t].wall ? {id: uid6(), t, side: pl.side, x: pl.x, y: 0, r: 0, c: 0} : {id: uid6(), t, x: pl.x, y: pl.y, r: 0, c: 0}, extra)); return true;
+}
+function buddyLook(){ return S().buddy.look; }
+function normLook(L, g){ const d = defaultLook((L && L.gender) || g || 'boy'); if (!L || typeof L !== 'object') return d; const o = Object.assign({}, d, L); o.wear = Object.assign({}, d.wear, L.wear || {}); o.wc = Object.assign({}, L.wc || {}); return o; }
+function lookOf(who){ const st = S(); if (who === 'buddy') return st.buddy.look; if (who === 'partner') return st.family.partner && st.family.partner.look; const k = st.family.kids.find(x => x.id === who); return k && k.look; }
+function whoName(who){ const st = S(); if (who === 'buddy') return st.buddy.name; if (who === 'partner') return st.family.partner ? st.family.partner.name : ''; const k = st.family.kids.find(x => x.id === who); return k ? k.name : ''; }
+const whoOfItem = it => it.t === 'kid' ? it.kid : it.t;
+function personInfo(it, room){
+  const st = S(), ppl = room && room.people;
+  if (ppl) { const p = ppl[it.t === 'kid' ? 'kid_' + it.kid : it.t] || {}; return {look: normLook(p.look), stage: p.stage, name: p.name || ''}; }
+  if (it.t === 'buddy') return {look: buddyLook(), name: st.buddy.name};
+  if (it.t === 'partner') { const p = st.family.partner; return p ? {look: p.look, name: p.name} : {look: defaultLook('girl'), name: ''}; }
+  const k = st.family.kids.find(x => x.id === it.kid); return k ? {look: k.look, stage: k.stage, name: k.name} : {look: defaultLook(), stage: 1, name: ''};
+}
+const parentWord = () => S().buddy.look.gender === 'girl' ? 'ママ' : 'パパ';
+/* poses: study at the desk, sleep at night, wander in the day */
+function lightState(room){
+  const h = new Date().getHours(), mode = (room && room.light) || 'auto', studying = typeof T !== 'undefined' && T.state === 'run';
+  const dark = h >= 18 || h < 6, dusk = h === 17 || h === 6;
+  const lit = mode === 'on' || (mode === 'auto' && (studying || (h >= 16 && h < 23) || (h >= 5 && h < 8)));
+  return {h, mode, dark, dusk, lit, shade: dark ? (lit ? .1 : .6) : dusk ? (lit ? .04 : .22) : 0};
+}
+function computePoses(items, room){
+  const out = {}, h = new Date().getHours(), night = h >= 23 || h < 6, studying = T.state === 'run' && T.phase === 'study' && !(room && room.people);
+  const ppl = items.filter(i => F[i.t] && F[i.t].person);
+  const beds = items.filter(i => F[i.t] && F[i.t].sleep).map(b => ({b, used: 0})).sort((p, q) => (q.b.t === 'bed') - (p.b.t === 'bed'));
+  const chairs = items.filter(i => i.t === 'chair_basic' || i.t === 'chair_gaming');
+  const near = c => items.some(o => /desk/.test(o.t) && Math.abs((o.x + footprint(o)[0] / 2) - (c.x + .5)) + Math.abs((o.y + footprint(o)[1] / 2) - (c.y + .5)) < 2.2);
+  chairs.sort((a, b) => near(b) - near(a));
+  const order = [...ppl].sort((a, b) => PERSON_T.indexOf(a.t) - PERSON_T.indexOf(b.t));
+  let chairUsed = 0;
+  const bedFor = baby => beds.find(x => x.used < F[x.b.t].sleep.slots.length && !!F[x.b.t].sleep.baby === baby) || (baby ? null : null);
+  for (const p of order) {
+    const info = personInfo(p, room), baby = info.stage === 0;
+    if (p.t === 'buddy' && studying && chairs[chairUsed]) { out[p.id] = {pose: 'sit', host: chairs[chairUsed++]}; continue; }
+    if (night) { const bed = bedFor(baby); if (bed) { out[p.id] = {pose: 'sleep', host: bed.b, slot: bed.used++}; continue; } }
+    if (p.t === 'buddy' && !night && chairs[chairUsed] && (hashStr(dkey() + h + Math.floor(new Date().getMinutes() / 20)) % 10) < 6) { out[p.id] = {pose: 'sit', host: chairs[chairUsed++]}; continue; }
+    out[p.id] = {pose: 'stand'};
+  }
+  return out;
+}
+function personBoxes(it, items, room, poses){
+  const info = personInfo(it, room), ps = poses[it.id] || {pose: 'stand'}, z0 = 0;
+  if (ps.pose === 'sleep') {
+    const bed = ps.host, sd = F[bed.t].sleep, [W, D] = [F[bed.t].W, F[bed.t].D], blanket = resolveCol('m', F[bed.t], bed.c || 0).c;
+    const parts = sleepParts(info.look, sd, sd.slots[ps.slot], mix(blanket, '#ffffff', .12), info.stage === 0 || info.stage === 1);
+    return parts.map(p => rotPart(p, W, D, bed.r || 0)).map(q => ({x: bed.x + q[0], y: bed.y + q[1], z: q[2], w: q[3], d: q[4], h: q[5], ...resolveCol(q[6], F[it.t], 0), iid: it.id}));
+  }
+  if (ps.pose === 'sit') {
+    const ch = ps.host, seatZ = ch.t === 'chair_gaming' ? .73 : .78;
+    return personParts(info.look, 'sit', {seatZ, stage: info.stage}).map(p => rotPart(p, 1, 1, ch.r || 0)).map(q => ({x: ch.x + q[0], y: ch.y + q[1], z: q[2], w: q[3], d: q[4], h: q[5], ...resolveCol(q[6], F[it.t], 0), iid: it.id}));
+  }
+  return personParts(info.look, 'stand', {stage: info.stage}).map(p => rotPart(p, 1, 1, it.r || 0)).map(q => ({x: it.x + q[0], y: it.y + q[1], z: z0 + q[2], w: q[3], d: q[4], h: q[5], ...resolveCol(q[6], F[it.t], 0), iid: it.id}));
+}
+function personThumb(look, stage){
+  const boxes = personParts(look, 'stand', {stage}).map(p => ({x: p[0], y: p[1], z: p[2], w: p[3], d: p[4], h: p[5], ...resolveCol(p[6], F.buddy, 0)}));
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+  for (const b of boxes) for (const pt of [P(b.x, b.y, b.z), P(b.x + b.w, b.y, b.z + b.h), P(b.x, b.y + b.d, b.z), P(b.x + b.w, b.y + b.d, b.z), P(b.x, b.y, b.z + b.h)]) { minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]); minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]); }
+  return `<svg viewBox="${(minX - 6).toFixed(0)} ${(minY - 6).toFixed(0)} ${(maxX - minX + 12).toFixed(0)} ${(maxY - minY + 12).toFixed(0)}">${sortBoxes(boxes).map(boxSVG).join('')}</svg>`;
+}
+/* ---------- family events ---------- */
+const NAMES = {boy: ['ハルト','ソウタ','ユウマ','リク','アオイ','ミナト','レン','カイ'], girl: ['ヒナ','ユイ','メイ','サクラ','リン','アカリ','ミオ','ツムギ']};
+const PNAMES = {boy: ['ユウキ','ショウ','ケンタ','タクミ','ダイチ'], girl: ['ミサキ','アヤ','ナナ','ユキ','カナ']};
+const KID_STAGE = ['赤ちゃん', '子ども', '学生', 'おとな'];
+const daysBetween = (a, b) => Math.round((parseD(b) - parseD(a)) / 86400000);
+function kidStage(k){ const m = stats().total - (k.minAt || 0); return m < 300 ? 0 : m < 1500 ? 1 : m < 3600 ? 2 : 3; }
+function famLog(text, icon){ const f = S().family; f.log.unshift({date: dkey(), text, icon: icon || 'star'}); f.log = f.log.slice(0, 60); }
+function familyTick(){
+  const st = S(); if (!st || !st.onboarded) return; const f = st.family, today = dkey(), x = stats(); let changed = false;
+  for (const k of f.kids) { if (k.left) continue; const sg = kidStage(k);
+    if (sg !== k.stage) { if (sg === 3) { if (!f.pending) { f.pending = {type: 'grown', kid: k.id}; changed = true; } }
+      else { k.stage = sg; famLog(`${k.name}が${KID_STAGE[sg]}になった`, 'star'); toast(`${k.name}が${KID_STAGE[sg]}になりました！あなたの勉強時間で大きくなっています。`, 'star', 5000); changed = true; } } }
+  if (f.lastRoll !== today && !f.pending) {
+    f.lastRoll = today; changed = true;
+    const roll = (hashStr(today + (UID || 'local') + 'fam') % 1000) / 1000;
+    const active = f.kids.filter(k => !k.left), lastBirth = f.kids.reduce((a, k) => k.born > a ? k.born : a, '');
+    if (!f.partner && x.level >= 8 && today >= (f.declinedUntil || '') && roll < .35) f.pending = {type: 'partner', seed: today};
+    else if (f.partner && x.level >= 12 && active.length < 3 && daysBetween(f.partner.since, today) >= 3 && (!lastBirth || daysBetween(lastBirth, today) >= 7) && roll < .25) f.pending = {type: 'child', seed: today};
+  }
+  if (changed) queueWrite('state');
+  if (f.pending && !UI.famQueued && (route() === 'room' || route() === 'home')) { UI.famQueued = true; setTimeout(() => queueOverlay(showFamilyEvent), 500); }
+}
+function placePerson(t, extra, prefer){
+  const st = S(), order = [...prefer.map(k => st.house.rooms.find(r => r.kind === k)).filter(Boolean), null];
+  for (const e of order) { const room = e ? e.room : st.room; if (putInto(room, sizeOf(e), t, extra)) return e ? (e.name || ROOM_KINDS[e.kind].n) : '勉強部屋'; }
+  return null;
+}
+function showFamilyEvent(){
+  UI.famQueued = false; const st = S(), f = st.family, ev = f.pending; if (!ev || modalOpen) return;
+  if (ev.type === 'partner') {
+    const d = UI.famDraft && UI.famDraft.seed === ev.seed ? UI.famDraft : (UI.famDraft = {seed: ev.seed, gender: st.buddy.look.gender === 'girl' ? 'boy' : 'girl', role: st.buddy.look.gender === 'girl' ? '夫' : '奥さん', name: ''});
+    const look = randomLook(d.gender, ev.seed + d.gender), nm = d.name || PNAMES[d.gender][hashStr(ev.seed) % PNAMES[d.gender].length];
+    showModal(`<div class="celebrate"><div class="eyebrow">EVENT</div><h3 style="margin-top:6px">ピンポーン♪ 誰かが訪ねてきた…</h3>
+      <div style="height:150px;margin:8px auto;width:120px">${personThumb(look)}</div>
+      <p class="note" style="font-size:14px">「いつも頑張ってるあなたを見ていました。一緒に暮らしませんか？」</p></div>
+      <form class="stack" data-form="fam-partner" style="gap:10px">
+        <div class="chips" style="justify-content:center">${[['girl','女性'],['boy','男性']].map(([g, n]) => `<button type="button" class="chip ${d.gender === g ? 'on' : ''}" style="--c:#a46bff" data-act="fam-g" data-v="${g}"><i></i>${n}</button>`).join('')}</div>
+        <div class="chips" style="justify-content:center">${['奥さん', '夫', 'パートナー'].map(r => `<button type="button" class="chip ${d.role === r ? 'on' : ''}" style="--c:#22e4ff" data-act="fam-role" data-v="${r}"><i></i>${r}</button>`).join('')}</div>
+        <label class="fld" for="fam-name">名前<input id="fam-name" type="text" maxlength="12" value="${esc(nm)}"></label>
+        <div class="acts"><button type="button" class="btn ghost" data-act="fam-decline">今はひとりで</button><button class="btn primary" type="submit">一緒に暮らす</button></div></form>`, {sticky: true});
+  } else if (ev.type === 'child') {
+    const d = UI.famDraft && UI.famDraft.seed === ev.seed ? UI.famDraft : (UI.famDraft = {seed: ev.seed, gender: hashStr(ev.seed + 'g') % 2 ? 'girl' : 'boy', name: ''});
+    const nm = d.name || NAMES[d.gender][hashStr(ev.seed) % NAMES[d.gender].length];
+    showModal(`<div class="celebrate">${burst()}<div class="eyebrow">EVENT</div><h3 style="margin-top:6px">おめでとう！赤ちゃんが生まれました</h3>
+      <div style="height:110px;margin:8px auto;width:100px">${personThumb(randomLook(d.gender, ev.seed + d.gender), 0)}</div>
+      <p class="note" style="font-size:14px">${esc(f.partner ? f.partner.name : '')}と${esc(st.buddy.name)}の子どもです。あなたが勉強した時間だけ、すくすく育ちます。</p></div>
+      <form class="stack" data-form="fam-child" style="gap:10px">
+        <div class="chips" style="justify-content:center">${[['boy','男の子'],['girl','女の子']].map(([g, n]) => `<button type="button" class="chip ${d.gender === g ? 'on' : ''}" style="--c:#ff6fb0" data-act="fam-g" data-v="${g}"><i></i>${n}</button>`).join('')}</div>
+        <label class="fld" for="fam-name">名前をつけよう<input id="fam-name" type="text" maxlength="12" value="${esc(nm)}"></label>
+        <div class="acts"><button class="btn primary wide" type="submit">この名前にする</button></div></form>`, {sticky: true});
+  } else if (ev.type === 'grown') {
+    const k = f.kids.find(x => x.id === ev.kid); if (!k) { f.pending = null; return; }
+    showModal(`<div class="celebrate"><div class="eyebrow">EVENT</div><h3 style="margin-top:6px">${esc(k.name)}が独り立ちする日がきました</h3>
+      <div style="height:150px;margin:8px auto;width:120px">${personThumb(k.look, 2)}</div>
+      <p style="font-size:14px">「${esc(parentWord())}、いままでありがとう。毎日勉強してる姿を見て、${k.gender === 'girl' ? 'わたし' : 'ぼく'}もがんばれたよ。いってきます！」</p>
+      <p class="note">${esc(k.name)}から仕送り <b style="color:var(--warn)">+300コイン</b></p>
+      <div class="acts" style="justify-content:center"><button class="btn primary" data-act="fam-grown">いってらっしゃい！</button></div></div>`, {sticky: true});
+  }
+}
+/* ---------- talk for family ---------- */
+function personLines(it, room){
+  const st = S(), info = personInfo(it), h = new Date().getHours(), poses = computePoses(room.items, room), ps = (poses[it.id] || {}).pose;
+  if (ps === 'sleep') return ['すぅ…すぅ…（ぐっすり眠っている）', 'むにゃむにゃ…あと5分…'];
+  if (it.t === 'buddy') return buddyLines(room, ps);
+  if (it.t === 'partner') { const p = st.family.partner || {}, L = [];
+    L.push(h < 10 ? 'おはよう！朝ごはん、ちゃんと食べた？' : h < 18 ? '今日も勉強がんばってるね。えらいよ。' : 'おかえり！今日もおつかれさま。');
+    L.push(`${st.buddy.name}、無理しすぎないでね。休むのも大事だよ。`);
+    if (p.since) L.push(`一緒に暮らしはじめて${daysBetween(p.since, dkey()) + 1}日目。毎日楽しいね。`);
+    if (st.family.kids.some(k => !k.left)) L.push('子どもたち、あなたが勉強するたびに大きくなってるよ。');
+    L.push('合格したら、みんなでお祝いしようね！');
+    return L; }
+  const k = st.family.kids.find(x => x.id === it.kid) || {}, pw = parentWord();
+  if (info.stage === 0) return ['ばぶー！', 'あー、うー！（にこにこ）', `（${pw}のことをじーっと見ている）`];
+  if (info.stage === 1) return [`${pw}、いっしょにあそぼ！`, `${k.gender === 'girl' ? 'わたし' : 'ぼく'}も おべんきょう する！`, `${pw}がべんきょうすると、${k.gender === 'girl' ? 'わたし' : 'ぼく'} おおきくなれるんだって！`, 'きょうね、ほいくえんでね…'];
+  return ['テスト前は自分も勉強してるよ。', `${pw}みたいに毎日続けるの、けっこう大変だね。`, '将来なにになろうかな…。', `あと少しでおとなだよ。${pw}、勉強がんばってね。`];
+}
+/* ---------- house plan ---------- */
+function houseSVG(){
+  const st = S(), lv = stats().level, open = plotOpen(lv), G = 3.6, SZ = 3, Hh = 1.3;
+  const cells = PLOT.map(([cx, cy], i) => ({i, cx, cy, room: i === 0 ? {id: 'study', kind: 'study', room: st.room} : st.house.rooms.find(r => r.cx === cx && r.cy === cy), open: i < open}));
+  const maxX = 3 * G, maxY = 3 * G;
+  let s = `<svg class="housesvg" viewBox="${(-maxY * TW - 20).toFixed(0)} ${(-Hh * ZS - 40).toFixed(0)} ${((maxX + maxY) * TW + 40).toFixed(0)} ${((maxX + maxY) * TH + Hh * ZS + 60).toFixed(0)}" role="img" aria-label="家の間取り">`;
+  s += `<polygon points="${poly([P(-.4, -.4, 0), P(maxX, -.4, 0), P(maxX, maxY, 0), P(-.4, maxY, 0)])}" fill="#16301f" stroke="#2f5c3a"/>`;
+  cells.sort((a, b) => (a.cx + a.cy) - (b.cx + b.cy));
+  for (const c of cells) {
+    const x0 = c.cx * G, y0 = c.cy * G, ctr = P(x0 + SZ / 2, y0 + SZ / 2, c.room ? Hh : 0);
+    if (c.room) {
+      const rm = c.room.room, fl = (FLOORS[rm.floor] || FLOORS.wood).c, wl = (WALLS[rm.wall] || WALLS.midnight).c, sel = UI.roomId === c.room.id || (!UI.roomId && c.i === 0);
+      const top = [P(x0, y0, Hh), P(x0 + SZ, y0, Hh), P(x0 + SZ, y0 + SZ, Hh), P(x0, y0 + SZ, Hh)], fy = [P(x0, y0 + SZ, 0), P(x0 + SZ, y0 + SZ, 0), P(x0 + SZ, y0 + SZ, Hh), P(x0, y0 + SZ, Hh)], fx = [P(x0 + SZ, y0, 0), P(x0 + SZ, y0 + SZ, 0), P(x0 + SZ, y0 + SZ, Hh), P(x0 + SZ, y0, Hh)];
+      const name = c.i === 0 ? '勉強部屋' : (c.room.name || ROOM_KINDS[c.room.kind].n), ppl = (rm.items || []).filter(i => F[i.t] && F[i.t].person).length;
+      s += `<g class="hcell" data-act="house-cell" data-v="${c.i}"><polygon points="${poly(fy)}" fill="${mix(wl, '#000000', .2)}" stroke="rgba(0,0,0,.4)"/><polygon points="${poly(fx)}" fill="${mix(wl, '#000000', .45)}" stroke="rgba(0,0,0,.4)"/><polygon points="${poly(top)}" fill="${fl}" stroke="${sel ? '#22e4ff' : 'rgba(255,255,255,.25)'}" stroke-width="${sel ? 3 : 1}"/>
+        <text x="${ctr[0].toFixed(0)}" y="${(ctr[1] + 5).toFixed(0)}" text-anchor="middle" font-size="22" font-weight="700" fill="#fff" stroke="#04050b" stroke-width="3" paint-order="stroke" font-family="'Zen Kaku Gothic New',sans-serif">${esc(name)}</text>${ppl ? `<text x="${ctr[0].toFixed(0)}" y="${(ctr[1] + 30).toFixed(0)}" text-anchor="middle" font-size="16" fill="#22e4ff" stroke="#04050b" stroke-width="3" paint-order="stroke">${ppl}人</text>` : ''}</g>`;
+    } else {
+      const pts = [P(x0, y0, 0), P(x0 + SZ, y0, 0), P(x0 + SZ, y0 + SZ, 0), P(x0, y0 + SZ, 0)];
+      s += c.open ? `<g class="hcell" data-act="house-cell" data-v="${c.i}"><polygon points="${poly(pts)}" fill="rgba(34,228,255,.08)" stroke="#22e4ff" stroke-dasharray="6 5" stroke-width="1.5"/><text x="${ctr[0].toFixed(0)}" y="${(ctr[1] + 5).toFixed(0)}" text-anchor="middle" font-size="20" fill="#22e4ff" font-weight="700" font-family="'Zen Kaku Gothic New',sans-serif">＋ 増築</text></g>`
+        : `<g><polygon points="${poly(pts)}" fill="rgba(0,0,0,.25)" stroke="rgba(255,255,255,.12)"/><text x="${ctr[0].toFixed(0)}" y="${(ctr[1] + 5).toFixed(0)}" text-anchor="middle" font-size="17" fill="#5a6382" font-family="'Chakra Petch',sans-serif">LV${PLOT_LV[c.i]}</text></g>`;
+    }
+  }
+  return s + '</svg>';
+}
+function showBuild(cell){
+  const st = S(), lv = stats().level, coins = stats().coins, built = new Set(st.house.rooms.map(r => r.kind));
+  showModal(`<h3>どんな部屋を建てる？</h3><p class="note" style="font-size:13px">所持コイン <b style="color:var(--warn)">${Math.max(0, coins).toLocaleString()}</b>。部屋には最初から家具がついてきます。</p>
+    <div class="list">${Object.entries(ROOM_KINDS).filter(([k]) => k !== 'study').map(([k, r]) => { const lock = lv < r.lv, has = built.has(k), poor = coins < r.cost;
+      return `<div class="li"><div class="t"><b>${esc(r.n)}</b><span>${has ? '建築済み' : lock ? `LV${r.lv}で解放` : `${r.size}×${r.size} · ${r.start.map(e => F[e[0]].n).filter((v, i, a) => a.indexOf(v) === i).join('・')}`}</span></div><span class="disp" style="flex:none">${r.cost}c</span><button class="btn sm ${lock || has || poor ? '' : 'primary'}" data-act="house-build" data-v="${k}" data-c="${cell}" ${lock || has || poor ? 'disabled' : ''}>${has ? '済' : lock ? 'ロック' : poor ? '不足' : '建てる'}</button></div>`; }).join('')}</div>
+    <div class="acts"><button class="btn ghost" data-act="modal-close">閉じる</button></div>`);
+}
+
 const F_ORDER_OLD = ['desk_basic','chair_basic','lamp_small','poster','banner','carpet','desk_pro','chair_gaming','bookshelf','plant','window','desklight','pc','monitor','clock','sofa','bed','trophy','neon','aquarium','bigwindow','hologram','trophycase'];
 const F_ORDER = Object.keys(F).filter(t => !F[t].buddy).sort((a, b) => F[a].lv - F[b].lv || F[a].cost - F[b].cost);
 const WALLS = {
   midnight:{n:'ミッドナイト', lv:1, c:'#151b30'}, slate:{n:'スレート', lv:1, c:'#2b303e'}, ivory:{n:'アイボリー', lv:3, c:'#d5d1c8'},
   wood:{n:'ウッドパネル', lv:5, c:'#5a4030'}, neongrid:{n:'ネオングリッド', lv:8, c:'#0b1020'}, sakura:{n:'桜', lv:12, c:'#3a2033'}, aurora:{n:'オーロラ', lv:18, c:'#2a1d55'},
-  space:{n:'宇宙', lv:25, c:'#05061a'}, gold:{n:'ゴールド', lv:32, c:'#2a2412'}
+  space:{n:'宇宙', lv:25, c:'#05061a'}, gold:{n:'ゴールド', lv:32, c:'#2a2412'}, garden:{n:'生け垣', lv:22, c:'#24553a'}
 };
 const FLOORS = {
   wood:{n:'フローリング', lv:1, c:'#6e5038'}, darktile:{n:'ダークタイル', lv:1, c:'#1b2030'}, grey:{n:'グレーカーペット', lv:3, c:'#3a3f4e'},
   tatami:{n:'畳', lv:5, c:'#9fae6b'}, checker:{n:'チェッカー', lv:8, c:'#2a2f45'}, marble:{n:'大理石', lv:12, c:'#dfe2ea'}, neon:{n:'ネオンフロア', lv:18, c:'#070a14'},
-  stars:{n:'星空の床', lv:25, c:'#060818'}, goldfloor:{n:'黄金の床', lv:32, c:'#3a3018'}
+  stars:{n:'星空の床', lv:25, c:'#060818'}, goldfloor:{n:'黄金の床', lv:32, c:'#3a3018'}, grass:{n:'芝生', lv:22, c:'#3f8a4a'}
 };
 
 /* ================= app state ================= */
@@ -661,7 +1004,8 @@ function defaultState(owner){
     owned: {desk_basic:1, chair_basic:1, lamp_small:1},
     spent: 0, bonus: 0, badges: {}, missions: {}, roomLog: [{stage: 0, date: today}],
     seenLevel: 1, prefs: {reviewTime: '22:00', stopSound: true, vol: .5, sound: 'rain'},
-    privacy: {share: true, room: true}, friends: [], groups: [], group: '', buddy: {name: 'ミライ', added: false}, created: Date.now()
+    privacy: {share: true, room: true}, friends: [], groups: [], group: '', buddy: {name: 'ミライ', added: false, look: defaultLook('boy'), closet: {}},
+    family: {partner: null, kids: [], log: [], lastRoll: '', pending: null, declinedUntil: ''}, house: {rooms: []}, created: Date.now()
   };
 }
 function normState(s){
@@ -672,6 +1016,14 @@ function normState(s){
   o.privacy = Object.assign({}, d.privacy, s.privacy || {});
   o.room = Object.assign({}, d.room, s.room || {});
   o.buddy = Object.assign({}, d.buddy, s.buddy || {});
+  o.buddy.look = normLook(o.buddy.look, o.buddy.gender); if (!o.buddy.closet || typeof o.buddy.closet !== 'object') o.buddy.closet = {};
+  o.family = Object.assign({}, d.family, s.family || {});
+  for (const k of ['kids', 'log']) if (!Array.isArray(o.family[k])) o.family[k] = [];
+  if (o.family.partner) o.family.partner.look = normLook(o.family.partner.look, o.family.partner.gender);
+  for (const k of o.family.kids) k.look = normLook(k.look, k.gender);
+  o.house = Object.assign({}, d.house, s.house || {}); if (!Array.isArray(o.house.rooms)) o.house.rooms = [];
+  o.house.rooms = o.house.rooms.filter(r => r && ROOM_KINDS[r.kind]);
+  for (const r of o.house.rooms) { r.room = Object.assign({wall: 'ivory', floor: 'wood', items: [], light: 'auto'}, r.room || {}); if (!Array.isArray(r.room.items)) r.room.items = []; }
   if (!Array.isArray(o.room.items)) o.room.items = [];
   for (const k of ['subjects','exams','targets','friends','roomLog','groups']) if (!Array.isArray(o[k])) o[k] = d[k];
   if (o.group && !o.groups.some(g => g.c === o.group)) o.groups.push({c: o.group, n: o.group}); o.group = '';
@@ -867,12 +1219,12 @@ async function refreshPub(force){
 function ensureBuddy(){
   const st = S(); if (st.buddy.added) return;
   st.owned.buddy = Math.max(1, st.owned.buddy || 0);
-  if (!st.room.items.some(i => i.t === 'buddy')) { const pl = initPlace('buddy'); if (placeOk(pl)) st.room.items.push({id: 'buddy', t: 'buddy', x: pl.x, y: pl.y, r: 0, c: 0}); }
+  if (!allItems().some(i => i.t === 'buddy')) { const pl = initPlace('buddy'); if (placeOk(pl)) st.room.items.push({id: 'buddy', t: 'buddy', x: pl.x, y: pl.y, r: 0, c: 0}); }
   st.buddy.added = true; queueWrite('state');
 }
 function afterDataReady(){
   ensureBuddy();
-  render();
+  render(); setTimeout(familyTick, 1800);
   checkRoomStage(true); checkBadges(true); checkMissions(true);
   setTimeout(publishPub, 2500);
   if (!S().onboarded) setTimeout(showOnboarding, 300);
@@ -885,8 +1237,13 @@ function buildPub(){
   return {
     code: st.code, nick: (st.nickname || '').slice(0, 20), lv: x.level, tot: x.total,
     wk: weekStart(today), wMin: x.weekMin, mo: monthOf(today), mMin: x.monthMin, streak: x.streak,
-    groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200), room: st.privacy.room ? {wall: st.room.wall, floor: st.room.floor, items: st.room.items, size: STAGES[stageFor(x.level)].size, stage: stageFor(x.level)} : null
+    groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200), room: st.privacy.room ? {wall: st.room.wall, floor: st.room.floor, light: st.room.light || 'auto', items: st.room.items, size: STAGES[stageFor(x.level)].size, stage: stageFor(x.level), people: pubPeople(st.room), rooms: st.house.rooms.length + 1} : null
   };
+}
+function pubPeople(room){
+  const st = S(), out = {};
+  for (const it of room.items) { if (!F[it.t] || !F[it.t].person) continue; const info = personInfo(it); out[it.t === 'kid' ? 'kid_' + it.kid : it.t] = {name: info.name, look: info.look, stage: info.stage}; }
+  return out;
 }
 function publishPub(delay = 1500){
   if (MODE !== 'cloud') return;
@@ -929,7 +1286,8 @@ function stats(){
   const st = S();
   const coins = total + (st.bonus || 0) - (st.spent || 0);
   const val = {sessions: ss, count: ss.length, byDay, subjDay, total, xp: total, level, coins, streak, best: Math.max(best, streak), maxSession, early,
-    goalDays, reviews, subjUsed: subjects.size, weekMin, monthMin, today: byDay[today] || 0, placed: st.room.items.length};
+    goalDays, reviews, subjUsed: subjects.size, weekMin, monthMin, today: byDay[today] || 0, placed: allItems().length,
+    fam: st.family && st.family.partner ? 1 : 0, kids: st.family ? st.family.kids.length : 0, grown: st.family ? st.family.kids.filter(k => k.left).length : 0, rooms: st.house ? st.house.rooms.length : 0};
   statCache = {v: dataV, val};
   return val;
 }
@@ -1046,7 +1404,7 @@ function render(){
   v.innerHTML = `<div class="stack fadein">${VIEWS[r]()}</div>`;
   if (r === 'timer') updateTimerUI();
 }
-window.addEventListener('hashchange', () => { UI.sel = null; UI.place = null; if (route() === 'room') UI.buddyIdx = 0; if (route() !== 'chat') closeChat(); if (route() !== 'review') UI.rvDate = null; render(); window.scrollTo(0, 0); });
+window.addEventListener('hashchange', () => { UI.sel = null; UI.place = null; if (route() === 'room') UI.buddyIdx = 0; if (route() === 'room' || route() === 'home') setTimeout(familyTick, 300); if (route() !== 'chat') closeChat(); if (route() !== 'review') UI.rvDate = null; render(); window.scrollTo(0, 0); });
 
 /* ================= charts ================= */
 function ringSVG(pct, size = 176, stroke = 12, id = 'rg'){
@@ -1102,7 +1460,7 @@ function resolveCol(key, def, ci){
   return {c, emi, tr};
 }
 function surfaceAt(items, x, y, excludeId){
-  for (const o of items) { if (o.id === excludeId) continue; const d = F[o.t]; if (!d || d.wall || d.rug || d.small) continue;
+  for (const o of items) { if (o.id === excludeId) continue; const d = F[o.t]; if (!d || d.wall || d.rug || d.small || d.hang) continue;
     const [w, dd] = footprint(o); if (x >= o.x && x < o.x + w && y >= o.y && y < o.y + dd) return {item: o, surf: d.surf || null}; }
   return null;
 }
@@ -1114,6 +1472,7 @@ function canPlace(items, N, t, x, y, r, excludeId){
   if (x < 0 || y < 0 || x + w > N || y + dd > N) return false;
   for (const o of items) {
     if (o.id === excludeId) continue; const od = F[o.t]; if (!od || od.wall) continue;
+    if (!!d.hang !== !!od.hang) continue;
     const [ow, odd] = footprint(o);
     const ov = x < o.x + ow && o.x < x + w && y < o.y + odd && o.y < y + dd;
     if (!ov) continue;
@@ -1141,7 +1500,9 @@ function sortBoxes(boxes){
     return false;
   };
   const indeg = new Array(n).fill(0), adj = Array.from({length: n}, () => []);
-  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j && before(boxes[i], boxes[j]) && !before(boxes[j], boxes[i])) { adj[i].push(j); indeg[j]++; }
+  const bb = boxes.map(b => [(b.x - b.y - b.d) * TW, (b.x + b.w - b.y) * TW, (b.x + b.y) * TH - (b.z + b.h) * ZS, (b.x + b.w + b.y + b.d) * TH - b.z * ZS]);
+  const meet = (i, j) => bb[i][0] < bb[j][1] - .3 && bb[j][0] < bb[i][1] - .3 && bb[i][2] < bb[j][3] - .3 && bb[j][2] < bb[i][3] - .3;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j && meet(i, j) && before(boxes[i], boxes[j]) && !before(boxes[j], boxes[i])) { adj[i].push(j); indeg[j]++; }
   const out = [], used = new Array(n).fill(false);
   for (let step = 0; step < n; step++) {
     let pick = -1; for (let i = 0; i < n; i++) if (!used[i] && indeg[i] === 0) { pick = i; break; }
@@ -1173,7 +1534,9 @@ function wallItemSVG(it, pfx){
     for (let x = .1; x < W - .1; x += .18 + rnd() * .12) { const bh = .25 + rnd() * (H * .45), bw = .14 + rnd() * .1;
       city += `<rect x="${x.toFixed(2)}" y=".08" width="${bw.toFixed(2)}" height="${bh.toFixed(2)}" fill="#0b1124"/>`;
       for (let wy = .16; wy < bh; wy += .12) for (let wx = x + .03; wx < x + bw - .03; wx += .06) if (rnd() < .4) city += `<rect x="${wx.toFixed(2)}" y="${wy.toFixed(2)}" width=".025" height=".04" fill="${rnd() < .5 ? '#ffd66b' : '#7dd3fc'}"/>`; }
-    return `<rect x="0" y="0" width="${W}" height="${H}" fill="url(#${pfx}sky)"/><circle cx="${(W * .78).toFixed(2)}" cy="${(H * .78).toFixed(2)}" r=".14" fill="#f4f1e0" style="filter:drop-shadow(0 0 4px #fff)"/>${city}<rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="${c}" stroke-width="3" ${ns}/><line x1="${W / 2}" y1="0" x2="${W / 2}" y2="${H}" stroke="${c}" stroke-width="2" ${ns}/><line x1="0" y1="${H / 2}" x2="${W}" y2="${H / 2}" stroke="${c}" stroke-width="1.5" ${ns}/><rect x="-.06" y="-.08" width="${W + .12}" height=".08" fill="${c}"/>`;
+    const hr = new Date().getHours(), day = hr >= 7 && hr < 17, nightCity = !day;
+    if (!nightCity) city = city.replace(/fill="#(ffd66b|7dd3fc)"/g, 'fill="#9fb3d6" opacity=".5"').replace(/fill="#0b1124"/g, 'fill="#5d6f94"');
+    return `<rect x="0" y="0" width="${W}" height="${H}" fill="url(#${pfx}sky)"/><circle cx="${(W * .78).toFixed(2)}" cy="${(H * .78).toFixed(2)}" r="${day ? .17 : .14}" fill="${day ? '#fff4b8' : '#f4f1e0'}" style="filter:drop-shadow(0 0 4px #fff)"/>${city}<rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="${c}" stroke-width="3" ${ns}/><line x1="${W / 2}" y1="0" x2="${W / 2}" y2="${H}" stroke="${c}" stroke-width="2" ${ns}/><line x1="0" y1="${H / 2}" x2="${W}" y2="${H / 2}" stroke="${c}" stroke-width="1.5" ${ns}/><rect x="-.06" y="-.08" width="${W + .12}" height=".08" fill="${c}"/>`;
   }
   if (it.t === 'clock') {
     const now = new Date(), hA = ((now.getHours() % 12) + now.getMinutes() / 60) / 12 * Math.PI * 2, mA = now.getMinutes() / 60 * Math.PI * 2;
@@ -1192,6 +1555,9 @@ function wallItemSVG(it, pfx){
   if (it.t === 'certificate') return `<rect x="0" y="0" width="${W}" height="${H}" fill="${c}"/><rect x=".07" y=".07" width="${W - .14}" height="${H - .14}" fill="#fbf7ea"/><text transform="translate(.5 .48) scale(1 -1)" text-anchor="middle" font-size=".2" fill="#2b2016" font-family="'Zen Kaku Gothic New',serif" font-weight="700">賞状</text><rect x=".25" y=".18" width=".5" height=".02" fill="#9aa3c0"/><rect x=".25" y=".24" width=".5" height=".02" fill="#9aa3c0"/><circle cx=".78" cy=".15" r=".05" fill="#c8102e"/>`;
   if (it.t === 'tv') { let bars = ''; [.3, .55, .4, .75, .6, .9].forEach((h, i) => { bars += `<rect x="${(.25 + i * .25).toFixed(2)}" y=".15" width=".14" height="${(h * .6).toFixed(2)}" fill="${c}" opacity=".85"/>`; });
     return `<rect x="0" y="0" width="${W}" height="${H}" rx=".04" fill="#05070f" stroke="#2b3045" stroke-width="3" ${ns}/><rect x=".06" y=".06" width="${W - .12}" height="${H - .12}" fill="#0b1124"/>${bars}<path d="M.25 .5 L.7 .62 L1.1 .55 L1.5 .85 L1.8 .8" fill="none" stroke="#fff" stroke-width="1.5" ${ns} style="filter:drop-shadow(0 0 3px ${c})"/>`; }
+  if (it.t === 'garland') { let b = `<path d="M0 ${H} Q${W / 4} ${H * .2} ${W / 2} ${H * .55} T${W} ${H}" fill="none" stroke="#2b3045" stroke-width="1.5" ${ns}/>`; const cols = [c, '#ff8fb8', '#7dd3fc', '#ffd66b', '#3ee6a0'];
+    for (let i = 1; i < 10; i++) { const t = i / 10, x = W * t, y = t < .5 ? H - (H - H * .3) * Math.sin(t * 2 * Math.PI / 2) * .9 : H - (H - H * .5) * Math.sin((t - .5) * 2 * Math.PI / 2) * .9; b += `<circle cx="${x.toFixed(2)}" cy="${(y - .05).toFixed(2)}" r=".06" fill="${cols[i % cols.length]}" style="filter:drop-shadow(0 0 3px ${cols[i % cols.length]})"/>`; }
+    return b; }
   if (it.t === 'neon') return `<rect x="0" y="0" width="${W}" height="${H}" rx=".12" fill="#070a14" stroke="rgba(255,255,255,.15)" stroke-width="1" ${ns}/><text transform="translate(${W / 2} ${(H * .3).toFixed(2)}) scale(1 -1)" text-anchor="middle" font-size=".44" fill="${c}" font-family="'Chakra Petch',sans-serif" font-weight="700" letter-spacing=".08" style="filter:drop-shadow(0 0 3px ${c}) drop-shadow(0 0 8px ${c})">STUDY HARD</text>`;
   return '';
 }
@@ -1210,6 +1576,7 @@ function floorPattern(fl, N, pfx){
   else if (fl === 'checker') { for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if ((x + y) % 2) g += `<rect x="${x}" y="${y}" width="1" height="1" fill="#e9ecf3"/>`; }
   else if (fl === 'stars') { let s0 = 11; const rnd = () => (s0 = (s0 * 9301 + 49297) % 233280) / 233280; for (let i = 0; i < N * N * 3; i++) g += `<circle cx="${(rnd() * N).toFixed(2)}" cy="${(rnd() * N).toFixed(2)}" r="${(.01 + rnd() * .03).toFixed(3)}" fill="${['#ffffff', '#bcd4ff', '#ffe9a8'][i % 3]}"/>`; }
   else if (fl === 'goldfloor') { for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) g += `<rect x="${x + .03}" y="${y + .03}" width=".94" height=".94" fill="${(x + y) % 2 ? '#5a4a1e' : '#4a3c16'}" stroke="#d6b25e" stroke-opacity=".5" stroke-width="1" vector-effect="non-scaling-stroke"/>`; }
+  else if (fl === 'grass') { let s0 = 5; const rnd = () => (s0 = (s0 * 9301 + 49297) % 233280) / 233280; for (let i = 0; i < N * N * 4; i++) { const x = rnd() * N, y = rnd() * N; g += `<path d="M${x.toFixed(2)} ${y.toFixed(2)} l.04 -.12 l.04 .12" fill="none" stroke="${rnd() < .5 ? '#5cb85c' : '#2f6b3a'}" stroke-width="1" ${ns}/>`; } }
   else if (fl === 'neon') { for (let i = 0; i <= N; i++) g += `<line x1="${i}" y1="0" x2="${i}" y2="${N}" stroke="#22e4ff" stroke-opacity=".35" stroke-width="1" ${ns}/><line x1="0" y1="${i}" x2="${N}" y2="${i}" stroke="#a46bff" stroke-opacity=".35" stroke-width="1" ${ns}/>`; }
   return g;
 }
@@ -1223,6 +1590,7 @@ function wallPattern(wl, N, side, pfx){
     for (let i = 0; i < n; i++) out += `<circle cx="${(rnd() * N).toFixed(2)}" cy="${(.2 + rnd() * (WALL_H - .3)).toFixed(2)}" r="${(rmin + rnd() * (rmax - rmin)).toFixed(3)}" fill="${cols[i % cols.length]}" opacity="${(.4 + rnd() * .6).toFixed(2)}"/>`; return out; };
   if (wl === 'sakura') g += dots(N * 9, ['#ffb7d0', '#ff8fb8', '#ffd6e6'], .025, .06, side === 'R' ? 7 : 13);
   if (wl === 'space') g += dots(N * 14, ['#ffffff', '#bcd4ff', '#ffe9a8'], .008, .03, side === 'R' ? 3 : 5) + (side === 'R' ? `<circle cx="${N * .7}" cy="${WALL_H * .7}" r=".35" fill="#a46bff" opacity=".55"/><ellipse cx="${N * .7}" cy="${WALL_H * .7}" rx=".6" ry=".1" fill="none" stroke="#e8d6ff" stroke-opacity=".6" ${ns}/>` : '');
+  if (wl === 'garden') { g = `<rect x="0" y="0" width="${N}" height="${WALL_H}" fill="url(#${pfx}sky)"/><rect x="0" y="0" width="${N}" height="1.6" fill="${th.c}"/>`; for (let i = .15; i < N; i += .3) g += `<circle cx="${i.toFixed(2)}" cy="1.6" r=".2" fill="#2f6b45"/>`; for (let i = .2; i < N; i += .5) g += `<rect x="${i.toFixed(2)}" y="0" width=".08" height="1.1" fill="#d9c7a6"/>`; g += `<rect x="0" y=".75" width="${N}" height=".06" fill="#d9c7a6"/>`; }
   if (wl === 'gold') for (let i = .5; i < N; i += .5) g += `<line x1="${i}" y1=".15" x2="${i}" y2="${WALL_H}" stroke="#d6b25e" stroke-opacity=".35" ${ns}/>`;
   if (wl === 'neongrid') { for (let i = .5; i < N; i += .5) g += `<line x1="${i}" y1=".15" x2="${i}" y2="${WALL_H}" stroke="#22e4ff" stroke-opacity=".16" ${ns}/>`; for (let v = .5; v < WALL_H; v += .5) g += `<line x1="0" y1="${v}" x2="${N}" y2="${v}" stroke="#a46bff" stroke-opacity=".14" ${ns}/>`; }
   g += `<rect x="0" y="0" width="${N}" height=".15" fill="rgba(0,0,0,.35)"/>`;
@@ -1230,6 +1598,7 @@ function wallPattern(wl, N, side, pfx){
   return g;
 }
 let svgSeq = 0;
+function skyStops(){ const h = new Date().getHours(); const [a, b] = h >= 7 && h < 16 ? ['#cfeaff', '#4aa8f0'] : h >= 16 && h < 18 ? ['#ff9a5c', '#6a3a8a'] : h >= 5 && h < 7 ? ['#ffb38a', '#4a5a9a'] : ['#3a2a6e', '#0a1230']; return `<stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/>`; }
 function roomSVG(room, N, opts = {}){
   const pfx = 'r' + (++svgSeq) + '_';
   const baseItems = room.items.filter(it => F[it.t]);
@@ -1246,7 +1615,7 @@ function roomSVG(room, N, opts = {}){
   const mF = `matrix(${TW} ${TH} ${-TW} ${TH} 0 0)`;
   const sel = opts.sel, place = opts.place;
   let s = `<svg class="roomsvg" viewBox="${vbX.toFixed(0)} ${vbY.toFixed(0)} ${vbW.toFixed(0)} ${vbH.toFixed(0)}" role="img" aria-label="勉強部屋"><defs>
-    <linearGradient id="${pfx}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2a6e"/><stop offset="1" stop-color="#0a1230"/></linearGradient>
+    <linearGradient id="${pfx}sky" x1="0" y1="0" x2="0" y2="1">${skyStops()}</linearGradient>
     <linearGradient id="${pfx}aur" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1d2a6b"/><stop offset=".5" stop-color="#3b1f6e"/><stop offset="1" stop-color="#0f3a4a"/></linearGradient>
     <radialGradient id="${pfx}shade" cx=".5" cy=".5" r=".6"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient>
     ${[...new Set(items.filter(i => F[i.t].glow).map(i => F[i.t].glow))].map((c, k) => `<radialGradient id="${pfx}g${k}"><stop offset="0" stop-color="${c}" stop-opacity=".42"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`).join('')}
@@ -1268,8 +1637,9 @@ function roomSVG(room, N, opts = {}){
     s += `<g data-i="${it.id}" class="${sel === it.id ? 'sel' : ''}${gcls(it.id)}"><rect x="${it.x + .05}" y="${it.y + .05}" width="${w - .1}" height="${dd - .1}" fill="${c}" stroke="${sel === it.id ? '#22e4ff' : mix(c, '#000000', .3)}" stroke-width="2" vector-effect="non-scaling-stroke"/><rect x="${it.x + .22}" y="${it.y + .22}" width="${w - .44}" height="${dd - .44}" fill="none" stroke="${mix(c, '#ffffff', .3)}" stroke-width="1.2" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/></g>`; }
   s += `<rect x="0" y="0" width="${N}" height="${N}" fill="url(#${pfx}shade)"/></g></g>`;
   // light pools
-  for (const it of items.filter(i => F[i.t].glow)) { const [w, dd] = footprint(it); const [cx, cy] = P(it.x + w / 2, it.y + dd / 2, 0);
-    s += `<ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${TW * 3.2}" ry="${TH * 3.2}" fill="url(#${pfx}g${glowIds.indexOf(F[it.t].glow)})" pointer-events="none"/>`; }
+  const LS0 = lightState(room), poolsOn = LS0.lit || (!LS0.dark && !LS0.dusk);
+  if (poolsOn) for (const it of items.filter(i => F[i.t].glow)) { const [w, dd] = footprint(it); const [cx, cy] = P(it.x + w / 2, it.y + dd / 2, 0); const big = F[it.t].hang ? 1.5 : 1;
+    s += `<ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${TW * 3.2 * big}" ry="${TH * 3.2 * big}" fill="url(#${pfx}g${glowIds.indexOf(F[it.t].glow)})" pointer-events="none"/>`; }
   // placement tiles
   if (place && !F[place.t].wall) {
     const fd = F[place.t], [pw, pd] = (place.r % 2) ? [fd.D, fd.W] : [fd.W, fd.D], cover = new Set();
@@ -1284,9 +1654,10 @@ function roomSVG(room, N, opts = {}){
     }
   }
   // boxes
-  const boxes = [];
+  const boxes = [], poses = computePoses(items, room);
   for (const it of items) {
     const d = F[it.t]; if (d.wall || d.rug) continue;
+    if (d.person) { for (const b of personBoxes(it, items, room, poses)) boxes.push(b); continue; }
     const z0 = itemZ(items, it), r = it.r || 0;
     for (const p of d.parts) { const q = rotPart(p, d.W, d.D, r); const col = resolveCol(q[6], d, it.c || 0);
       boxes.push({x: it.x + q[0], y: it.y + q[1], z: z0 + q[2], w: q[3], d: q[4], h: q[5], ...col, iid: it.id}); }
@@ -1294,6 +1665,14 @@ function roomSVG(room, N, opts = {}){
   const sorted = sortBoxes(boxes);
   const noPtr = place ? ' pointer-events="none"' : '';
   for (const b of sorted) s += `<g data-i="${b.iid}" class="${sel === b.iid ? 'sel' : ''}${gcls(b.iid)}"${noPtr}>${boxSVG(b)}</g>`;
+  // night / lights
+  if (LS0.shade > 0) {
+    const hex = [P(-cap, -cap, WALL_H), P(N, -cap, WALL_H), P(N, 0, 0), P(N, N, 0), P(0, N, 0), P(-cap, N, WALL_H)];
+    s += `<polygon points="${poly(hex)}" fill="#040616" fill-opacity="${LS0.shade}" pointer-events="none"/>`;
+    if (LS0.lit) for (const it of items.filter(i => F[i.t].glow)) { const [w, dd] = footprint(it); const [cx, cy] = P(it.x + w / 2, it.y + dd / 2, F[it.t].hang ? 1.2 : .6);
+      s += `<ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${TW * 2.6}" ry="${TH * 3.4}" fill="url(#${pfx}g${glowIds.indexOf(F[it.t].glow)})" style="mix-blend-mode:screen" pointer-events="none"/>`; }
+    if (!LS0.lit) { const byId = Object.fromEntries(items.map(i => [i.id, i])); for (const b of sorted) if (b.emi && byId[b.iid] && !F[byId[b.iid].t].glow) s += `<g opacity=".8" pointer-events="none">${boxSVG(b)}</g>`; }
+  }
   // wall slots for wall placement
   if (place && F[place.t].wall) {
     const d = F[place.t];
@@ -1306,6 +1685,7 @@ function roomSVG(room, N, opts = {}){
 }
 function thumbSVG(t, ci = 0){
   const d = F[t];
+  if (d.person) return personThumb(t === 'buddy' ? buddyLook() : defaultLook(), t === 'kid' ? 1 : undefined);
   if (d.wall) { const W = d.W, H = d.H; return `<svg viewBox="${-.1} ${-.1} ${W + .2} ${H + .2}" style="height:70px"><g transform="translate(0 ${H}) scale(1 -1)">${wallItemSVG({t, c: ci, x: 0}, 'th' + t)}</g><defs><linearGradient id="th${t}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2a6e"/><stop offset="1" stop-color="#0a1230"/></linearGradient></defs></svg>`; }
   if (d.rug) { const c = d.colors[ci % d.colors.length]; return `<svg viewBox="-110 -10 220 120"><g transform="matrix(${TW} ${TH} ${-TW} ${TH} 0 0)"><rect x="0" y="0" width="3" height="2" fill="${c}" stroke="${mix(c, '#000000', .3)}" stroke-width="2" vector-effect="non-scaling-stroke"/><rect x=".2" y=".2" width="2.6" height="1.6" fill="none" stroke="${mix(c, '#ffffff', .3)}" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/></g></svg>`; }
   const boxes = d.parts.map(p => ({x: p[0], y: p[1], z: p[2], w: p[3], d: p[4], h: p[5], ...resolveCol(p[6], d, ci)}));
@@ -1546,7 +1926,7 @@ function addSession(sess){
   checkMissions(false); checkRoomStage(false);
   showSessionDone(sess, before, after);
   if (after.level > lvBefore) queueOverlay(() => showLevelUp(lvBefore, after.level));
-  checkBadges(false);
+  checkBadges(false); familyTick();
   publishPub();
 }
 function showSessionDone(sess, before, after){
@@ -1729,39 +2109,102 @@ VIEWS.stats = () => {
 };
 
 VIEWS.room = () => {
-  const st = S(), x = stats(), stg = stageFor(x.level), N = STAGES[stg].size, nextS = STAGES[stg + 1];
-  const selIt = st.room.items.find(i => i.id === UI.sel);
-  const placedCount = t => st.room.items.filter(i => i.t === t).length;
+  const st = S(), x = stats(), stg = stageFor(x.level), nextS = STAGES[stg + 1];
+  const isHouse = UI.roomId === 'house', ent = curEntry(), room = CR(), N = roomN(), rid = isHouse ? 'house' : ent ? ent.id : 'study';
+  const roomSel = `<div class="seg roomsel" style="margin-bottom:12px">${[['house', '家・家族'], ['study', '勉強部屋'], ...st.house.rooms.map(r => [r.id, r.name || ROOM_KINDS[r.kind].n])].map(([k, n]) => `<button data-act="room-go" data-v="${esc(k)}" class="${rid === k ? 'on' : ''}">${esc(n)}</button>`).join('')}</div>`;
+  if (isHouse) return houseView(roomSel);
+  const selIt = room.items.find(i => i.id === UI.sel);
+  const placedCount = t => allItems().filter(i => i.t === t).length;
   const inv = F_ORDER.filter(t => (st.owned[t] || 0) - placedCount(t) > 0);
   let bar = '';
   if (UI.place) { const pd = F[UI.place.t], ok = placeOk(UI.place), arr = (deg, v, lbl) => `<button class="tool" data-act="rm-nudge" data-v="${v}" aria-label="${lbl}"><span style="display:inline-flex;transform:rotate(${deg}deg)">${icon('arrow')}</span></button>`;
-    bar = `<div class="roombar"><div class="rb-head">${icon('move')}<b>${esc(pd.n)}</b><span class="sp"></span><span class="pill ${ok ? 'good' : 'bad'}">${ok ? 'ここに置けます' : 'ぶつかっています'}</span></div>
+    const nm = pd.person ? personInfo(UI.place.moveId ? room.items.find(i => i.id === UI.place.moveId) || UI.place : UI.place).name : pd.n;
+    bar = `<div class="roombar"><div class="rb-head">${icon('move')}<b>${esc(nm)}</b><span class="sp"></span><span class="pill ${ok ? 'good' : 'bad'}">${ok ? 'ここに置けます' : 'ぶつかっています'}</span></div>
       <div class="rb-move"><div class="pad">${pd.wall ? arr(-90, 'wl', '左へ') + arr(90, 'wr', '右へ') : arr(-45, 'xm', '左上へ') + arr(45, 'ym', '右上へ') + arr(-135, 'yp', '左下へ') + arr(135, 'xp', '右下へ')}</div>
       <div class="rb-tools">${!pd.wall ? `<button class="tool" data-act="rm-rot-place">${icon('rotate')}向き</button>` : ''}<button class="tool" data-act="rm-cancel">${icon('x')}やめる</button><button class="tool go ${ok ? '' : 'warn'}" data-act="rm-ok">${ok ? icon('check') + 'ここに置く' : icon('move') + '空いている所へ'}</button></div></div>
-      <p class="note" style="margin:6px 4px 0">矢印で1マスずつ動かせます。床をタップしてもその場所へ移動します。<span class="dim"> ver.7</span></p></div>`; }
+      <p class="note" style="margin:6px 4px 0">矢印で1マスずつ動かせます。床をタップしてもその場所へ移動します。${pd.hang ? '（天井から吊るす照明なので、家具の上にも置けます）' : ''}</p></div>`; }
   else if (selIt) { const d = F[selIt.t];
-    bar = `<div class="roombar"><div class="rb-head"><b>${esc(d.buddy ? st.buddy.name + '（ルームメイト）' : d.n)}</b></div>
-      <div class="rb-tools">${d.buddy ? `<button class="tool go" data-act="buddy-talk">${icon('sound')}話す</button><button class="tool" data-act="buddy-name">${icon('pen')}名前</button>` : ''}<button class="tool" data-act="rm-move">${icon('move')}移動</button>${!d.wall ? `<button class="tool" data-act="rm-rot">${icon('rotate')}回転</button>` : ''}<button class="tool ${UI.colorOpen ? 'on' : ''}" data-act="rm-color" aria-pressed="${!!UI.colorOpen}">${icon('palette')}色</button><button class="tool" data-act="rm-store">${icon('box')}しまう</button><button class="tool" data-act="rm-desel">${icon('x')}閉じる</button></div>
+    if (d.person) { const info = personInfo(selIt), who = whoOfItem(selIt), role = selIt.t === 'buddy' ? 'ルームメイト' : selIt.t === 'partner' ? (st.family.partner && st.family.partner.role || 'パートナー') : KID_STAGE[info.stage || 0];
+      bar = `<div class="roombar"><div class="rb-head"><b>${esc(info.name)}（${esc(role)}）</b></div>
+      <div class="rb-tools"><button class="tool go" data-act="buddy-talk">${icon('chat')}話す</button><button class="tool" data-act="buddy-name">${icon('pen')}名前</button><button class="tool" data-act="wear-open" data-v="${esc(who)}">${icon('shirt')}着せ替え</button><button class="tool" data-act="rm-move">${icon('move')}移動</button><button class="tool" data-act="rm-rot">${icon('rotate')}向き</button><button class="tool" data-act="rm-store">${icon('box')}しまう</button><button class="tool" data-act="rm-desel">${icon('x')}閉じる</button></div></div>`; }
+    else bar = `<div class="roombar"><div class="rb-head"><b>${esc(d.n)}</b></div>
+      <div class="rb-tools"><button class="tool" data-act="rm-move">${icon('move')}移動</button>${!d.wall ? `<button class="tool" data-act="rm-rot">${icon('rotate')}回転</button>` : ''}<button class="tool ${UI.colorOpen ? 'on' : ''}" data-act="rm-color" aria-pressed="${!!UI.colorOpen}">${icon('palette')}色</button><button class="tool" data-act="rm-store">${icon('box')}しまう</button><button class="tool" data-act="rm-desel">${icon('x')}閉じる</button></div>
       ${UI.colorOpen ? `<div class="swatches" style="margin-top:8px;padding:0 2px">${d.colors.map((c, i) => `<button class="sw ${(selIt.c || 0) === i ? 'on' : ''}" style="--c:${c}" data-act="rm-setc" data-v="${i}" aria-label="色${i + 1}"></button>`).join('')}</div>` : ''}</div>`; }
-  const tabs = [['inv','持ち物'],['shop','ショップ'],['deco','壁紙・床'],['log','成長記録']];
+  const tabs = [['inv','持ち物'],['shop','家具ショップ'],['wear','着せ替え'],['deco','壁紙・床'],['log','記録・アルバム']];
   let panel = '';
-  if (UI.roomTab === 'inv') panel = inv.length ? `<div class="shop">${inv.map(t => `<div class="item"><div class="thumb">${thumbSVG(t)}</div><b>${esc(F[t].buddy ? st.buddy.name : F[t].n)}</b><div class="meta"><span>残り ${(st.owned[t] || 0) - placedCount(t)}個</span></div><button class="btn sm primary" data-act="rm-place" data-v="${t}">置く</button></div>`).join('')}</div>`
-      : `<div class="empty">しまってある家具はありません。<br>ショップで家具を手に入れるか、部屋の家具をタップして「しまう」とここに戻ります。</div>`;
+  if (UI.roomTab === 'inv') { const ppl = unplacedPeople();
+    panel = (ppl.length ? `<h3 style="margin:0 0 8px;font-size:14px">家族・ルームメイト</h3><div class="shop" style="margin-bottom:16px">${ppl.map(p => `<div class="item"><div class="thumb">${personThumb(p.look, p.stage)}</div><b>${esc(p.name)}</b><div class="meta"><span>${esc(p.role)}</span></div><button class="btn sm primary" data-act="rm-place" data-v="${esc(p.key)}">この部屋に呼ぶ</button></div>`).join('')}</div>` : '')
+      + (inv.length ? `<div class="shop">${inv.map(t => `<div class="item"><div class="thumb">${thumbSVG(t)}</div><b>${esc(F[t].n)}</b><div class="meta"><span>残り ${(st.owned[t] || 0) - placedCount(t)}個</span></div><button class="btn sm primary" data-act="rm-place" data-v="${t}">置く</button></div>`).join('')}</div>`
+      : `<div class="empty">しまってある家具はありません。<br>ショップで家具を手に入れるか、部屋の家具をタップして「しまう」とここに戻ります。<br>しまった家具や人は、別の部屋で置くこともできます。</div>`); }
   if (UI.roomTab === 'shop') panel = `<p class="note" style="margin:0 0 10px">勉強1分＝1コイン。レベルが上がると新しい家具が解放されます。所持コイン <b class="disp" style="color:var(--warn)">${Math.max(0, x.coins).toLocaleString()}</b></p>
-      <div class="seg" style="margin-bottom:12px">${[['all','すべて'],['floor','家具'],['small','机の上の小物'],['wall','壁'],['rug','床']].map(([k, n]) => `<button data-act="shop-cat" data-v="${k}" class="${(UI.shopCat || 'all') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
-      <div class="shop">${F_ORDER.filter(t => { const c = UI.shopCat || 'all', d = F[t]; return c === 'all' || (c === 'wall' ? d.wall : c === 'small' ? d.small : c === 'rug' ? d.rug : !d.wall && !d.small && !d.rug); }).map(t => { const d = F[t], lock = x.level < d.lv, own = st.owned[t] || 0;
+      <div class="seg" style="margin-bottom:12px">${[['all','すべて'],['floor','家具'],['light','照明'],['small','机の上の小物'],['wall','壁'],['rug','床']].map(([k, n]) => `<button data-act="shop-cat" data-v="${k}" class="${(UI.shopCat || 'all') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+      <div class="shop">${F_ORDER.filter(t => { const c = UI.shopCat || 'all', d = F[t]; return c === 'all' || (c === 'light' ? (d.glow || t === 'garland') : c === 'wall' ? d.wall : c === 'small' ? d.small : c === 'rug' ? d.rug : !d.wall && !d.small && !d.rug); }).map(t => { const d = F[t], lock = x.level < d.lv, own = st.owned[t] || 0;
       return `<div class="item ${lock ? 'locked' : ''}"><div class="thumb">${lock ? icon('lock') : thumbSVG(t)}</div><b>${esc(d.n)}</b><div class="meta"><span>${lock ? `LV${d.lv}で解放` : own ? `所持 ${own}` : '未所持'}</span><span class="disp">${d.cost ? d.cost + 'c' : '無料'}</span></div>
         <button class="btn sm ${lock ? '' : 'primary'}" data-act="rm-buy" data-v="${t}" ${lock || x.coins < d.cost ? 'disabled' : ''}>${lock ? 'ロック中' : x.coins < d.cost ? 'コイン不足' : own ? 'もう1つ買う' : '購入する'}</button></div>`; }).join('')}</div>`;
-  if (UI.roomTab === 'deco') panel = `<h3 style="margin:0 0 8px;font-size:14px">壁紙</h3><div class="themes">${Object.entries(WALLS).map(([k, w]) => `<button class="theme ${st.room.wall === k ? 'on' : ''}" data-act="rm-wall" data-v="${k}" ${x.level < w.lv ? 'disabled' : ''}><i style="--c:${k === 'aurora' ? 'linear-gradient(135deg,#1d2a6b,#3b1f6e,#0f3a4a)' : k === 'sakura' ? 'radial-gradient(circle at 30% 40%,#ffb7d0 0 6%,transparent 7%),radial-gradient(circle at 70% 60%,#ff8fb8 0 5%,transparent 6%),#3a2033' : k === 'space' ? 'radial-gradient(circle at 70% 40%,#a46bff 0 12%,transparent 13%),radial-gradient(circle at 20% 30%,#fff 0 2%,transparent 3%),#05061a' : k === 'gold' ? 'repeating-linear-gradient(90deg,#2a2412 0 10px,#d6b25e55 10px 11px)' : w.c}"></i>${esc(w.n)}${x.level < w.lv ? ` · LV${w.lv}` : ''}</button>`).join('')}</div>
-      <h3 style="margin:16px 0 8px;font-size:14px">床</h3><div class="themes">${Object.entries(FLOORS).map(([k, f]) => `<button class="theme ${st.room.floor === k ? 'on' : ''}" data-act="rm-floor" data-v="${k}" ${x.level < f.lv ? 'disabled' : ''}><i style="--c:${k === 'checker' ? 'repeating-conic-gradient(#2a2f45 0 25%,#e9ecf3 0 50%) 0 0/16px 16px' : k === 'goldfloor' ? 'repeating-linear-gradient(45deg,#5a4a1e 0 10px,#4a3c16 10px 20px)' : k === 'stars' ? 'radial-gradient(circle at 30% 50%,#fff 0 3%,transparent 4%),radial-gradient(circle at 70% 30%,#bcd4ff 0 3%,transparent 4%),#060818' : f.c}"></i>${esc(f.n)}${x.level < f.lv ? ` · LV${f.lv}` : ''}</button>`).join('')}</div>`;
-  if (UI.roomTab === 'log') panel = `<div class="timeline">${STAGES.map((s, i) => { const log = st.roomLog.find(r => r.stage === i); return `<div class="tl ${i > stg ? 'lock' : ''}"><b>LEVEL ${i + 1}：${esc(s.name)}</b><div class="note">${log ? `${fmtDate(log.date)}に到達` : `プレイヤーLV${s.lv}で解放`} · 広さ ${s.size}×${s.size}</div></div>`; }).join('')}</div>`;
-  return `<div class="pagehead"><div><span class="eyebrow">ROOM LEVEL ${stg + 1} / ${STAGES.length}</span><h1>${esc(STAGES[stg].name)}</h1></div>
-    <div style="min-width:200px;flex:1;max-width:320px">${nextS ? `<div class="row" style="justify-content:space-between;font-size:12px"><span class="mute">次の部屋まで</span><span class="disp">LV${x.level} → LV${nextS.lv}</span></div><div class="bar" style="margin-top:6px"><i style="width:${clamp((x.xp - xpForLevel(STAGES[stg].lv)) / (xpForLevel(nextS.lv) - xpForLevel(STAGES[stg].lv)) * 100, 0, 100).toFixed(1)}%"></i></div>` : '<span class="pill good">最終段階に到達</span>'}</div></div>
-  <div class="roomstage" id="roomstage">${roomSVG(st.room, N, {sel: UI.sel, place: UI.place})}
+  if (UI.roomTab === 'wear') panel = wearPanel();
+  if (UI.roomTab === 'deco') panel = `<h3 style="margin:0 0 8px;font-size:14px">壁紙</h3><div class="themes">${Object.entries(WALLS).map(([k, w]) => `<button class="theme ${room.wall === k ? 'on' : ''}" data-act="rm-wall" data-v="${k}" ${x.level < w.lv ? 'disabled' : ''}><i style="--c:${k === 'aurora' ? 'linear-gradient(135deg,#1d2a6b,#3b1f6e,#0f3a4a)' : k === 'sakura' ? 'radial-gradient(circle at 30% 40%,#ffb7d0 0 6%,transparent 7%),radial-gradient(circle at 70% 60%,#ff8fb8 0 5%,transparent 6%),#3a2033' : k === 'space' ? 'radial-gradient(circle at 70% 40%,#a46bff 0 12%,transparent 13%),radial-gradient(circle at 20% 30%,#fff 0 2%,transparent 3%),#05061a' : k === 'gold' ? 'repeating-linear-gradient(90deg,#2a2412 0 10px,#d6b25e55 10px 11px)' : k === 'garden' ? 'linear-gradient(#7cc4ff 0 45%,#24553a 45%)' : w.c}"></i>${esc(w.n)}${x.level < w.lv ? ` · LV${w.lv}` : ''}</button>`).join('')}</div>
+      <h3 style="margin:16px 0 8px;font-size:14px">床</h3><div class="themes">${Object.entries(FLOORS).map(([k, f]) => `<button class="theme ${room.floor === k ? 'on' : ''}" data-act="rm-floor" data-v="${k}" ${x.level < f.lv ? 'disabled' : ''}><i style="--c:${k === 'checker' ? 'repeating-conic-gradient(#2a2f45 0 25%,#e9ecf3 0 50%) 0 0/16px 16px' : k === 'goldfloor' ? 'repeating-linear-gradient(45deg,#5a4a1e 0 10px,#4a3c16 10px 20px)' : k === 'stars' ? 'radial-gradient(circle at 30% 50%,#fff 0 3%,transparent 4%),radial-gradient(circle at 70% 30%,#bcd4ff 0 3%,transparent 4%),#060818' : f.c}"></i>${esc(f.n)}${x.level < f.lv ? ` · LV${f.lv}` : ''}</button>`).join('')}</div>
+      ${ent ? `<h3 style="margin:16px 0 8px;font-size:14px">この部屋</h3><div class="row wrap" style="gap:8px"><button class="btn sm" data-act="room-rename">${icon('pen')}名前を変える</button><button class="btn sm danger" data-act="room-demolish">${icon('trash')}この部屋をこわす</button></div><p class="note">こわしても家具と家族は「持ち物」に戻ります。建てたときのコインは戻りません。</p>` : ''}`;
+  if (UI.roomTab === 'log') panel = (ent ? '' : `<h3 style="margin:0 0 8px;font-size:14px">勉強部屋の成長</h3><div class="timeline">${STAGES.map((s, i) => { const log = st.roomLog.find(r => r.stage === i); return `<div class="tl ${i > stg ? 'lock' : ''}"><b>LEVEL ${i + 1}：${esc(s.name)}</b><div class="note">${log ? `${fmtDate(log.date)}に到達` : `プレイヤーLV${s.lv}で解放`} · 広さ ${s.size}×${s.size}</div></div>`; }).join('')}</div>`) + albumHTML();
+  const LS0 = lightState(room), lightLbl = {auto: '自動', on: 'ON', off: 'OFF'}[LS0.mode];
+  const title = ent ? (ent.name || ROOM_KINDS[ent.kind].n) : STAGES[stg].name;
+  return `<div class="pagehead"><div><span class="eyebrow">${ent ? `MY HOUSE · ${esc(ROOM_KINDS[ent.kind].n)}` : `ROOM LEVEL ${stg + 1} / ${STAGES.length}`}</span><h1>${esc(title)}</h1></div>
+    ${ent ? '' : `<div style="min-width:200px;flex:1;max-width:320px">${nextS ? `<div class="row" style="justify-content:space-between;font-size:12px"><span class="mute">次の部屋まで</span><span class="disp">LV${x.level} → LV${nextS.lv}</span></div><div class="bar" style="margin-top:6px"><i style="width:${clamp((x.xp - xpForLevel(STAGES[stg].lv)) / (xpForLevel(nextS.lv) - xpForLevel(STAGES[stg].lv)) * 100, 0, 100).toFixed(1)}%"></i></div>` : '<span class="pill good">最終段階に到達</span>'}</div>`}</div>
+  ${roomSel}
+  <div class="roomstage" id="roomstage">${roomSVG(room, N, {sel: UI.sel, place: UI.place})}
     ${buddyBubble()}
-    <div class="roomtop"><span class="pill cy" style="background:rgba(5,8,18,.7)">${N}×${N}</span>${!UI.place && !selIt ? '<span class="pill" style="background:rgba(5,8,18,.7)">家具をタップ → 移動・回転・色</span>' : ''}</div>${bar}</div>
-  <section class="panel"><div class="seg" style="margin-bottom:14px">${tabs.map(([k, n]) => `<button data-act="rm-tab" data-v="${k}" class="${UI.roomTab === k ? 'on' : ''}">${n}</button>`).join('')}</div>${panel}</section>`;
+    <div class="roomtop"><span class="row" style="gap:6px"><span class="pill cy" style="background:rgba(5,8,18,.7)">${N}×${N}</span><button class="pill lightbtn ${LS0.lit ? 'on' : ''}" data-act="rm-light" aria-label="電気の切り替え（今は${lightLbl}）">${icon('bulb')}電気 ${lightLbl}</button></span>${!UI.place && !selIt ? '<span class="pill" style="background:rgba(5,8,18,.7)">タップ → 移動・回転・色・会話</span>' : ''}</div>${bar}</div>
+  <section class="panel" id="roompanel"><div class="seg" style="margin-bottom:14px">${tabs.map(([k, n]) => `<button data-act="rm-tab" data-v="${k}" class="${UI.roomTab === k ? 'on' : ''}">${n}</button>`).join('')}</div>${panel}</section>`;
 };
+function unplacedPeople(){
+  const st = S(), all = allItems(), out = [];
+  if (!all.some(i => i.t === 'buddy')) out.push({key: 'buddy', name: st.buddy.name, role: 'ルームメイト', look: st.buddy.look});
+  const p = st.family.partner; if (p && !all.some(i => i.t === 'partner')) out.push({key: 'partner', name: p.name, role: p.role || 'パートナー', look: p.look});
+  for (const k of st.family.kids) if (!k.left && !all.some(i => i.t === 'kid' && i.kid === k.id)) out.push({key: 'kid:' + k.id, name: k.name, role: KID_STAGE[k.stage || 0], look: k.look, stage: k.stage});
+  return out;
+}
+const HAIR_N = {short: 'ショート', spiky: 'ツンツン', bob: 'ボブ', long: 'ロング', pony: 'ポニーテール'};
+function wearPanel(){
+  const st = S(), x = stats(), f = st.family;
+  const whos = [['buddy', st.buddy.name], ...(f.partner ? [['partner', f.partner.name]] : []), ...f.kids.filter(k => !k.left).map(k => [k.id, k.name])];
+  const who = whos.some(w => w[0] === UI.wearWho) ? UI.wearWho : 'buddy', L = lookOf(who), slot = UI.wearSlot || 'top';
+  const kid = f.kids.find(k => k.id === who), stage = kid ? kid.stage : undefined, tStage = stage === 0 ? 1 : stage;
+  const owns = (sl, k) => !WEAR[sl].items[k].cost || !!st.buddy.closet[sl + ':' + k];
+  const cur = WEAR[slot].items[L.wear[slot]] || {};
+  return `${whos.length > 1 ? `<div class="chips" style="margin-bottom:12px">${whos.map(([k, n]) => `<button class="chip ${who === k ? 'on' : ''}" style="--c:#22e4ff" data-act="wr-who" data-v="${esc(k)}"><i></i>${esc(n)}</button>`).join('')}</div>` : ''}
+    <div class="wearhead"><div class="wearprev">${personThumb(L, stage)}</div><div class="stack" style="gap:10px;flex:1;min-width:0">
+      <div><div class="note" style="margin:0 0 4px">性別</div><div class="chips">${[['boy','男の子'],['girl','女の子']].map(([g, n]) => `<button class="chip ${L.gender === g ? 'on' : ''}" style="--c:#a46bff" data-act="wr-gender" data-v="${g}"><i></i>${n}</button>`).join('')}</div></div>
+      <div><div class="note" style="margin:0 0 4px">髪型</div><div class="chips">${Object.entries(HAIR_N).map(([k, n]) => `<button class="chip ${L.hair === k ? 'on' : ''}" style="--c:#ffc24d" data-act="wr-hair" data-v="${k}"><i></i>${n}</button>`).join('')}</div></div>
+      <div class="row wrap" style="gap:14px"><div><div class="note" style="margin:0 0 4px">髪の色</div><div class="swatches">${HAIRC.map((c, i) => `<button class="sw sm ${L.hc === i ? 'on' : ''}" style="--c:${c}" data-act="wr-hc" data-v="${i}" aria-label="髪の色${i + 1}"></button>`).join('')}</div></div>
+      <div><div class="note" style="margin:0 0 4px">肌の色</div><div class="swatches">${SKINS.map((c, i) => `<button class="sw sm ${L.skin === i ? 'on' : ''}" style="--c:${c}" data-act="wr-skin" data-v="${i}" aria-label="肌の色${i + 1}"></button>`).join('')}</div></div></div>
+    </div></div>
+    <div class="seg" style="margin:14px 0 12px">${WEAR_SLOTS.map(k => `<button data-act="wr-slot" data-v="${k}" class="${slot === k ? 'on' : ''}">${WEAR[k].n}</button>`).join('')}</div>
+    ${cur.colors && cur.colors.length > 1 ? `<div class="row wrap" style="gap:10px;margin-bottom:12px"><span class="note" style="margin:0">「${esc(cur.n)}」の色</span><div class="swatches">${cur.colors.map((c, i) => `<button class="sw sm ${((L.wc || {})[slot] || 0) % cur.colors.length === i ? 'on' : ''}" style="--c:${c}" data-act="wr-color" data-v="${i}" aria-label="色${i + 1}"></button>`).join('')}</div></div>` : ''}
+    <div class="shop">${Object.entries(WEAR[slot].items).map(([k, it]) => { const lock = x.level < it.lv, own = owns(slot, k), on = L.wear[slot] === k;
+      return `<div class="item ${lock ? 'locked' : ''} ${on ? 'equipped' : ''}"><div class="thumb">${lock ? icon('lock') : personThumb({...L, wear: {...L.wear, [slot]: k}}, tStage)}</div><b>${esc(it.n)}</b><div class="meta"><span>${lock ? `LV${it.lv}で解放` : on ? '着ている' : own ? '持っている' : '未所持'}</span><span class="disp">${it.cost ? it.cost + 'c' : '無料'}</span></div>
+      ${on ? `<button class="btn sm" disabled>${icon('check')}着ている</button>` : lock ? `<button class="btn sm" disabled>ロック中</button>` : own ? `<button class="btn sm primary" data-act="wr-equip" data-v="${k}">着る</button>` : `<button class="btn sm primary" data-act="wr-buy" data-v="${k}" ${x.coins < it.cost ? 'disabled' : ''}>${x.coins < it.cost ? 'コイン不足' : '買って着る'}</button>`}</div>`; }).join('')}</div>
+    <p class="note" style="margin:10px 0 0">買った服は家族みんなで着られます。${stage === 0 ? '赤ちゃんは服の色だけ見た目に出ます。' : ''}</p>`;
+}
+function albumHTML(){
+  const f = S().family;
+  return `<h3 style="margin:18px 0 8px;font-size:14px">家族のアルバム</h3>${f.log.length ? `<div class="timeline">${f.log.map(e => `<div class="tl"><b>${esc(e.text)}</b><div class="note">${fmtDate(e.date)}</div></div>`).join('')}</div>` : '<div class="empty" style="padding:14px">まだ思い出はありません。<br>LV8をこえると、ある日だれかが訪ねてくるかも…？</div>'}`;
+}
+function houseView(roomSel){
+  const st = S(), x = stats(), f = st.family, open = plotOpen(x.level), nextLv = PLOT_LV.find(l => l > x.level);
+  const where = it => { for (const e of [{id: 'study', room: st.room, n: '勉強部屋'}, ...st.house.rooms.map(r => ({id: r.id, room: r.room, n: r.name || ROOM_KINDS[r.kind].n}))]) if (e.room.items.some(it)) return e.n; return 'しまってある'; };
+  const ppl = [{name: st.buddy.name, role: 'ルームメイト', look: st.buddy.look, at: where(i => i.t === 'buddy')}];
+  if (f.partner) ppl.push({name: f.partner.name, role: f.partner.role || 'パートナー', look: f.partner.look, at: where(i => i.t === 'partner'), sub: `${fmtDate(f.partner.since)}から一緒に暮らしている`});
+  for (const k of f.kids) { const m = x.total - (k.minAt || 0), next = [300, 1500, 3600][k.stage || 0];
+    ppl.push({name: k.name, role: k.left ? '独り立ちした' : KID_STAGE[k.stage || 0], look: k.look, stage: k.left ? 2 : k.stage, at: k.left ? '遠くの街' : where(i => i.t === 'kid' && i.kid === k.id), sub: k.left ? 'ときどき連絡をくれる' : `次の成長まで あと${fmtHM(Math.max(0, next - m))}の勉強`, prog: k.left ? null : clamp(m / next * 100, 0, 100)}); }
+  return `<div class="pagehead"><div><span class="eyebrow">MY HOUSE</span><h1>家を設計しよう</h1></div><span class="pill">${st.house.rooms.length + 1}部屋 · 土地 ${open}/9区画</span></div>
+  ${roomSel}
+  <section class="panel"><div class="housestage">${houseSVG()}</div>
+    <p class="note" style="margin:8px 0 0">部屋をタップすると中に入れます。「＋増築」をタップすると新しい部屋を建てられます。${nextLv ? `LV${nextLv}で土地が広がります。` : '土地はすべて解放済み！'}</p></section>
+  <section class="panel"><div class="ph"><div><span class="eyebrow">FAMILY</span><h2>家族</h2></div></div>
+    <div class="list">${ppl.map(p => `<div class="li"><div class="fam-av">${personThumb(p.look, p.stage)}</div><div class="t"><b>${esc(p.name)} <span class="mute" style="font-weight:400">· ${esc(p.role)}</span></b><span>いる場所：${esc(p.at)}${p.sub ? ' · ' + esc(p.sub) : ''}</span>${p.prog != null ? `<div class="bar" style="margin-top:6px"><i style="width:${p.prog.toFixed(1)}%"></i></div>` : ''}</div></div>`).join('')}</div>
+    <p class="note" style="margin:10px 0 0">${f.partner ? '子どもはあなたが勉強した時間だけ育ちます。勉強するほど家族が成長！' : x.level < 8 ? 'LV8になると、ある日パートナーが訪ねてくるイベントが起こるかも。' : 'ある日だれかが訪ねてくるかも…。毎日ログインして待とう。'}</p>
+    ${albumHTML()}</section>`;
+}
 
 VIEWS.rank = () => {
   const st = S(), x = stats(), today = dkey(), wk = weekStart(today), mo = monthOf(today);
@@ -2132,8 +2575,9 @@ function showOnboarding(){
 }
 
 /* ================= actions ================= */
-function selectedItem(){ return S().room.items.find(i => i.id === UI.sel); }
-function roomN(){ return STAGES[stageFor(stats().level)].size; }
+function selectedItem(){ return CR().items.find(i => i.id === UI.sel); }
+function roomN(){ return sizeOf(curEntry()); }
+function nOfRoom(room){ const e = S().house.rooms.find(r => r.room === room); return e ? sizeOf(e) : studySize(); }
 const ACT = {
   more(){
     if ($('#sheet')) { $('#sheet').remove(); return; }
@@ -2163,8 +2607,8 @@ const ACT = {
   'hist-del'(b){ const m = data.months[b.dataset.m]; if (!m) return; m.sessions = m.sessions.filter(s => s.id !== b.dataset.v); UI.histConfirm = null; queueWrite('m-' + b.dataset.m, 0); publishPub(); toast('記録を削除しました。', 'trash'); render(); },
   // room
   'buddy-talk'(){ UI.buddyIdx = (UI.buddyIdx || 0) + 1; render(); },
-  'buddy-name'(){ const st = S();
-    showModal(`<h3>ルームメイトの名前</h3><form class="stack" data-form="buddy-name" style="gap:12px"><input id="bn-name" type="text" maxlength="12" value="${esc(st.buddy.name)}" aria-label="名前" autofocus><div class="acts"><button class="btn ghost" type="button" data-act="modal-close">やめる</button><button class="btn primary" type="submit">決定</button></div></form>`); },
+  'buddy-name'(){ const it = selectedItem(), who = it && F[it.t].person ? whoOfItem(it) : 'buddy'; UI.nameWho = who;
+    showModal(`<h3>${who === 'buddy' ? 'ルームメイト' : who === 'partner' ? 'パートナー' : '子ども'}の名前</h3><form class="stack" data-form="buddy-name" style="gap:12px"><input id="bn-name" type="text" maxlength="12" value="${esc(whoName(who))}" aria-label="名前" autofocus><div class="acts"><button class="btn ghost" type="button" data-act="modal-close">やめる</button><button class="btn primary" type="submit">決定</button></div></form>`); },
   'rv-tab'(b){ syncRvDraft(); UI.rvTab = b.dataset.v; render(); },
   'rv-month'(b){ UI.rvMonth = addMonths(UI.rvMonth || monthOf(dkey()), +b.dataset.v); render(); },
   'rv-edit'(b){ UI.rvDate = b.dataset.v === dkey() ? null : b.dataset.v; UI.review = null; UI.rvTab = 'write'; render(); window.scrollTo(0, 0); },
@@ -2188,28 +2632,70 @@ const ACT = {
   'rm-tab'(b){ UI.roomTab = b.dataset.v; render(); },
   'rm-desel'(){ UI.sel = null; UI.colorOpen = false; render(); },
   'rm-cancel'(){ UI.place = null; render(); },
-  'rm-place'(b){ UI.place = initPlace(b.dataset.v); UI.sel = null; render(); $('#roomstage')?.scrollIntoView({behavior: 'smooth', block: 'center'}); },
+  'rm-place'(b){ const v = b.dataset.v; if (v.startsWith('kid:')) { UI.place = initPlace('kid'); UI.place.kid = v.slice(4); } else UI.place = initPlace(v); UI.sel = null; render(); $('#roomstage')?.scrollIntoView({behavior: 'smooth', block: 'center'}); },
   'rm-rot-place'(){ const pl = UI.place; pl.r = ((pl.r || 0) + 1) % 4; clampPlace(pl); render(); },
   'rm-nudge'(b){ nudgePlace(b.dataset.v); },
   'rm-ok'(){ commitPlace(); },
   'rm-move'(){ const it = selectedItem(); if (!it) return;
-    if (!F[it.t].small && F[it.t].surf && S().room.items.some(o => F[o.t].small && itemZ(S().room.items, o) > 0 && surfaceAt(S().room.items, o.x, o.y, o.id)?.item.id === it.id)) { toast('上に置いてある小物を先に移動してください。', 'box'); return; }
-    UI.place = {t: it.t, r: it.r || 0, moveId: it.id, x: it.x, y: it.y, side: it.side}; UI.sel = null; UI.colorOpen = false; render(); $('#roomstage')?.scrollIntoView({behavior: 'smooth', block: 'center'}); },
+    if (!F[it.t].small && F[it.t].surf && CR().items.some(o => F[o.t].small && itemZ(CR().items, o) > 0 && surfaceAt(CR().items, o.x, o.y, o.id)?.item.id === it.id)) { toast('上に置いてある小物を先に移動してください。', 'box'); return; }
+    UI.place = {t: it.t, r: it.r || 0, moveId: it.id, x: it.x, y: it.y, side: it.side, kid: it.kid}; UI.sel = null; UI.colorOpen = false; render(); $('#roomstage')?.scrollIntoView({behavior: 'smooth', block: 'center'}); },
   'rm-rot'(){ const it = selectedItem(); if (!it) return; const nr = ((it.r || 0) + 1) % 4;
-    if (!canPlace(S().room.items, roomN(), it.t, it.x, it.y, nr, it.id)) { toast('この位置では回転できません。少し移動してから試してください。', 'rotate'); return; }
+    if (!canPlace(CR().items, roomN(), it.t, it.x, it.y, nr, it.id)) { toast('この位置では回転できません。少し移動してから試してください。', 'rotate'); return; }
     it.r = nr; queueWrite('state'); publishPub(); render(); },
   'rm-color'(){ UI.colorOpen = !UI.colorOpen; render(); },
   'rm-setc'(b){ const it = selectedItem(); if (!it) return; it.c = +b.dataset.v; queueWrite('state'); publishPub(); render(); },
-  'rm-store'(){ const it = selectedItem(); if (!it) return; const items = S().room.items;
+  'rm-store'(){ const it = selectedItem(); if (!it) return; const items = CR().items;
     if (F[it.t].surf && items.some(o => F[o.t].small && surfaceAt(items, o.x, o.y, o.id)?.item.id === it.id)) { toast('上に置いてある小物を先にしまってください。', 'box'); return; }
-    S().room.items = items.filter(i => i.id !== it.id); UI.sel = null; UI.colorOpen = false; queueWrite('state'); publishPub(); toast(`${F[it.t].n}を持ち物にしまいました。`, 'box'); render(); },
+    CR().items = items.filter(i => i.id !== it.id); UI.sel = null; UI.colorOpen = false; queueWrite('state'); publishPub(); toast(F[it.t].person ? `${personInfo(it).name}は「持ち物」で待っています。別の部屋に呼ぶこともできます。` : `${F[it.t].n}を持ち物にしまいました。`, 'box'); render(); },
   'rm-buy'(b){ const t = b.dataset.v, d = F[t], x = stats();
     if (x.level < d.lv || x.coins < d.cost) return;
     confirmBox(`${d.n}を購入しますか？`, `${d.cost}コインを使います（残り ${x.coins - d.cost}コイン）。購入後は持ち物から部屋に置けます。`, '購入する', () => {
       const st = S(); st.spent = (st.spent || 0) + d.cost; st.owned[t] = (st.owned[t] || 0) + 1; queueWrite('state');
       UI.roomTab = 'inv'; UI.place = initPlace(t); render(); $('#roomstage')?.scrollIntoView({behavior: 'smooth', block: 'center'}); toast(`${d.n}を手に入れた！ 置きたい場所をタップしよう。`, 'box', 4500); }); },
-  'rm-wall'(b){ S().room.wall = b.dataset.v; queueWrite('state'); publishPub(); render(); },
-  'rm-floor'(b){ S().room.floor = b.dataset.v; queueWrite('state'); publishPub(); render(); },
+  'rm-wall'(b){ CR().wall = b.dataset.v; queueWrite('state'); publishPub(); render(); },
+  'rm-floor'(b){ CR().floor = b.dataset.v; queueWrite('state'); publishPub(); render(); },
+  // life: rooms, house, wardrobe, family
+  'room-go'(b){ const v = b.dataset.v; UI.roomId = v === 'study' ? null : v; UI.sel = null; UI.place = null; UI.colorOpen = false; UI.buddyIdx = 0; render(); },
+  'house-cell'(b){ const i = +b.dataset.v, [cx, cy] = PLOT[i]; if (i === 0) { UI.roomId = null; render(); return; }
+    const e = S().house.rooms.find(r => r.cx === cx && r.cy === cy); if (e) { UI.roomId = e.id; UI.sel = null; render(); window.scrollTo(0, 0); return; }
+    if (i < plotOpen(stats().level)) showBuild(i); },
+  'house-build'(b){ const k = b.dataset.v, cell = +b.dataset.c, rk = ROOM_KINDS[k], x = stats(), st = S(), [cx, cy] = PLOT[cell];
+    if (!rk || x.level < rk.lv || x.coins < rk.cost || st.house.rooms.some(r => r.kind === k || (r.cx === cx && r.cy === cy))) return;
+    closeModal();
+    const e = {id: 'rm' + uid6(), kind: k, cx, cy, room: {wall: rk.wall, floor: rk.floor, items: [], light: 'auto'}};
+    st.spent = (st.spent || 0) + rk.cost; st.house.rooms.push(e);
+    for (const [t, sx, sy, sr] of rk.start) { let ok = false; if (canPlace(e.room.items, rk.size, t, sx, sy, sr)) { e.room.items.push({id: uid6(), t, x: sx, y: sy, r: sr, c: 0}); ok = true; } else ok = putInto(e.room, rk.size, t); if (ok) st.owned[t] = (st.owned[t] || 0) + 1; }
+    famLog(`${rk.n}を増築した`, 'home'); queueWrite('state', 0); publishPub();
+    UI.roomId = e.id; UI.sel = null; render(); window.scrollTo(0, 0);
+    toast(`${rk.n}が完成！家具つきです。`, 'home', 4500); checkBadges(false); },
+  'room-rename'(){ const e = curEntry(); if (!e) return;
+    showModal(`<h3>部屋の名前</h3><form class="stack" data-form="room-name" style="gap:12px"><input id="rn-name" type="text" maxlength="12" value="${esc(e.name || ROOM_KINDS[e.kind].n)}" aria-label="名前" autofocus><div class="acts"><button class="btn ghost" type="button" data-act="modal-close">やめる</button><button class="btn primary" type="submit">決定</button></div></form>`); },
+  'room-demolish'(){ const e = curEntry(); if (!e) return; const nm = e.name || ROOM_KINDS[e.kind].n;
+    confirmBox(`「${nm}」をこわしますか？`, '家具と家族は持ち物に戻ります。使ったコインは戻りません。', 'こわす', () => { const st = S(); st.house.rooms = st.house.rooms.filter(r => r.id !== e.id); UI.roomId = 'house'; queueWrite('state', 0); publishPub(); render(); toast(`${nm}をこわしました。`, 'trash'); }, true); },
+  'rm-light'(){ const r = CR(); r.light = {auto: 'on', on: 'off', off: 'auto'}[r.light || 'auto']; queueWrite('state'); publishPub(); render();
+    toast({auto: '電気：自動（夕方〜夜11時と勉強中につきます）', on: '電気：つけっぱなし', off: '電気：消しました'}[r.light], 'bulb', 2600); },
+  'wear-open'(b){ UI.roomTab = 'wear'; UI.wearWho = b.dataset.v; UI.sel = null; render(); $('#roompanel')?.scrollIntoView({behavior: 'smooth', block: 'start'}); },
+  'wr-who'(b){ UI.wearWho = b.dataset.v; render(); },
+  'wr-slot'(b){ UI.wearSlot = b.dataset.v; render(); },
+  'wr-gender'(b){ const L = lookOf(UI.wearWho || 'buddy') || S().buddy.look, g = b.dataset.v; if (L.gender === g) return; L.gender = g;
+    if (!HAIRS[g].some(h => h[0] === L.hair)) L.hair = HAIRS[g][0][0]; queueWrite('state'); publishPub(); render(); },
+  'wr-hair'(b){ const L = lookOf(UI.wearWho || 'buddy') || S().buddy.look; L.hair = b.dataset.v; queueWrite('state'); publishPub(); render(); },
+  'wr-hc'(b){ const L = lookOf(UI.wearWho || 'buddy') || S().buddy.look; L.hc = +b.dataset.v; queueWrite('state'); publishPub(); render(); },
+  'wr-skin'(b){ const L = lookOf(UI.wearWho || 'buddy') || S().buddy.look; L.skin = +b.dataset.v; queueWrite('state'); publishPub(); render(); },
+  'wr-color'(b){ const L = lookOf(UI.wearWho || 'buddy') || S().buddy.look; L.wc = L.wc || {}; L.wc[UI.wearSlot || 'top'] = +b.dataset.v; queueWrite('state'); publishPub(); render(); },
+  'wr-equip'(b){ const slot = UI.wearSlot || 'top', k = b.dataset.v, st = S(), it = WEAR[slot].items[k]; if (!it) return;
+    if (it.cost && !st.buddy.closet[slot + ':' + k]) return; const L = lookOf(UI.wearWho || 'buddy') || st.buddy.look; L.wear[slot] = k; queueWrite('state'); publishPub(); render(); },
+  'wr-buy'(b){ const slot = UI.wearSlot || 'top', k = b.dataset.v, it = WEAR[slot].items[k], x = stats(); if (!it || x.level < it.lv || x.coins < it.cost) return;
+    confirmBox(`${it.n}を買いますか？`, `${it.cost}コインを使います（残り ${x.coins - it.cost}コイン）。買った服は家族みんなで着られます。`, '買って着る', () => {
+      const st = S(); st.spent = (st.spent || 0) + it.cost; st.buddy.closet[slot + ':' + k] = dkey(); const L = lookOf(UI.wearWho || 'buddy') || st.buddy.look; L.wear[slot] = k;
+      queueWrite('state', 0); publishPub(); render(); toast(`${it.n}を手に入れた！`, 'shirt', 3000); }); },
+  'fam-g'(b){ const d = UI.famDraft; if (!d) return; const inp = $('#fam-name'); if (inp) d.name = '';
+    d.gender = b.dataset.v; if (S().family.pending && S().family.pending.type === 'partner') d.role = d.gender === 'boy' ? '夫' : '奥さん'; closeModal(); showFamilyEvent(); },
+  'fam-role'(b){ const d = UI.famDraft; if (!d) return; const inp = $('#fam-name'); if (inp) d.name = inp.value; d.role = b.dataset.v; closeModal(); showFamilyEvent(); },
+  'fam-decline'(){ const f = S().family; f.pending = null; f.declinedUntil = addDays(dkey(), 7); UI.famDraft = null; queueWrite('state', 0); closeModal(); toast('「そっか。また会えるといいね」…訪ねてきた人は帰っていきました。', 'moon', 4500); },
+  'fam-grown'(){ const st = S(), f = st.family, ev = f.pending, k = ev && f.kids.find(x => x.id === ev.kid); f.pending = null;
+    if (k) { k.left = dkey(); k.stage = 3; st.bonus = (st.bonus || 0) + 300; for (const r of allRooms()) r.items = r.items.filter(i => !(i.t === 'kid' && i.kid === k.id)); famLog(`${k.name}が独り立ちした`, 'flag'); }
+    queueWrite('state', 0); publishPub(); closeModal(); render(); checkBadges(false); setTimeout(familyTick, 800); },
   // rank
   'rank-p'(b){ UI.rankPeriod = b.dataset.v; render(); },
   'rank-s'(b){ UI.rankScope = b.dataset.v; render(); },
@@ -2229,7 +2715,7 @@ const ACT = {
   'fr-del'(b){ S().friends = S().friends.filter(c => c !== b.dataset.v); queueWrite('state'); render(); },
   priv(b){ const k = b.dataset.k; S().privacy[k] = !S().privacy[k]; queueWrite('state'); publishPub(); render(); },
   'see-room'(b){ const d = pubDocs.find(p => p.uid === b.dataset.v); if (!d || !d.room) return;
-    showModal(`<div class="ph"><div><span class="eyebrow">ROOM LEVEL ${(d.room.stage || 0) + 1}</span><h3>${esc(d.nick || 'ななしの受験生')}の部屋</h3></div><button class="btn sm ghost" data-act="modal-close" aria-label="閉じる">${icon('x')}</button></div><div class="roomstage">${roomSVG(d.room, d.room.size || 5, {})}</div><p class="note">LV${d.lv} · ${esc(titleFor(d.lv))} · 累計 ${fmtHM(d.tot)}</p>`); },
+    showModal(`<div class="ph"><div><span class="eyebrow">ROOM LEVEL ${(d.room.stage || 0) + 1}</span><h3>${esc(d.nick || 'ななしの受験生')}の部屋</h3></div><button class="btn sm ghost" data-act="modal-close" aria-label="閉じる">${icon('x')}</button></div><div class="roomstage">${roomSVG({...d.room, people: d.room.people || {}}, d.room.size || 5, {})}</div><p class="note">LV${d.lv} · ${esc(titleFor(d.lv))} · 累計 ${fmtHM(d.tot)}</p>`); },
   // exams
   'exam-pin'(b){ const st = S(); st.pinnedExam = st.pinnedExam === b.dataset.v ? null : b.dataset.v; queueWrite('state'); render(); },
   'exam-edit'(b){ UI.editExam = b.dataset.v; render(); },
@@ -2290,17 +2776,25 @@ document.addEventListener('click', e => {
   if (a && ACT[a.dataset.act]) { if (a.tagName === 'A') { ACT[a.dataset.act](a, e); return; } e.preventDefault(); ACT[a.dataset.act](a, e); }
 });
 /* ---------- roommate: comments about the room and the day ---------- */
-function buddyLines(){
-  const st = S(), x = stats(), info = todayInfo(), items = st.room.items.filter(i => F[i.t]), N = roomN(), stg = stageFor(x.level), h = new Date().getHours();
+function buddyLines(room = S().room, pose){
+  const st = S(), x = stats(), info = todayInfo(), items = room.items.filter(i => F[i.t]), N = nOfRoom(room), stg = stageFor(x.level), h = new Date().getHours();
   const has = (...ts) => items.some(i => ts.includes(i.t)), cnt = ts => items.filter(i => ts.includes(i.t)).length;
   const lights = items.filter(i => F[i.t].glow).length, plants = cnt(['plant','cactus','bonsai']), walls = items.filter(i => F[i.t].wall).length;
   const desks = cnt(['desk_basic','desk_pro','standing_desk','gold_desk']), chairs = cnt(['chair_basic','chair_gaming']);
   const used = new Set(); for (const i of items) { const d = F[i.t]; if (d.wall || d.small || d.rug) continue; const [w, dd] = footprint(i); for (let a = 0; a < w; a++) for (let b = 0; b < dd; b++) used.add((i.x + a) + ',' + (i.y + b)); }
-  const fill = used.size / (N * N), L = [];
+  const fill = used.size / (N * N), L = [], f = st.family, LS0 = lightState(room), me = st.buddy.look.gender === 'girl' ? 'わたし' : 'ぼく';
   L.push(h < 5 ? 'こんな時間まで起きてるの？　睡眠も勉強のうちだよ。' : h < 10 ? 'おはよう！朝の頭はいちばん冴えてるよ。' : h < 17 ? 'こんにちは。今日も一緒にがんばろう。' : h < 22 ? 'おかえり！今日はどうだった？' : 'もう夜だね。きりのいいところで休もう。');
   if (info.total === 0) L.push('今日はまだ勉強してないみたい。まずは5分だけ、タイマーを回してみよう。');
   else if (info.goal && info.total >= info.goal) L.push(`今日の目標${fmtHM(info.goal)}、達成だね！部屋もよろこんでるよ。`);
   else if (info.goal) L.push(`今日は${fmtHM(info.total)}勉強したね。目標まであと${fmtHM(info.goal - info.total)}！`);
+  if (pose === 'sit') L.push(T.state === 'run' && T.phase === 'study' ? `タイマー動いてるね。${me}もとなりの席で集中してるよ！` : 'ちょっと座ってひと休み。机に向かうと気持ちが引きしまるね。');
+  if (LS0.dark && !LS0.lit) L.push('電気、つけないの？ちょっと暗いよ。右上の「電気」ボタンでつけられるよ。');
+  if (h >= 22 && !items.some(i => F[i.t].sleep)) L.push('夜は布団かベッドで寝たいなあ…。ショップに布団があるよ。');
+  if (f.partner) L.push(`${f.partner.name}がいると、家があったかいね。`);
+  for (const k of f.kids.filter(k => !k.left)) L.push(k.stage === 0 ? `${k.name}、すやすや育ってるよ。あなたが勉強するほど大きくなるんだ。` : `${k.name}、もう${KID_STAGE[k.stage]}だね。時間がたつのは早いなあ。`);
+  if (f.kids.some(k => k.left)) L.push(`${f.kids.find(k => k.left).name}、元気にしてるかな。`);
+  if (x.level >= 10 && !st.house.rooms.length) L.push('レベル10になったから、「家・家族」タブで部屋を増築できるよ！リビングとかどう？');
+  else if (st.house.rooms.length) L.push(`家が${st.house.rooms.length + 1}部屋になったね。どんどん豪邸に近づいてる！`);
   if (x.streak >= 3) L.push(`${x.streak}日連続で勉強してる！毎日つづけるのが一番の近道だよ。`);
   if (!desks) L.push('あれ、机がない…。持ち物から机を置くと、勉強部屋っぽくなるよ。');
   else if (!chairs && !has('standing_desk')) L.push('机はあるけど椅子がないね。立ちっぱなしはつかれちゃう。');
@@ -2313,7 +2807,7 @@ function buddyLines(){
   else L.push(plants >= 3 ? 'ここ、ちょっとした植物園みたい。空気がおいしい！' : '植物があると落ち着くね。');
   if (has('bookshelf','books_stack','shelf_wall')) L.push('本があると、いかにも勉強部屋って感じ！');
   if (!walls) L.push('壁がちょっとさびしいかも。カレンダーや合格祈願の掛け軸はどう？');
-  if (has('banner')) L.push('合格祈願の掛け軸、毎日見てると気合が入るね。ぼくも応援してる！');
+  if (has('banner')) L.push(`合格祈願の掛け軸、毎日見てると気合が入るね。${me}も応援してる！`);
   if (has('calendar')) { const ex = nextExam(); if (ex) L.push(`カレンダーを見ると…${ex.name}まであと${daysUntil(ex.date)}日。一日一日を大事にしよう。`); }
   if (has('kotatsu')) L.push('こたつ、あったかいね…。でも寝落ちには気をつけて！');
   if (has('bed') && (h >= 22 || h < 5)) L.push('ベッドが呼んでる…。ちゃんと寝るのも作戦だよ。');
@@ -2323,11 +2817,11 @@ function buddyLines(){
   if (has('piano')) L.push('ピアノ、息抜きにちょっと弾くと集中力が戻るらしいよ。');
   if (has('fridge','mug')) L.push('水分補給も忘れずにね。脳は水が大好きなんだ。');
   if (has('neon')) L.push('STUDY HARD のネオン、見るたびにテンション上がる！');
-  if (has('robot')) L.push('ロボットくん、なかなか頼りになりそう。ぼくの後輩かな？');
+  if (has('robot')) L.push(`ロボットくん、なかなか頼りになりそう。${me}の後輩かな？`);
   if (has('crystal')) L.push('クリスタルタワー…！ここまで来た人はなかなかいないよ。');
-  if (st.room.floor === 'tatami') L.push('畳のにおいって、なんだか落ち着くよね。');
-  if (st.room.wall === 'space') L.push('宇宙の壁紙、未来に向かってる感じがしてかっこいい。');
-  if (st.room.wall === 'sakura') L.push('桜の壁紙、合格したらほんものの桜を見に行こう！');
+  if (room.floor === 'tatami') L.push('畳のにおいって、なんだか落ち着くよね。');
+  if (room.wall === 'space') L.push('宇宙の壁紙、未来に向かってる感じがしてかっこいい。');
+  if (room.wall === 'sakura') L.push('桜の壁紙、合格したらほんものの桜を見に行こう！');
   const nextS = STAGES[stg + 1];
   L.push(nextS ? `あとレベル${nextS.lv - x.level}で、部屋が「${nextS.name}」に広がるよ。` : '部屋は最終段階！ここまで積み上げたの、本当にすごいよ。');
   const buyable = F_ORDER.filter(t => x.level >= F[t].lv && F[t].cost > 0 && !st.owned[t] && x.coins >= F[t].cost);
@@ -2335,14 +2829,15 @@ function buddyLines(){
   if (!info.reviewed && nowHM() >= st.prefs.reviewTime) L.push('寝る前に、今日の振り返りを書いておこう。明日の自分が助かるよ。');
   return L;
 }
+function talkTarget(){ const items = CR().items; return items.find(i => i.id === UI.sel && F[i.t] && F[i.t].person) || items.find(i => i.t === 'buddy') || items.find(i => F[i.t] && F[i.t].person); }
 function buddyBubble(){
-  const st = S(); if (UI.place || !st.room.items.some(i => i.t === 'buddy')) return '';
-  const L = buddyLines(), line = L[(UI.buddyIdx || 0) % L.length];
-  return `<div class="bubble" id="buddy-bubble" role="status" hidden><b>${esc(st.buddy.name)}</b>${esc(line)}</div>`;
+  if (UI.place) return ''; const it = talkTarget(); if (!it) return '';
+  const L = personLines(it, CR()), line = L[(UI.buddyIdx || 0) % L.length];
+  return `<div class="bubble" id="buddy-bubble" data-talk="${esc(it.id)}" role="status" hidden><b>${esc(personInfo(it).name)}</b>${esc(line)}</div>`;
 }
 function placeBubble(){
   const rs = $('#roomstage'), b = $('#buddy-bubble'); if (!rs || !b) return;
-  const bi = S().room.items.find(i => i.t === 'buddy'); if (!bi) return;
+  const bi = CR().items.find(i => i.id === b.dataset.talk); if (!bi) return;
   const els = [...rs.querySelectorAll(`svg [data-i="${bi.id}"]`)]; if (!els.length) return;
   let top = 1e9, l = 1e9, r = -1e9; for (const el of els) { const q = el.getBoundingClientRect(); if (!q.width && !q.height) continue; top = Math.min(top, q.top); l = Math.min(l, q.left); r = Math.max(r, q.right); }
   if (top === 1e9) return;
@@ -2356,7 +2851,7 @@ window.addEventListener('resize', () => { if (route() === 'room') placeBubble();
 
 /* ---------- room placement: candidate position + arrows + tap ---------- */
 function placeOk(pl){
-  const items = S().room.items, N = roomN();
+  const items = CR().items, N = roomN();
   return F[pl.t].wall ? canPlaceWall(items, N, pl.t, pl.side, pl.x, pl.moveId) : canPlace(items, N, pl.t, pl.x, pl.y, pl.r || 0, pl.moveId);
 }
 function placeDims(pl){ const d = F[pl.t]; return (pl.r % 2) ? [d.D, d.W] : [d.W, d.D]; }
@@ -2366,7 +2861,7 @@ function clampPlace(pl){
   const [w, dd] = placeDims(pl); pl.x = clamp(pl.x, 0, N - w); pl.y = clamp(pl.y, 0, N - dd);
 }
 function initPlace(t){
-  const d = F[t], items = S().room.items, N = roomN();
+  const d = F[t], items = CR().items, N = roomN();
   if (d.wall) { for (const side of ['R', 'L']) for (let p = 0; p + d.W <= N; p++) if (canPlaceWall(items, N, t, side, p)) return {t, side, x: p, y: 0, r: 0};
     return {t, side: 'R', x: 0, y: 0, r: 0}; }
   const cands = []; for (let ax = 0; ax + d.W <= N; ax++) for (let ay = 0; ay + d.D <= N; ay++) cands.push({ax, ay, dist: (ax + d.W / 2 - N / 2) ** 2 + (ay + d.D / 2 - N / 2) ** 2});
@@ -2393,15 +2888,15 @@ function commitPlace(){
     return;
   }
   const st = S(), d = F[pl.t];
-  if (pl.moveId) { const it = st.room.items.find(i => i.id === pl.moveId); if (it) Object.assign(it, d.wall ? {side: pl.side, x: pl.x} : {x: pl.x, y: pl.y, r: pl.r || 0}); }
-  else st.room.items.push(d.wall ? {id: uid6(), t: pl.t, side: pl.side, x: pl.x, y: 0, r: 0, c: 0} : {id: uid6(), t: pl.t, x: pl.x, y: pl.y, r: pl.r || 0, c: 0});
-  const moved = !!pl.moveId; UI.place = null; UI.sel = null;
+  if (pl.moveId) { const it = CR().items.find(i => i.id === pl.moveId); if (it) Object.assign(it, d.wall ? {side: pl.side, x: pl.x} : {x: pl.x, y: pl.y, r: pl.r || 0}); }
+  else CR().items.push(d.wall ? {id: uid6(), t: pl.t, side: pl.side, x: pl.x, y: 0, r: 0, c: 0} : Object.assign({id: pl.t === 'buddy' ? 'buddy' : uid6(), t: pl.t, x: pl.x, y: pl.y, r: pl.r || 0, c: 0}, pl.kid ? {kid: pl.kid} : {}));
+  const moved = !!pl.moveId, nm = d.person ? personInfo(pl).name : d.n; UI.place = null; UI.sel = null;
   queueWrite('state', 0); render();
-  toast(moved ? `${d.n}を移動しました。` : `${d.n}を置きました。`, 'check', 2600);
+  toast(moved ? `${nm}を移動しました。` : d.person ? `${nm}がこの部屋に来ました。` : `${nm}を置きました。`, 'check', 2600);
   try { publishPub(); checkBadges(false); } catch {}
 }
 function snapToFree(pl){
-  const items = S().room.items, N = roomN(), d = F[pl.t];
+  const items = CR().items, N = roomN(), d = F[pl.t];
   if (d.wall) {
     const c = []; for (const side of ['R', 'L']) for (let q = 0; q + d.W <= N; q++) c.push({side, q, dist: (side === pl.side ? 0 : N) + Math.abs(q - pl.x)});
     c.sort((a, b) => a.dist - b.dist); const f = c.find(o => canPlaceWall(items, N, pl.t, o.side, o.q, pl.moveId));
@@ -2417,7 +2912,7 @@ function svgPoint(svg, cx, cy){
   const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy; return pt.matrixTransform(m.inverse());
 }
 function candidateFromPoint(sx, sy){
-  const pl = UI.place, st = S(), N = roomN(), d = F[pl.t], items = st.room.items;
+  const pl = UI.place, st = S(), N = roomN(), d = F[pl.t], items = CR().items;
   if (d.wall) {
     const side = sx >= 0 ? 'R' : 'L', u = side === 'R' ? sx / TW : (sx + N * TW) / TW;
     const p0 = clamp(Math.round(u - d.W / 2), 0, N - d.W);
@@ -2442,7 +2937,7 @@ function roomTap(e, rs){
   const svg = rs.querySelector('svg.roomsvg'); if (!svg) return false;
   if (UI.place) { const p = svgPoint(svg, e.clientX, e.clientY); if (p && candidateFromPoint(p.x, p.y)) render(); return true; }
   const it = e.target.closest('[data-i]');
-  const isBuddy = it && S().room.items.some(i => i.id === it.dataset.i && i.t === 'buddy');
+  const isBuddy = it && CR().items.some(i => i.id === it.dataset.i && F[i.t] && F[i.t].person);
   if (isBuddy) { if (UI.sel === it.dataset.i) UI.buddyIdx = (UI.buddyIdx || 0) + 1; UI.sel = it.dataset.i; }
   else if (it) UI.sel = UI.sel === it.dataset.i ? null : it.dataset.i;
   else if (UI.sel) UI.sel = null;
@@ -2468,7 +2963,23 @@ document.addEventListener('submit', e => {
   const f = e.target.closest('[data-form]'); if (!f) return; e.preventDefault();
   const st = S(), k = f.dataset.form, val = id => (f.querySelector('#' + id)?.value ?? '').trim();
   if (k === 'auth') { doAuth(f); return; }
-  if (k === 'buddy-name') { const n = val('bn-name').slice(0, 12); if (n) { st.buddy.name = n; queueWrite('state'); } closeModal(); render(); if (n) toast(`ルームメイトの名前を「${n}」にしました。`, 'check'); return; }
+  if (k === 'buddy-name') { const n = val('bn-name').slice(0, 12), who = UI.nameWho || 'buddy';
+    if (n) { if (who === 'buddy') st.buddy.name = n; else if (who === 'partner') { if (st.family.partner) st.family.partner.name = n; } else { const kd = st.family.kids.find(x => x.id === who); if (kd) kd.name = n; } queueWrite('state'); publishPub(); }
+    closeModal(); render(); if (n) toast(`名前を「${n}」にしました。`, 'check'); return; }
+  if (k === 'room-name') { const n = val('rn-name').slice(0, 12), e = curEntry(); if (n && e) { e.name = n; queueWrite('state'); } closeModal(); render(); return; }
+  if (k === 'fam-partner') { const f = st.family, d = UI.famDraft || {}, ev = f.pending; if (!ev || ev.type !== 'partner') { closeModal(); return; }
+    const gender = d.gender || 'girl', name = val('fam-name').slice(0, 12) || PNAMES[gender][0];
+    f.partner = {name, role: d.role || 'パートナー', gender, look: randomLook(gender, ev.seed + gender), since: dkey()}; f.pending = null; UI.famDraft = null;
+    const at = placePerson('partner', {}, ['living', 'bedroom']); famLog(`${name}（${f.partner.role}）と暮らしはじめた`, 'heart');
+    queueWrite('state', 0); publishPub(); closeModal(); render(); checkBadges(false);
+    toast(at ? `${name}が${at}にやってきました！タップすると話せます。` : `${name}が家族になりました！部屋がいっぱいなので「持ち物」から呼んでね。`, 'users', 5500); return; }
+  if (k === 'fam-child') { const f = st.family, d = UI.famDraft || {}, ev = f.pending; if (!ev || ev.type !== 'child') { closeModal(); return; }
+    const gender = d.gender || 'boy', name = val('fam-name').slice(0, 12) || NAMES[gender][0];
+    const kid = {id: 'k' + uid6(), name, gender, look: randomLook(gender, ev.seed + gender), born: dkey(), minAt: stats().total, stage: 0, left: false};
+    f.kids.push(kid); f.pending = null; UI.famDraft = null;
+    const at = placePerson('kid', {kid: kid.id}, ['kids', 'living', 'bedroom']); famLog(`${name}が生まれた`, 'star');
+    queueWrite('state', 0); publishPub(); closeModal(); render(); checkBadges(false);
+    toast(at ? `${name}は${at}にいます。勉強するほど大きくなるよ！` : `${name}が生まれました！「持ち物」から部屋に呼べます。`, 'star', 5500); return; }
   if (k === 'pw') { const pw = f.querySelector('#pw-new').value; if (pw.length < 6) { toast('パスワードは6文字以上にしてください。', 'x'); return; }
     SB.auth.updateUser({password: pw}).then(({error}) => { if (error) toast(authMsg(error), 'x', 5000); else { f.reset(); toast('パスワードを変更しました。', 'check'); } }); return; }
   if (k === 'newpw') { const pw = f.querySelector('#np-new').value; if (pw.length < 6) { toast('パスワードは6文字以上にしてください。', 'x'); return; }
@@ -2533,7 +3044,8 @@ setInterval(() => {
   const today = dkey();
   if (today !== lastDay) { lastDay = today; dataV++; scheduleRender(); }
   if (UI.reviewToasted !== today && nowHM() >= S().prefs.reviewTime && !todayInfo().reviewed && S().onboarded) { UI.reviewToasted = today; toast('振り返りの時間です。今日の記録をまとめよう。', 'moon', 6000); if (route() === 'home') scheduleRender(); }
-  if (route() === 'room' && S().room.items.some(i => i.t === 'clock') && !UI.place && !modalOpen) scheduleRender();
+  if (today !== UI.famDay) { UI.famDay = today; familyTick(); }
+  if (route() === 'room' && !UI.place && !modalOpen) { const n = new Date(), pk = n.getHours() + '-' + Math.floor(n.getMinutes() / 20); if (pk !== UI.poseKey || CR().items.some(i => i.t === 'clock')) { UI.poseKey = pk; scheduleRender(); } }
 }, 30000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && T.state === 'run') { requestWake(); tick(); } });
 
