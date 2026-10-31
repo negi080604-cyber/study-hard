@@ -439,6 +439,13 @@ const IC = {
   chevL:'<path d="M15 6l-6 6 6 6"/>', chevR:'<path d="M9 6l6 6-6 6"/>',
   eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   arrow:'<path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/>',
+  drop:'<path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z"/>',
+  wind:'<path d="M3 8h11a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h8"/>',
+  cup:'<path d="M4 8h13v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 3v2M12 3v2"/>',
+  train:'<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M9 21l1.5-4M15 21l-1.5-4"/><circle cx="9" cy="14" r=".8" fill="currentColor"/><circle cx="15" cy="14" r=".8" fill="currentColor"/>',
+  headphones:'<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/>',
+  planet:'<circle cx="12" cy="12" r="5"/><path d="M3.5 15.5c-1.2 2 .1 3 3.5 2.4 3.6-.6 8.6-3 11.8-5.6 2.8-2.3 3.2-4.2.9-4.5"/>',
+  upload:'<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>',
   star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'
 };
 const icon = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n] || ''}</svg>`;
@@ -1283,13 +1290,14 @@ function thumbSVG(t, ci = 0){
 
 /* ================= AUDIO (Web Audio — generated in-browser, no recordings) ================= */
 const AudioEng = {
-  ctx: null, master: null, nodes: [], timers: [], loops: [], cur: null, bufs: {},
+  ctx: null, master: null, bufs: {}, ch: new Map(),
   ensure(){
     if (!this.ctx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return false;
       this.ctx = new C(); this.master = this.ctx.createGain(); this.master.gain.value = S().prefs.vol ?? .5; this.master.connect(this.ctx.destination); }
     if (this.ctx.state === 'suspended') this.ctx.resume();
     return true;
   },
+  get playing(){ return this.ch.size > 0; },
   noise(kind){
     if (this.bufs[kind]) return this.bufs[kind];
     const len = this.ctx.sampleRate * 4, buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = buf.getChannelData(0);
@@ -1300,66 +1308,153 @@ const AudioEng = {
       else { last = (last + .02 * w) / 1.02; d[i] = last * 3.5; } }
     return (this.bufs[kind] = buf);
   },
-  src(kind, gain, filters = []){
-    const s = this.ctx.createBufferSource(); s.buffer = this.noise(kind); s.loop = true;
-    const g = this.ctx.createGain(); g.gain.value = gain; let n = s;
-    for (const [type, f, q] of filters) { const bq = this.ctx.createBiquadFilter(); bq.type = type; bq.frequency.value = f; if (q) bq.Q.value = q; n.connect(bq); n = bq; this.nodes.push(bq); }
-    n.connect(g); g.connect(this.master); s.start(); this.nodes.push(s, g); return g;
+  // ---- per-channel helpers ----
+  src(ch, kind, gain, filters = []){
+    const C = this.ctx, s = C.createBufferSource(); s.buffer = this.noise(kind); s.loop = true;
+    const g = C.createGain(); g.gain.value = gain; let n = s; const fs = [];
+    for (const [type, f, q] of filters) { const bq = C.createBiquadFilter(); bq.type = type; bq.frequency.value = f; if (q) bq.Q.value = q; n.connect(bq); n = bq; fs.push(bq); ch.nodes.push(bq); }
+    n.connect(g); g.connect(ch.g); s.start(0, Math.random() * 3); ch.nodes.push(s, g); g.filters = fs; return g;
   },
-  blip(freq, dur, gain, type = 'bandpass', q = 1){
-    const t = this.ctx.currentTime, s = this.ctx.createBufferSource(); s.buffer = this.noise('white');
-    const f = this.ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
-    const g = this.ctx.createGain(); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-    s.connect(f); f.connect(g); g.connect(this.master); s.start(t, Math.random() * 3); s.stop(t + dur + .02);
+  burst(ch, freq, dur, gain, type = 'bandpass', q = 1, dest){
+    const C = this.ctx, t = C.currentTime, s = C.createBufferSource(); s.buffer = this.noise('white');
+    const f = C.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+    const g = C.createGain(); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(dest || ch.g); s.start(t, Math.random() * 3); s.stop(t + dur + .02);
   },
-  tone(freq, t, dur, gain, type = 'sine'){
-    const o = this.ctx.createOscillator(), g = this.ctx.createGain(); o.type = type; o.frequency.value = freq;
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + Math.min(.6, dur * .3)); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-    o.connect(g); g.connect(this.out || this.master); o.start(t); o.stop(t + dur + .05);
+  tone(ch, freq, t, dur, gain, type = 'sine', dest, attack){
+    const C = this.ctx, o = C.createOscillator(), g = C.createGain(); o.type = type; o.frequency.value = freq;
+    const a = attack != null ? attack : Math.min(.6, dur * .3);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(dest || ch.g); o.start(t); o.stop(t + dur + .05);
   },
-  every(fn, minMs, maxMs){ const h = {id: null, live: true}; this.loops.push(h); const loop = () => { if (!h.live) return; fn(); h.id = setTimeout(loop, minMs + Math.random() * (maxMs - minMs)); }; loop(); },
-  play(kind){
-    this.stop(); if (!this.ensure()) { toast('このブラウザでは音声を再生できません。', 'x'); return; }
-    this.cur = kind; const C = this.ctx;
-    if (kind === 'white') this.src('white', .32, [['lowpass', 9000]]);
-    if (kind === 'rain') { this.src('pink', .9, [['highpass', 400], ['lowpass', 7000]]); this.src('brown', .35, [['lowpass', 600]]);
-      this.every(() => this.blip(2500 + Math.random() * 3500, .03 + Math.random() * .04, .04 + Math.random() * .08, 'bandpass', 2), 25, 90); }
-    if (kind === 'fire') { this.src('brown', .9, [['lowpass', 420]]); this.src('pink', .06, [['bandpass', 900, .7]]);
-      this.every(() => this.blip(1200 + Math.random() * 3000, .008 + Math.random() * .03, .1 + Math.random() * .45, 'bandpass', 3), 40, 420); }
-    if (kind === 'wave') { const g = this.src('brown', .1, [['lowpass', 1000]]); const g2 = this.src('pink', .03, [['highpass', 1500]]);
-      const lfo = C.createOscillator(); lfo.frequency.value = .085; const d = C.createGain(); d.gain.value = .55; lfo.connect(d); d.connect(g.gain);
-      const d2 = C.createGain(); d2.gain.value = .12; lfo.connect(d2); d2.connect(g2.gain); g.gain.value = .65; g2.gain.value = .14; lfo.start(); this.nodes.push(lfo, d, d2); }
-    if (kind === 'forest') { const g = this.src('pink', .12, [['bandpass', 1100, .5]]); const lfo = C.createOscillator(); lfo.frequency.value = .05; const d = C.createGain(); d.gain.value = .07; lfo.connect(d); d.connect(g.gain); lfo.start(); this.nodes.push(lfo, d);
-      this.every(() => { const t = C.currentTime + .05, base = 2200 + Math.random() * 2400, n = 2 + Math.floor(Math.random() * 4);
-        for (let i = 0; i < n; i++) { const o = C.createOscillator(), gg = C.createGain(), st = t + i * (.11 + Math.random() * .05);
-          o.type = 'sine'; o.frequency.setValueAtTime(base, st); o.frequency.exponentialRampToValueAtTime(base * (1.25 + Math.random() * .4), st + .07);
-          gg.gain.setValueAtTime(0, st); gg.gain.linearRampToValueAtTime(.05, st + .015); gg.gain.exponentialRampToValueAtTime(.0001, st + .09);
-          o.connect(gg); gg.connect(this.master); o.start(st); o.stop(st + .12); } }, 1400, 5200); }
-    if (kind === 'bgm') {
-      const out = C.createGain(); out.gain.value = .9; const lp = C.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
-      const dl = C.createDelay(); dl.delayTime.value = .42; const fb = C.createGain(); fb.gain.value = .35;
-      out.connect(lp); lp.connect(this.master); lp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(this.master); this.nodes.push(out, lp, dl, fb); this.out = out;
-      const chords = [[57,60,64,67],[53,57,60,64],[48,52,55,59],[55,59,62,65]]; const mf = n => 440 * Math.pow(2, (n - 69) / 12); let ci = 0;
-      const playChord = () => { const t = C.currentTime + .05, ch = chords[ci++ % chords.length];
-        for (const n of ch) { this.tone(mf(n), t, 8.2, .035, 'triangle'); this.tone(mf(n) * 1.003, t, 8.2, .02, 'sine'); }
-        this.tone(mf(ch[0] - 12), t, 8.2, .05, 'sine');
-        for (let i = 0; i < 8; i++) if (Math.random() < .7) this.tone(mf(ch[Math.floor(Math.random() * 4)] + 12), t + i * 1 + Math.random() * .2, 1.6, .025, 'sine'); };
-      playChord(); const id = setInterval(playChord, 8000); this.timers.push(id);
-    }
-    renderSoundBtns();
+  loop(ch, fn, minMs, maxMs){ const h = {id: null, live: true}; ch.loops.push(h); const run = () => { if (!h.live) return; try { fn(); } catch {} h.id = setTimeout(run, minMs + Math.random() * (maxMs - minMs)); }; run(); },
+  every(ch, fn, ms){ try { fn(); } catch {} ch.timers.push(setInterval(() => { try { fn(); } catch {} }, ms)); },
+  echo(ch, time = .4, fb = .35, wet = .5){ const C = this.ctx, d = C.createDelay(); d.delayTime.value = time; const f = C.createGain(); f.gain.value = fb; const w = C.createGain(); w.gain.value = wet;
+    const inp = C.createGain(); inp.connect(ch.g); inp.connect(d); d.connect(f); f.connect(d); d.connect(w); w.connect(ch.g); ch.nodes.push(d, f, w, inp); return inp; },
+  // ---- channels ----
+  async play(id){
+    if (!this.ensure()) { toast('このブラウザでは音声を再生できません。', 'x'); return; }
+    this.stop(id, true);
+    const vol = (S().prefs.mix || {})[id] ?? .7, g = this.ctx.createGain(); g.gain.value = vol; g.connect(this.master);
+    const ch = {id, g, nodes: [g], loops: [], timers: [], audio: null, url: null}; this.ch.set(id, ch);
+    try {
+      if (id.startsWith('u')) {
+        const rec = await IDB.get(id); if (!rec || !this.ch.has(id)) { this.stop(id); if (!rec) toast('音声ファイルが見つかりません。', 'x'); return; }
+        ch.url = URL.createObjectURL(rec.blob); ch.audio = new Audio(ch.url); ch.audio.loop = true;
+        const node = this.ctx.createMediaElementSource(ch.audio); node.connect(g); ch.nodes.push(node);
+        await ch.audio.play();
+      } else if (GEN[id]) GEN[id](ch);
+    } catch (e) { this.stop(id); toast('この音声は再生できませんでした。ファイルの形式（mp3・m4a・wav など）を確認してください。', 'x', 5000); }
+    saveMix(); renderSoundBtns();
   },
-  stop(){
-    for (const n of this.nodes) { try { n.stop && n.stop(); } catch {} try { n.disconnect(); } catch {} }
-    this.nodes = []; this.timers.forEach(id => { clearTimeout(id); clearInterval(id); }); this.timers = []; this.loops.forEach(h => { h.live = false; clearTimeout(h.id); }); this.loops = []; this.out = null; this.cur = null; renderSoundBtns();
+  stop(id, quiet){
+    const ch = this.ch.get(id); if (!ch) return;
+    for (const n of ch.nodes) { try { n.stop && n.stop(); } catch {} try { n.disconnect(); } catch {} }
+    ch.timers.forEach(t => clearInterval(t)); ch.loops.forEach(h => { h.live = false; clearTimeout(h.id); });
+    if (ch.audio) { try { ch.audio.pause(); } catch {} } if (ch.url) URL.revokeObjectURL(ch.url);
+    this.ch.delete(id); if (!quiet) { saveMix(); renderSoundBtns(); }
   },
+  stopAll(){ for (const id of [...this.ch.keys()]) this.stop(id, true); renderSoundBtns(); },
+  toggle(id){ if (this.ch.has(id)) this.stop(id); else this.play(id); },
   setVol(v){ if (this.master) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, .05); },
+  setChVol(id, v){ const ch = this.ch.get(id); if (ch) ch.g.gain.setTargetAtTime(v, this.ctx.currentTime, .05); },
   chime(){
-    if (!this.ensure()) return; const t = this.ctx.currentTime + .02, prev = this.out; this.out = null;
-    [[880, 0], [1318.5, .18], [1760, .36]].forEach(([f, d]) => this.tone(f, t + d, 1.4, .12, 'sine')); this.out = prev;
+    if (!this.ensure()) return; const t = this.ctx.currentTime + .02, fake = {g: this.master};
+    [[880, 0], [1318.5, .18], [1760, .36]].forEach(([f, d]) => this.tone(fake, f, t + d, 1.4, .12, 'sine'));
   }
 };
-const SOUNDS = [['rain','雨音','rain'],['fire','焚き火','fire'],['wave','波の音','wave'],['forest','森の音','tree'],['white','ホワイトノイズ','noise'],['bgm','集中BGM','music']];
-function renderSoundBtns(){ document.querySelectorAll('[data-snd]').forEach(b => { b.classList.toggle('on', AudioEng.cur === b.dataset.snd); b.setAttribute('aria-pressed', AudioEng.cur === b.dataset.snd); }); const pp = $('#snd-pp'); if (pp) pp.innerHTML = AudioEng.cur ? icon('pause') + '停止' : icon('play') + '再生'; }
+const A = AudioEng, mf = n => 440 * Math.pow(2, (n - 69) / 12);
+const GEN = {
+  rain(ch){ A.src(ch, 'pink', .9, [['highpass', 400], ['lowpass', 7000]]); A.src(ch, 'brown', .35, [['lowpass', 600]]);
+    A.loop(ch, () => A.burst(ch, 2500 + Math.random() * 3500, .03 + Math.random() * .04, .04 + Math.random() * .08, 'bandpass', 2), 25, 90); },
+  fire(ch){ A.src(ch, 'brown', .9, [['lowpass', 420]]); A.src(ch, 'pink', .06, [['bandpass', 900, .7]]);
+    A.loop(ch, () => A.burst(ch, 1200 + Math.random() * 3000, .008 + Math.random() * .03, .1 + Math.random() * .45, 'bandpass', 3), 40, 420); },
+  wave(ch){ const C = A.ctx, g = A.src(ch, 'brown', .65, [['lowpass', 1000]]), g2 = A.src(ch, 'pink', .14, [['highpass', 1500]]);
+    const lfo = C.createOscillator(); lfo.frequency.value = .085; const d = C.createGain(); d.gain.value = .55; lfo.connect(d); d.connect(g.gain);
+    const d2 = C.createGain(); d2.gain.value = .12; lfo.connect(d2); d2.connect(g2.gain); lfo.start(); ch.nodes.push(lfo, d, d2); },
+  forest(ch){ const C = A.ctx, g = A.src(ch, 'pink', .12, [['bandpass', 1100, .5]]); const lfo = C.createOscillator(); lfo.frequency.value = .05; const d = C.createGain(); d.gain.value = .07; lfo.connect(d); d.connect(g.gain); lfo.start(); ch.nodes.push(lfo, d);
+    A.loop(ch, () => { const t = C.currentTime + .05, base = 2200 + Math.random() * 2400, n = 2 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < n; i++) { const o = C.createOscillator(), gg = C.createGain(), st = t + i * (.11 + Math.random() * .05);
+        o.frequency.setValueAtTime(base, st); o.frequency.exponentialRampToValueAtTime(base * (1.25 + Math.random() * .4), st + .07);
+        gg.gain.setValueAtTime(0, st); gg.gain.linearRampToValueAtTime(.05, st + .015); gg.gain.exponentialRampToValueAtTime(.0001, st + .09);
+        o.connect(gg); gg.connect(ch.g); o.start(st); o.stop(st + .12); } }, 1400, 5200); },
+  stream(ch){ const C = A.ctx, g = A.src(ch, 'pink', .45, [['bandpass', 2200, .8]]); A.src(ch, 'brown', .22, [['lowpass', 500]]);
+    A.loop(ch, () => g.gain.setTargetAtTime(.2 + Math.random() * .5, C.currentTime, .05), 60, 170);
+    A.loop(ch, () => { const t = C.currentTime, o = C.createOscillator(), gg = C.createGain(), f = 500 + Math.random() * 900;
+      o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 1.9, t + .06); gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(.045, t + .01); gg.gain.exponentialRampToValueAtTime(.0001, t + .08);
+      o.connect(gg); gg.connect(ch.g); o.start(t); o.stop(t + .1); }, 70, 380); },
+  wind(ch){ const C = A.ctx, g = A.src(ch, 'pink', .6, [['bandpass', 450, .7]]), f = g.filters[0];
+    const l1 = C.createOscillator(); l1.frequency.value = .06; const d1 = C.createGain(); d1.gain.value = 280; l1.connect(d1); d1.connect(f.frequency);
+    const l2 = C.createOscillator(); l2.frequency.value = .11; const d2 = C.createGain(); d2.gain.value = .3; l2.connect(d2); d2.connect(g.gain);
+    l1.start(); l2.start(); ch.nodes.push(l1, d1, l2, d2); A.src(ch, 'brown', .3, [['lowpass', 300]]); },
+  night(ch){ const C = A.ctx; A.src(ch, 'pink', .04, [['highpass', 1800]]);
+    const cricket = (freq, n, gap) => () => { const t = C.currentTime + .02; for (let i = 0; i < n; i++) A.tone(ch, freq, t + i * gap, .035, .03, 'sine', null, .005); };
+    A.loop(ch, cricket(4400, 3, .05), 700, 1300); A.loop(ch, cricket(3900, 4, .045), 1100, 2000); A.loop(ch, cricket(5000, 2, .06), 1600, 3200); },
+  train(ch){ const C = A.ctx; A.src(ch, 'brown', .85, [['lowpass', 260]]); A.src(ch, 'pink', .05, [['bandpass', 1200, .5]]);
+    A.every(ch, () => { const t = C.currentTime; [0, .17, .62, .79].forEach(o => setTimeout(() => A.burst(ch, 160 + Math.random() * 40, .14, .55, 'lowpass', 1), o * 1000)); }, 1500); },
+  clock(ch){ let k = 0; A.every(ch, () => A.burst(ch, k++ % 2 ? 2400 : 3100, .02, .45, 'bandpass', 10), 1000); },
+  cafe(ch){ const C = A.ctx, g1 = A.src(ch, 'pink', .3, [['bandpass', 650, .6]]), g2 = A.src(ch, 'pink', .15, [['bandpass', 1500, .8]]); A.src(ch, 'brown', .2, [['lowpass', 300]]);
+    A.loop(ch, () => { g1.gain.setTargetAtTime(.15 + Math.random() * .3, C.currentTime, .12); g2.gain.setTargetAtTime(.05 + Math.random() * .18, C.currentTime, .08); }, 120, 400);
+    A.loop(ch, () => { const t = C.currentTime + .02, f = 3000 + Math.random() * 2200; A.tone(ch, f, t, .35, .025, 'sine', null, .003); A.tone(ch, f * 1.51, t, .25, .012, 'sine', null, .003); }, 2500, 7500); },
+  white(ch){ A.src(ch, 'white', .32, [['lowpass', 9000]]); },
+  bgm(ch){ const C = A.ctx, lp = C.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200; const ech = A.echo(ch, .42, .35); lp.connect(ech); ch.nodes.push(lp);
+    const chords = [[57,60,64,67],[53,57,60,64],[48,52,55,59],[55,59,62,65]]; let ci = 0;
+    A.every(ch, () => { const t = C.currentTime + .05, c = chords[ci++ % chords.length];
+      for (const n of c) { A.tone(ch, mf(n), t, 8.2, .035, 'triangle', lp); A.tone(ch, mf(n) * 1.003, t, 8.2, .02, 'sine', lp); }
+      A.tone(ch, mf(c[0] - 12), t, 8.2, .05, 'sine', lp);
+      for (let i = 0; i < 8; i++) if (Math.random() < .7) A.tone(ch, mf(c[Math.floor(Math.random() * 4)] + 12), t + i + Math.random() * .2, 1.6, .025, 'sine', lp); }, 8000); },
+  lofi(ch){ const C = A.ctx, beat = .75, lp = C.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1600; lp.connect(ch.g); ch.nodes.push(lp);
+    const prog = [[50,53,57,60,64],[43,47,50,53,57],[48,52,55,59,62],[45,48,52,55,59]]; let bar = 0;
+    const kick = t => { const o = C.createOscillator(), g = C.createGain(); o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(45, t + .14); g.gain.setValueAtTime(.55, t); g.gain.exponentialRampToValueAtTime(.0001, t + .32); o.connect(g); g.connect(ch.g); o.start(t); o.stop(t + .35); };
+    const at = (t, fn) => setTimeout(fn, Math.max(0, (t - C.currentTime) * 1000));
+    A.every(ch, () => { const t0 = C.currentTime + .05, c = prog[bar++ % prog.length];
+      for (const n of c) A.tone(ch, mf(n), t0, beat * 4, .022, 'triangle', lp, .04);
+      for (let b = 0; b < 4; b++) { const t = t0 + b * beat;
+        if (b === 0 || b === 2) kick(t); if (b === 1 && Math.random() < .4) kick(t + beat * .5);
+        if (b === 1 || b === 3) at(t, () => A.burst(ch, 1800, .16, .22, 'bandpass', .8));
+        at(t, () => A.burst(ch, 8000, .035, .05, 'highpass', 1)); at(t + beat * .5, () => A.burst(ch, 8000, .03, .035, 'highpass', 1)); } }, beat * 4000);
+    A.loop(ch, () => A.burst(ch, 5000 + Math.random() * 4000, .006, .03 + Math.random() * .05, 'highpass', 1), 40, 260); },
+  piano(ch){ const C = A.ctx, ech = A.echo(ch, .5, .3, .4), scale = [60,62,64,67,69,72,74,76,79,81];
+    A.loop(ch, () => { const t = C.currentTime + .02, n = scale[Math.floor(Math.random() * scale.length)];
+      A.tone(ch, mf(n), t, 2.6, .07, 'triangle', ech, .006); A.tone(ch, mf(n) * 2, t, 1.4, .015, 'sine', ech, .006);
+      if (Math.random() < .3) A.tone(ch, mf(n - 12), t, 3, .05, 'sine', ech, .01); }, 450, 1500); },
+  space(ch){ const C = A.ctx, lp = C.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 650; lp.connect(ch.g);
+    const lfo = C.createOscillator(); lfo.frequency.value = .03; const ld = C.createGain(); ld.gain.value = 320; lfo.connect(ld); ld.connect(lp.frequency); lfo.start(); ch.nodes.push(lp, lfo, ld);
+    for (const [f, det] of [[55, 0], [55, 4], [82.4, -3], [110, 2]]) { const o = C.createOscillator(), g = C.createGain(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = det; g.gain.value = .035; o.connect(g); g.connect(lp); o.start(); ch.nodes.push(o, g); }
+    A.loop(ch, () => { const t = C.currentTime + .05; A.tone(ch, [880, 1320, 1174.7, 990][Math.floor(Math.random() * 4)], t, 6, .018, 'sine', null, 2.5); }, 3500, 8000); }
+};
+const SOUNDS = [['rain','雨音','rain'],['fire','焚き火','fire'],['wave','波の音','wave'],['forest','森の音','tree'],['stream','川のせせらぎ','drop'],['wind','風の音','wind'],['night','夏の夜','moon'],['cafe','カフェ','cup'],['train','電車','train'],['clock','時計の秒針','timer'],['white','ホワイトノイズ','noise'],['bgm','集中BGM','music'],['lofi','Lo-fiビート','headphones'],['piano','ピアノ','music'],['space','宇宙アンビエント','planet']];
+let CUSTOM = [];
+const IDB = {
+  db: null,
+  open(){ return this.db || (this.db = new Promise((res, rej) => { const r = indexedDB.open('study-hard-audio', 1); r.onupgradeneeded = () => r.result.createObjectStore('files', {keyPath: 'id'}); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); })); },
+  async run(mode, fn){ const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction('files', mode), req = fn(t.objectStore('files')); t.oncomplete = () => res(req && req.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); }); },
+  all(){ return this.run('readonly', s => s.getAll()); }, get(id){ return this.run('readonly', s => s.get(id)); }, put(r){ return this.run('readwrite', s => s.put(r)); }, del(id){ return this.run('readwrite', s => s.delete(id)); }
+};
+async function loadCustom(){ try { const all = await IDB.all(); CUSTOM = (all || []).sort((a, b) => a.added - b.added).map(r => ({id: r.id, name: r.name, size: r.size})); } catch { CUSTOM = []; } if (route() === 'timer') scheduleRender(); }
+function saveMix(){ const st = S(); if (!st) return; const on = [...AudioEng.ch.keys()]; if (on.length) { st.prefs.mixOn = on; queueWrite('state', 2000); } }
+function renderSoundBtns(){
+  document.querySelectorAll('[data-snd]').forEach(b => { const on = AudioEng.ch.has(b.dataset.snd); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  const pp = $('#snd-pp'); if (pp) pp.innerHTML = AudioEng.playing ? icon('pause') + 'すべて停止' : icon('play') + '再生';
+  const mx = $('#snd-mixer'); if (mx) mx.innerHTML = mixerHTML();
+}
+async function addSoundFiles(files){
+  let added = 0;
+  for (const f of files) {
+    if (!/^audio\//.test(f.type) && !/\.(mp3|m4a|aac|wav|ogg|flac)$/i.test(f.name)) { toast(`「${f.name}」は音声ファイルではありません。`, 'x'); continue; }
+    if (f.size > 60 * 1048576) { toast(`「${f.name}」は大きすぎます（60MBまで）。`, 'x'); continue; }
+    const rec = {id: 'u' + uid6(), name: f.name.replace(/\.[^.]+$/, '').slice(0, 30) || '音声', type: f.type, size: f.size, blob: f, added: Date.now()};
+    try { await IDB.put(rec); CUSTOM.push({id: rec.id, name: rec.name, size: rec.size}); added++; }
+    catch { toast('保存できませんでした。端末の空き容量を確認してください。', 'x', 5000); }
+  }
+  if (added) { render(); toast(`${added}個の音声を追加しました。タップで再生できます。`, 'music', 4000); }
+}
+function soundName(id){ const b = SOUNDS.find(x => x[0] === id); if (b) return b[1]; const c = CUSTOM.find(x => x.id === id); return c ? c.name : '音声'; }
+function mixerHTML(){
+  const on = [...AudioEng.ch.keys()]; if (!on.length) return '';
+  const mix = S().prefs.mix || {};
+  return `<div class="stack" style="gap:8px;margin-top:14px"><span class="note">再生中の音量</span>${on.map(id => `<div class="row" style="gap:10px"><span style="width:7.5em;font-size:13px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(soundName(id))}</span><input type="range" id="snd-ch-${esc(id)}" data-ch="${esc(id)}" min="0" max="1" step=".01" value="${mix[id] ?? .7}" aria-label="${esc(soundName(id))}の音量"></div>`).join('')}</div>`;
+}
 
 /* ================= TIMER ================= */
 let T = LS.get('sh-timer') || {mode: 'cd', target: 25, subj: 'en', state: 'idle', acc: 0, since: null, phase: 'study', brk: 5, startAt: null, cheer: ''};
@@ -1409,7 +1504,7 @@ function finishStudy(auto){
   const el = Math.min(elapsed(), cap), min = Math.floor(el / 60000);
   const startAt = T.startAt || (Date.now() - el), subj = T.subj, mode = T.mode;
   Object.assign(T, {state: 'idle', acc: 0, since: null, startAt: null}); saveTimer(); stopTick(); releaseWake();
-  if (S().prefs.stopSound) AudioEng.stop();
+  if (S().prefs.stopSound) AudioEng.stopAll();
   AudioEng.chime();
   if (min < 1) { toast('1分未満の勉強は記録されません。', 'timer'); render(); return; }
   const startDate = new Date(startAt);
@@ -1532,11 +1627,17 @@ VIEWS.timer = () => {
       </section>
       <section class="panel"><div class="ph"><h3>科目</h3><a class="btn sm ghost" href="#prefs">科目を編集</a></div>
         <div class="chips">${subs.map(s => `<button class="chip ${T.subj === s.id ? 'on' : ''}" style="--c:${s.color}" data-act="t-subj" data-v="${s.id}" ${idle ? '' : 'disabled'}><i></i>${esc(s.name)}</button>`).join('')}</div></section>
-      <section class="panel"><div class="ph"><h3>環境音・BGM</h3><button class="btn sm" id="snd-pp" data-act="snd-toggle">${AudioEng.cur ? icon('pause') + '停止' : icon('play') + '再生'}</button></div>
-        <div class="sounds">${SOUNDS.map(([k, n, ic]) => `<button class="snd ${AudioEng.cur === k ? 'on' : ''}" data-act="snd" data-snd="${k}" aria-pressed="${AudioEng.cur === k}">${icon(ic)}${n}</button>`).join('')}</div>
-        <div class="row" style="margin-top:14px">${icon('sound')}<input id="snd-vol" type="range" min="0" max="1" step=".01" value="${st.prefs.vol}" aria-label="音量"></div>
+      <section class="panel"><div class="ph"><h3>環境音・BGM</h3><button class="btn sm" id="snd-pp" data-act="snd-toggle">${AudioEng.playing ? icon('pause') + 'すべて停止' : icon('play') + '再生'}</button></div>
+        <p class="note" style="margin:-4px 0 10px">タップでオン・オフ。いくつでも重ねて流せます（例：雨音＋Lo-fiビート）。</p>
+        <div class="sounds">${SOUNDS.map(([k, n, ic]) => `<button class="snd ${AudioEng.ch.has(k) ? 'on' : ''}" data-act="snd" data-snd="${k}" aria-pressed="${AudioEng.ch.has(k)}">${icon(ic)}${n}</button>`).join('')}</div>
+        <div class="ph" style="margin:16px 0 8px"><h3 style="font-size:14px">マイサウンド</h3><label class="btn sm" for="snd-file" style="cursor:pointer">${icon('upload')}音声ファイルを追加</label></div>
+        <input id="snd-file" type="file" accept="audio/*" multiple hidden>
+        ${CUSTOM.length ? `<div class="list">${CUSTOM.map(c => `<div class="li"><button class="snd ${AudioEng.ch.has(c.id) ? 'on' : ''}" data-act="snd" data-snd="${esc(c.id)}" aria-pressed="${AudioEng.ch.has(c.id)}" style="flex-direction:row;flex:1;justify-content:flex-start;padding:10px 12px;min-width:0">${icon('music')}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name)}</span></button><span class="note" style="flex:none">${(c.size / 1048576).toFixed(1)}MB</span><button class="btn sm ghost" data-act="snd-del" data-v="${esc(c.id)}" aria-label="${esc(c.name)}を削除">${icon('trash')}</button></div>`).join('')}</div>`
+          : '<p class="note" style="margin:0">好きなBGMや環境音のファイル（mp3・m4a・wav など）を追加できます。</p>'}
+        <div id="snd-mixer">${mixerHTML()}</div>
+        <div class="row" style="margin-top:14px">${icon('sound')}<input id="snd-vol" type="range" min="0" max="1" step=".01" value="${st.prefs.vol}" aria-label="全体の音量"></div>
         <div class="row" style="margin-top:12px"><span style="flex:1;font-size:14px">タイマー終了時に音を止める</span><button class="tog ${st.prefs.stopSound ? 'on' : ''}" data-act="pref-tog" data-k="stopSound" aria-pressed="${st.prefs.stopSound}" aria-label="タイマー終了時に音を止める"></button></div>
-        <p class="note" style="margin:10px 0 0">音はすべてブラウザ内でリアルタイムに合成しています（録音素材は使っていません）。</p></section>
+        <p class="note" style="margin:10px 0 0">標準の音はブラウザ内で合成しています。マイサウンドはこの端末の中だけに保存され、ほかの端末やほかの人には共有されません。自分で録音した音や、利用が許可されているフリー素材を使ってください。</p></section>
     </div>
   </div>`;
 };
@@ -1911,8 +2012,10 @@ const ACT = {
   't-preset'(b){ T.target = +b.dataset.v; saveTimer(); render(); },
   't-brk'(b){ T.brk = +b.dataset.v; saveTimer(); render(); },
   't-subj'(b){ T.subj = b.dataset.v; saveTimer(); render(); },
-  snd(b){ const k = b.dataset.snd; if (AudioEng.cur === k) AudioEng.stop(); else { AudioEng.play(k); S().prefs.sound = k; queueWrite('state', 1500); } },
-  'snd-toggle'(){ if (AudioEng.cur) AudioEng.stop(); else AudioEng.play(S().prefs.sound || 'rain'); },
+  snd(b){ AudioEng.toggle(b.dataset.snd); },
+  'snd-del'(b){ const id = b.dataset.v, c = CUSTOM.find(x => x.id === id); if (!c) return;
+    confirmBox(`「${c.name}」を削除しますか？`, 'この端末から音声ファイルを消します。', '削除する', async () => { AudioEng.stop(id); try { await IDB.del(id); } catch {} CUSTOM = CUSTOM.filter(x => x.id !== id); render(); toast('削除しました。', 'trash'); }, true); },
+  'snd-toggle'(){ if (AudioEng.playing) { AudioEng.stopAll(); return; } const ids = (S().prefs.mixOn || []).filter(id => SOUNDS.some(x => x[0] === id) || CUSTOM.some(x => x.id === id)); (ids.length ? ids : ['rain']).forEach(id => AudioEng.play(id)); },
   'pref-tog'(b){ const k = b.dataset.k; S().prefs[k] = !S().prefs[k]; queueWrite('state'); render(); },
   'stat-mode'(b){ UI.statMode = b.dataset.v; render(); },
   donut(b){ UI.donut = b.dataset.v; render(); },
@@ -2249,6 +2352,7 @@ document.addEventListener('submit', e => {
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'snd-vol') { S().prefs.vol = +t.value; AudioEng.setVol(+t.value); queueWrite('state', 1500); }
+  if (t.dataset && t.dataset.ch) { const st = S(); st.prefs.mix = Object.assign({}, st.prefs.mix, {[t.dataset.ch]: +t.value}); AudioEng.setChVol(t.dataset.ch, +t.value); queueWrite('state', 2000); }
   if (t.id === 't-custom') { const v = Math.round(+t.value); if (v >= 1 && v <= 600) { T.target = v; saveTimer(); updateTimerUI(); } }
   if (/^rv-(did|bad|imp|tom|tg|ach|todo-\d+)$/.test(t.id)) { syncRvDraft(); if (t.id === 'rv-ach') { const o = $('#rv-ach-v'); if (o) o.textContent = t.value + '%'; } }
 });
@@ -2256,6 +2360,7 @@ document.addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'rv-time' && t.value) { S().prefs.reviewTime = t.value; queueWrite('state'); toast(`毎晩${t.value}にお知らせします。`, 'moon'); }
   if (t.id === 't-custom') render();
+  if (t.id === 'snd-file' && t.files && t.files.length) addSoundFiles([...t.files]);
 });
 document.addEventListener('keydown', e => { if (UI.place && route() === 'room' && !/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) { const m = {ArrowLeft: F[UI.place.t].wall ? 'wl' : 'xm', ArrowRight: F[UI.place.t].wall ? 'wr' : 'xp', ArrowUp: 'ym', ArrowDown: 'yp'}[e.key]; if (m) { e.preventDefault(); nudgePlace(m); return; } if (e.key === 'Enter') { e.preventDefault(); commitPlace(); return; } } if (e.key === 'Escape') { if (UI.place) { UI.place = null; render(); } else if (modalOpen && !$('[data-form="onboard"]')) closeModal(); $('#sheet')?.remove(); } });
 
@@ -2353,6 +2458,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && MO
 window.addEventListener('pagehide', () => { if (MODE === 'cloud' && pending.size) flushAll(); });
 
 window.addEventListener('error', e => { try { toast('エラーが起きました：' + (e.message || '不明') + '（ページを開き直してください）', 'x', 6000); } catch {} });
+loadCustom();
 boot();
 })();
 </script>
