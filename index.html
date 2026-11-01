@@ -4005,8 +4005,8 @@ VIEWS.plan = () => {
     <div class="kv" style="text-align:right"><span class="k">目標との差（得点率）</span><span class="v" style="font-size:26px;color:${lastRate == null ? 'var(--mute)' : lastRate >= gRate ? '#3ee6a0' : '#ffc24d'}">${lastRate == null ? '—' : (lastRate >= gRate ? '+' : '') + Math.round((lastRate - gRate) * 100) + '<small>pt</small>'}</span><span class="note">目標 ${Math.round(gRate * 100)}%${sumGK + sumGN ? `（${sumGK + sumGN}点）` : ''}</span></div></div>
     ${left != null && left > 0 ? `<p class="note" style="margin:10px 0 0">1日の目標 ${fmtHM(goal)} を続けると、本番までにあと <b style="color:var(--ink)">約${Math.round(goal * left / 60).toLocaleString()}時間</b> 勉強できます。</p>` : ''}
     <form class="row wrap" data-form="pl-info" style="gap:8px;margin-top:12px;align-items:flex-end">
-      <label class="fld" style="flex:1;min-width:150px">試験日<select id="pl-exam"><option value="">（日付を直接入れる）</option>${st.exams.map(e => `<option value="${e.id}" ${inf.exam === e.id ? 'selected' : ''}>${esc(e.name)}（${fmtMD(e.date)}）</option>`).join('')}</select></label>
-      <label class="fld" style="width:150px">日付<input id="pl-date" type="date" value="${esc(inf.exam ? '' : inf.date || '')}"></label>
+      <label class="fld" style="flex:1;min-width:150px">試験日<select id="pl-exam"><option value="">（日付を直接入れる）</option>${st.exams.map(e => `<option value="${e.id}" data-date="${e.date}" ${inf.exam === e.id ? 'selected' : ''}>${esc(e.name)}（${fmtMD(e.date)}）</option>`).join('')}</select></label>
+      <label class="fld" style="width:150px">日付<input id="pl-date" type="date" value="${esc(planDate(inf) || '')}"></label>
       <label class="fld" style="width:110px">共通 目標%<input id="pl-gk" type="number" min="0" max="100" inputmode="numeric" value="${inf.goalK}"></label>
       <label class="fld" style="width:100px">二次 目標%<input id="pl-gn" type="number" min="0" max="100" inputmode="numeric" value="${inf.goalN}"></label>
       <label class="fld" style="width:100px">目標偏差値<input id="pl-gd" type="number" step="0.1" inputmode="decimal" value="${inf.goalDev ?? ''}" placeholder="任意"></label>
@@ -4025,7 +4025,7 @@ VIEWS.plan = () => {
       <button class="btn sm primary" data-act="alloc-go" data-v="${esc(alloc[0].sub.tsid)}" style="margin-top:10px">${icon('play')}${esc(alloc[0].sub.name)}から始める</button>`
       : '<div class="empty">右の「科目・配点・目標点」を入れると、科目ごとのおすすめ時間が出ます。</div>'}</section>
 
-  <section class="panel"><div class="ph"><div><span class="eyebrow">SUBJECTS</span><h2>科目・配点・目標点</h2></div>${UI.subsDraft ? '' : `<button class="btn sm" data-act="sub-edit">${icon('pen')}編集</button>`}</div>
+  <section class="panel"><div class="ph"><div><span class="eyebrow">SUBJECTS</span><h2>科目・配点・目標点</h2></div>${UI.subsDraft ? '' : `<div class="row" style="gap:6px">${subs.length || inf.goalDev != null || inf.goalK !== 75 || inf.goalN !== 65 ? `<button class="btn sm ghost" data-act="sub-reset">${icon('rotate')}リセット</button>` : ''}<button class="btn sm" data-act="sub-edit">${icon('pen')}編集</button></div>`}</div>
     <div class="chips" style="margin-bottom:10px">${Object.entries(PLAN_TPL).map(([k, [n]]) => `<button class="chip" style="--c:#a46bff" data-act="pl-tpl" data-v="${k}"><i></i>${n}</button>`).join('')}</div>
     ${UI.subsDraft ? subsEditor() : subs.length ? `<div class="subtbl"><div class="strow head"><span>科目</span><span>配点<br>共通/二次</span><span>目標点</span><span>最新</span></div>${subs.map(x => { const L = latestOf(x); return `<div class="strow"><span><span class="dot" style="--c:${x.color};display:inline-block;margin-right:5px"></span>${esc(x.name)}</span><span>${+x.k || 0} / ${+x.n || 0}</span><span>${(+x.gk || 0) + (+x.gn || 0) ? `${x.gk ?? '—'} / ${x.gn ?? '—'}` : '—'}</span><span>${L ? `${Math.round(L.rate * 100)}%${L.dev ? `<br><small>偏差値${L.dev}</small>` : ''}` : '—'}</span></div>`; }).join('')}
       <div class="strow foot"><span>合計</span><span>${sumK} / ${sumN}</span><span>${sumGK + sumGN ? `${sumGK} / ${sumGN}` : '—'}</span><span></span></div></div>` : `<div class="empty" style="padding:14px">科目がまだありません。上のテンプレートを使うか「編集」から追加してね。</div>`}
@@ -4541,6 +4541,10 @@ const ACT = {
   'pl-main'(b){ PL().main = b.dataset.v; queueWrite('state'); render(); },
   'pl-tpl'(b){ const [n, list] = PLAN_TPL[b.dataset.v]; confirmBox(`「${n}」を入れますか？`, '今の科目と配点は入れかわります（模試の記録は消えません）。あとで大学の募集要項を見て、正しい数字に直してね。', '入れる', () => {
     const inf = planInfo(PL().main); inf.subs = list.map(([name, tsid, k, nn], i) => ({id: 'p' + uid6(), name, tsid: S().subjects.some(x => x.id === tsid) ? tsid : 'ot', color: SUB_COLORS[i % SUB_COLORS.length], k, n: nn, gk: null, gn: null, pref: 1, fix: null})); UI.subsDraft = null; queueWrite('state'); render(); }); },
+  'sub-reset'(){ const t = S().targets.find(x => x.id === PL().main);
+    confirmBox(`${t ? t.univ + 'の' : ''}科目・配点・目標をリセットしますか？`, '科目・配点・科目ごとの目標点、共通テスト・二次の目標%（75%・65%にもどります）、目標偏差値、おすすめ配分の調整（多め・少なめ・自分で決めた時間）がすべて消えます。模試の記録・試験日・チェックリストはそのまま残ります。', 'リセットする', () => {
+      const inf = planInfo(PL().main); inf.subs = []; inf.goalK = 75; inf.goalN = 65; inf.goalDev = null; inf.mode = 'gap';
+      UI.subsDraft = null; UI.allocEdit = false; UI.mockSub = 'total'; queueWrite('state'); render(); toast('科目・配点・目標をリセットしました。テンプレートか「編集」から入れ直してね。', 'rotate', 5000); }, true); },
   'sub-edit'(){ UI.subsDraft = JSON.parse(JSON.stringify(planInfo(PL().main).subs)); render(); },
   'sub-add'(){ const D = UI.subsDraft; if (!D) return; D.push({id: 'p' + uid6(), name: '', tsid: 'ot', color: SUB_COLORS[D.length % SUB_COLORS.length], k: null, n: null, gk: null, gn: null, pref: 1, fix: null}); render(); setTimeout(() => { const el = $(`[data-sf="${D.length - 1}:name"]`); if (el) el.focus(); }, 30); },
   'sub-del'(b){ const D = UI.subsDraft; if (!D) return; D.splice(+b.dataset.v, 1); render(); },
@@ -5052,7 +5056,7 @@ document.addEventListener('submit', e => {
       else { st.nickname = nn; st.nickChangedM = monthOf(dkey()); toast(`名前を「${nn || 'ななしの受験生'}」に変更しました。次の変更は ${nextMonthLabel()} からできます。`, 'check', 5000); }
     } const ng = clamp(+val('pf-goal') || 180, 10, 1200); if (ng !== st.dailyGoal || ng !== goalFor(dkey())) st.goalDay = {d: dkey(), m: ng}; st.dailyGoal = ng; dataV++; if (val('pf-rt')) st.prefs.reviewTime = val('pf-rt'); queueWrite('state'); publishPub(); toast('設定を保存しました。', 'check'); pendingRender = false; render(); }
   if (k === 'subj-add') { const n = val('sj-name'); if (!n) return; const used = st.subjects.length; st.subjects.push({id: 'c' + uid6(), name: n.slice(0, 12), color: EXTRA_COLORS[used % EXTRA_COLORS.length], hidden: false}); queueWrite('state'); pendingRender = false; render(); toast(`「${n}」を追加しました。`, 'plus'); }
-  if (k === 'pl-info') { const p = PL(), inf = planInfo(p.main); inf.exam = val('pl-exam'); inf.date = inf.exam ? '' : val('pl-date'); inf.goalK = clamp(+val('pl-gk') || 0, 0, 100); inf.goalN = clamp(+val('pl-gn') || 0, 0, 100); inf.goalDev = val('pl-gd') ? Math.round(+val('pl-gd') * 10) / 10 : null; queueWrite('state'); toast('保存しました。', 'check'); pendingRender = false; render(); return; }
+  if (k === 'pl-info') { const p = PL(), inf = planInfo(p.main); inf.exam = val('pl-exam'); const ed = (S().exams.find(e => e.id === inf.exam) || {}).date; if (inf.exam && val('pl-date') && val('pl-date') !== ed) inf.exam = ''; inf.date = inf.exam ? '' : val('pl-date'); inf.goalK = clamp(+val('pl-gk') || 0, 0, 100); inf.goalN = clamp(+val('pl-gn') || 0, 0, 100); inf.goalDev = val('pl-gd') ? Math.round(+val('pl-gd') * 10) / 10 : null; queueWrite('state'); toast('保存しました。', 'check'); pendingRender = false; render(); return; }
   if (k === 'pl-chkadd') { const t = val('pl-chkt'); if (!t) return; PL().check.push({id: uid6(), t: t.slice(0, 50), done: false, ph: +val('pl-ph') || 0}); queueWrite('state'); pendingRender = false; render(); return; }
   if (k === 'm1') { st.m1 = val('m1-in').slice(0, 40); queueWrite('state'); publishPub(200); toast(st.m1 ? '1位のひとことをのせました！ みんなのランキングに表示されます。' : 'ひとことを消しました。', 'trophy', 4000); pendingRender = false; render(); return; }
   if (k === 'add-friend') { addFriend(val('fr-code')); return; }
@@ -5107,6 +5111,9 @@ document.addEventListener('change', e => {
   if (t.id === 'snd-file' && t.files && t.files.length) addSoundFiles([...t.files]);
   if (t.dataset && t.dataset.fix && route() === 'plan') render();
   if (t.dataset && (t.dataset.sf || t.dataset.mh) && t.tagName === 'SELECT') { /* 値はinputイベントで保存済み */ }
+  // 試験を選んだら、日付をその試験の日に。日付を自分で変えたら「直接入れる」に
+  if (t.id === 'pl-exam') { const o = t.selectedOptions[0], d = $('#pl-date'); if (d && o && o.dataset.date) d.value = o.dataset.date; }
+  if (t.id === 'pl-date') { const sel = $('#pl-exam'), o = sel && sel.selectedOptions[0]; if (o && o.dataset.date && o.dataset.date !== t.value) sel.value = ''; }
   if (t.id === 'chat-photo' && t.files && t.files[0]) { sendPhoto(t.files[0]); t.value = ''; }
   if (t.id === 'av-file' && t.files && t.files[0]) { if (/^image\//.test(t.files[0].type)) avatarEditor(t.files[0]); else toast('画像ファイルを選んでください。', 'x'); t.value = ''; }
 });
