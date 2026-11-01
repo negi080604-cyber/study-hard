@@ -17,7 +17,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=optional">
+<meta name="color-scheme" content="dark">
 <style>
 /* Layout: HUD command deck — sticky status bar, column of glass modules, bottom dock on phones / side rail on desktop */
 :root{
@@ -263,6 +264,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .hcell{cursor:pointer}.hcell:hover polygon{filter:brightness(1.25)}
 .roomsel{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none}.roomsel::-webkit-scrollbar{display:none}.roomsel button{white-space:nowrap;flex:none}
 .wearhead{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+@media (max-width:560px){.wearhead{flex-direction:column;align-items:stretch}.spinwrap{align-self:center}}
 .spinwrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex:none}
 .wearprev.spin{width:150px;height:190px;cursor:grab;touch-action:pan-y;user-select:none}
 .spinctl{display:flex;gap:4px}.spinpose button{padding:5px 9px;font-size:12px}
@@ -322,10 +324,20 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .av.live{box-shadow:0 0 0 2px #3ee6a0,0 0 10px rgba(62,230,160,.6)}
 .av.big{box-shadow:0 0 0 2px var(--line-2)}
 .hav{display:flex;text-decoration:none;flex:none}
+.tgl{width:46px;height:26px;border-radius:99px;border:1px solid var(--line-2);background:rgba(255,255,255,.08);position:relative;flex:none;padding:0;cursor:pointer;transition:background .2s}
+.tgl i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#c9cfe3;transition:transform .2s}
+.tgl.on{background:linear-gradient(100deg,#22e4ff,#a46bff);border-color:transparent}.tgl.on i{transform:translateX(20px);background:#fff}
 .subed{display:flex;flex-direction:column;gap:10px}.subrow{padding:10px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
 .subrow select{max-width:110px}.subnums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin-top:8px}
 .subnums label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--mute)}.subnums input{padding:7px 8px;min-width:0}
 @media (min-width:700px){.subnums{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.phgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.phbox{padding:12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);min-width:0}.phbox.cur{border-color:rgba(34,228,255,.55);box-shadow:0 0 18px -8px rgba(34,228,255,.7)}
+.phleft{font-size:14px;margin-top:4px}.phleft b{font-size:28px;margin:0 2px}.phrow{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:var(--mute);margin-top:6px;flex-wrap:wrap}.phdiff{font-size:13px;font-weight:700;margin-top:4px}
+.stcards{display:flex;flex-direction:column;gap:8px}.stcard{padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.025)}.stcard.total{background:linear-gradient(120deg,rgba(34,228,255,.08),rgba(164,107,255,.08))}
+.sthead{display:flex;align-items:center;gap:8px;font-size:14px}.sthead .dot{flex:none}.sthead .note{font-size:11px;white-space:nowrap}
+.stcols{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.stc{display:flex;flex-direction:column;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.25);min-width:0}.stc.off{opacity:.45}
+.stc small{font-size:10.5px;color:var(--mute);letter-spacing:.04em}.stc b{font-family:var(--f-disp);font-size:20px;line-height:1.2}.stc b i{font-style:normal;font-size:11px;margin-left:2px;color:var(--mute)}.stc span{font-size:11.5px;color:var(--mute)}.stc .lt{color:#bfefff}
+.mkkind{margin-bottom:2px}
 .subtbl{display:flex;flex-direction:column;font-size:13px}.strow{display:grid;grid-template-columns:minmax(0,1.3fr) .9fr .9fr .8fr;gap:6px;padding:7px 2px;border-top:1px solid var(--line);align-items:center}
 .strow.head{font-size:11px;color:var(--mute);border-top:0;line-height:1.3}.strow.foot{font-weight:700}.strow small{color:var(--mute)}
 .mrows{display:flex;flex-direction:column;gap:6px}.mrow{display:grid;grid-template-columns:minmax(0,1.4fr) .8fr .8fr .8fr auto;gap:6px;align-items:center}.mrow.head{font-size:11px;color:var(--mute)}.mrow input{padding:7px 6px;min-width:0}
@@ -764,7 +776,7 @@ Object.assign(F, {
 /* ================= LIFE: characters, wardrobe, family, house ================= */
 const SKINS = ['#f6d3b3','#e8b48f','#c98f68','#8d5a3b'];
 const HAIRC = ['#2a1d14','#5a3a22','#a8742f','#e3c07a','#1c2133','#c4304a','#7a5cff'];
-const HAIRS = {boy: [['short','ショート'],['spiky','ツンツン'],['bob','マッシュ']], girl: [['long','ロング'],['bob','ボブ'],['pony','ポニーテール'],['short','ショート']]};
+const HAIRS = {boy: [['short','ショート'],['spiky','ツンツン'],['bob','マッシュ'],['center','センター分け'],['buzz','ぼうず']], girl: [['long','ロング'],['bob','ボブ'],['pony','ポニーテール'],['short','ショート'],['twin','ツインテール'],['bun','おだんご'],['braid','みつあみ'],['wavy','ゆるふわ']]};
 const WEAR = {
   head:{n:'頭', items:{none:{n:'なし',lv:1,cost:0}, cap:{n:'キャップ',lv:1,cost:60,colors:['#3d7bff','#c4304a','#1c2133','#eef0f6']}, hachimaki:{n:'合格はちまき',lv:2,cost:50}, beanie:{n:'ニット帽',lv:3,cost:90,colors:['#ffc24d','#3ee6a0','#a46bff','#1c2133']}, ribbon:{n:'リボン',lv:3,cost:70,colors:['#ff6fb0','#c4304a','#3fb8ff','#eef0f6']}, headphones:{n:'ヘッドホン',lv:8,cost:200,colors:['#22e4ff','#ff6fb0','#eef0f6']}, crown:{n:'王冠',lv:30,cost:3000}}},
   top:{n:'服', items:{hoodie:{n:'パーカー',lv:1,cost:0,colors:['#3d7bff','#ff6fb0','#3ee6a0','#ffc24d','#a46bff','#eef0f6','#2b3045']}, tshirt:{n:'Tシャツ',lv:1,cost:40,colors:['#eef0f6','#2b3045','#c4304a','#3fb8ff']}, uniform:{n:'制服（ブレザー）',lv:3,cost:150,colors:['#1d2a6b','#2b3045','#6b4a32']}, sailor:{n:'セーラー服',lv:3,cost:150,colors:['#eef0f6','#1d2a6b']}, jersey:{n:'ジャージ',lv:5,cost:100,colors:['#1d2a6b','#c4304a','#2f5c55']}, sweater:{n:'セーター',lv:5,cost:120,colors:['#c9b79a','#7a2f45','#2f5c55']}, kimono:{n:'着物',lv:18,cost:900,colors:['#c8102e','#1d2a6b','#ff8fb8']}, suit:{n:'スーツ',lv:25,cost:1500,colors:['#1c2133','#2a3550','#5a5f70']}, astronaut:{n:'宇宙服',lv:40,cost:4000}}},
@@ -808,11 +820,20 @@ function headParts(L){
   b(.46, .63, 1.245, .08, .005, .018, girl ? '#d0566a' : '#b9675e');
   b(.392, .63, 1.29, .045, .004, .025, girl ? '#f39aa6' : mix(sk, '#e08080', .2)); b(.563, .63, 1.29, .045, .004, .025, girl ? '#f39aa6' : mix(sk, '#e08080', .2));
   // hair (crown sits on top of the head; back/sides wrap outside it)
-  if (!hat) b(.355, .355, 1.49, .29, .29, .08, hc);
-  b(.37, .645, 1.46, .26, .025, .08, hc);                    // bangs
+  if (H === 'afro' && !hat) b(.29, .29, 1.49, .42, .42, .2, hc); else if (H === 'buzz') b(.365, .365, 1.49, .27, .27, .025, mix(hc, sk, .35)); else if (!hat) b(.355, .355, 1.49, .29, .29, .08, hc);
+  if (H === 'center') { b(.37, .645, 1.45, .115, .025, .09, hc); b(.515, .645, 1.45, .115, .025, .09, hc); }
+  else if (H !== 'buzz') b(.37, .645, 1.46, .26, .025, .08, hc);                    // bangs
   const side = (z, h, y = .38, d = .2) => { b(.345, y, z, .025, d, h, hc); b(.63, y, z, .025, d, h, hc); };
   if (H === 'long') { b(.35, .31, .98, .3, .06, .51, hc); side(1.16, .33, .38, .22); b(.345, .6, 1.0, .025, .03, .49, hc); b(.63, .6, 1.0, .025, .03, .49, hc); }
   else if (H === 'bob') { b(.35, .31, 1.2, .3, .06, .29, hc); side(1.22, .27, .38, .23); }
+  else if (H === 'buzz') { b(.36, .35, 1.3, .28, .02, .19, mix(hc, sk, .35)); }
+  else if (H === 'center') { b(.36, .33, 1.25, .28, .04, .24, hc); side(1.28, .21, .4, .21); }
+  else if (H === 'afro') { b(.345, .27, 1.22, .31, .1, .27, hc); b(.29, .33, 1.3, .055, .34, .19, hc); b(.655, .33, 1.3, .055, .34, .19, hc); }
+  else if (H === 'twin' || H === 'side') { b(.36, .33, 1.3, .28, .04, .19, hc); side(1.36, .13, .4, .16); const tie = w.head === 'ribbon' ? wcol(L, 'head') : '#ff6fb0';
+    for (const tx of H === 'twin' ? [.265, .665] : [.665]) { b(tx, .4, 1.43, .07, .1, .04, tie); b(tx, .4, 1.0, .07, .1, .43, hc); b(tx + .005, .41, .92, .06, .08, .08, hc); } }
+  else if (H === 'bun') { b(.36, .33, 1.3, .28, .04, .19, hc); side(1.36, .13, .4, .16); if (!hat) { b(.42, .42, 1.57, .16, .16, .12, hc); b(.43, .43, 1.69, .14, .14, .02, mix(hc, '#ffffff', .15)); } }
+  else if (H === 'braid') { b(.35, .31, 1.18, .3, .06, .31, hc); side(1.2, .29, .38, .23); for (const [z, x] of [[1.02, .585], [.92, .595], [.82, .585]]) b(x, .59, z, .06, .05, .1, hc); b(.59, .595, .78, .05, .04, .04, '#ff6fb0'); }
+  else if (H === 'wavy') { b(.33, .29, .95, .34, .08, .54, hc); side(1.1, .39, .38, .24); b(.32, .44, .98, .025, .16, .2, hc); b(.655, .44, .98, .025, .16, .2, hc); b(.345, .6, 1.0, .025, .03, .49, hc); b(.63, .6, 1.0, .025, .03, .49, hc); }
   else if (H === 'pony') { b(.36, .33, 1.3, .28, .04, .19, hc); side(1.38, .11, .4, .14); b(.455, .29, 1.4, .09, .04, .08, w.head === 'ribbon' ? wcol(L, 'head') : '#c4304a'); b(.46, .26, 1.0, .08, .05, .4, hc); }
   else { b(.36, .33, 1.3, .28, .04, .19, hc); side(1.4, .09, .4, .12);
     if (H === 'spiky' && !hat && w.head !== 'crown') { b(.38, .4, 1.57, .07, .07, .07, hc); b(.465, .46, 1.57, .07, .07, .1, hc); b(.55, .42, 1.57, .07, .07, .08, hc); b(.43, .55, 1.57, .07, .06, .06, hc); } }
@@ -2461,9 +2482,9 @@ document.addEventListener('focusout', () => setTimeout(() => { if (pendingRender
 function renderHeader(){
   if (!S()) return;
   const x = stats();
-  $('#hc-coin').innerHTML = icon('coin') + `<span>${Math.max(0, x.coins).toLocaleString()}</span>`;
-  $('#hc-lv').innerHTML = `<span style="color:var(--cyan)">LV</span><span>${x.level}</span>`;
-  const ha = $('#hc-av'); if (ha) ha.innerHTML = avHTML(meDoc(), 30);
+  morphHTML($('#hc-coin'), icon('coin') + `<span>${Math.max(0, x.coins).toLocaleString()}</span>`);
+  morphHTML($('#hc-lv'), `<span style="color:var(--cyan)">LV</span><span>${x.level}</span>`);
+  const ha = $('#hc-av'); if (ha) morphHTML(ha, avHTML(meDoc(), 30));
 }
 const selfStudying = () => typeof T !== 'undefined' && T.state === 'run' && T.phase === 'study';
 function rawNotifCounts(){
@@ -2478,18 +2499,49 @@ const nbadge = (n, lbl) => n ? `<i class="nbadge" aria-label="${lbl}${n}件">${n
 function renderNav(){
   const r = route(), nc = notifCounts(), nfor = k => k === 'chat' ? nbadge(nc.chat, '未読のチャット') : k === 'rank' ? nbadge(nc.rank, 'フォロー申請') : '';
   try { if (navigator.setAppBadge) { const t = nc.chat + nc.rank; t ? navigator.setAppBadge(t) : navigator.clearAppBadge(); } } catch {}
-  $('#rail').innerHTML = Object.entries(ROUTES).map(([k, [n, ic]]) => `<a href="#${k}" class="${k === r ? 'on' : ''}">${icon(ic)}<span>${n}</span>${nfor(k)}</a>`).join('');
+  morphHTML($('#rail'), Object.entries(ROUTES).map(([k, [n, ic]]) => `<a href="#${k}" class="${k === r ? 'on' : ''}">${icon(ic)}<span>${n}</span>${nfor(k)}</a>`).join(''));
   const dock = ['home','timer','stats','room'];
-  $('#dock').innerHTML = dock.map(k => `<a href="#${k}" class="${k === r ? 'on' : ''}">${icon(ROUTES[k][1])}<span>${ROUTES[k][0].replace('記録・分析','記録').replace('勉強部屋','部屋')}</span></a>`).join('')
-    + `<button data-act="more" class="${dock.includes(r) ? '' : 'on'}">${icon('menu')}<span>メニュー</span>${nbadge(nc.chat + nc.rank, 'お知らせ')}</button>`;
+  morphHTML($('#dock'), dock.map(k => `<a href="#${k}" class="${k === r ? 'on' : ''}">${icon(ROUTES[k][1])}<span>${ROUTES[k][0].replace('記録・分析','記録').replace('勉強部屋','部屋')}</span></a>`).join('')
+    + `<button data-act="more" class="${dock.includes(r) ? '' : 'on'}">${icon('menu')}<span>メニュー</span>${nbadge(nc.chat + nc.rank, 'お知らせ')}</button>`);
 }
+/* ---------- 画面の書きかえ：全部作り直さず、変わったところだけ直す（チカチカしない・入力中の文字やスクロールが消えない） ---------- */
+function morphAttrs(a, b){
+  for (const at of [...a.attributes]) if (!b.hasAttribute(at.name)) { if (a.tagName === 'DETAILS' && at.name === 'open') continue; a.removeAttribute(at.name); }
+  for (const at of [...b.attributes]) if (a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
+}
+function morphNode(a, b){
+  if (a.nodeType !== b.nodeType || a.nodeName !== b.nodeName || (a.nodeType === 1 && a.id !== b.id)) { a.replaceWith(b); return; }
+  if (a.nodeType === 3 || a.nodeType === 8) { if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue; return; }
+  if (a.nodeType !== 1) return;
+  if (a.hasAttribute('data-keep') && b.hasAttribute('data-keep')) { morphAttrs(a, b); return; }   // 中身はほかで描いている（チャットのログなど）
+  morphAttrs(a, b);
+  const tag = a.tagName, focused = a === document.activeElement;
+  if (tag === 'INPUT') {
+    if (a.type === 'checkbox' || a.type === 'radio') a.checked = b.hasAttribute('checked');
+    else if (a.type !== 'file' && !focused) { const v = b.getAttribute('value') ?? ''; if (a.value !== v) a.value = v; }
+    return;
+  }
+  if (tag === 'TEXTAREA') { if (!focused && a.value !== b.value) a.value = b.value; return; }
+  morphKids(a, b);
+  if (tag === 'SELECT' && !focused) { const o = [...b.options].find(x => x.hasAttribute('selected')); a.value = o ? o.value : (b.options[0] ? b.options[0].value : ''); }
+}
+function morphKids(a, b){
+  const A = [...a.childNodes], B = [...b.childNodes];
+  for (let i = 0; i < B.length; i++) { if (i < A.length) morphNode(A[i], B[i]); else a.appendChild(B[i]); }
+  for (let i = B.length; i < A.length; i++) A[i].remove();
+}
+function morphHTML(el, html){ if (!el) return; const t = document.createElement(el.tagName === 'svg' ? 'div' : el.tagName); t.innerHTML = html; morphKids(el, t); }
+let lastRoute = null;
 function render(){
   if (!S()) return;
   const r = route();
   renderHeader(); renderNav();
   const v = $('#view');
   try { setTimeout(syncChatFS, 0); } catch {}
-  v.innerHTML = `<div class="stack fadein">${VIEWS[r]()}</div>`;
+  const html = `<div class="stack">${VIEWS[r]()}</div>`, chatKey = r === 'chat' ? (CHAT.room || '') : '';
+  // ページが変わったときだけ、ふわっと出す。同じページの更新は、変わったところだけ書きかえる
+  if (r !== lastRoute || chatKey !== UI.lastChatKey || !v.firstElementChild) { const first = lastRoute === null; v.innerHTML = html; if (!first) v.firstElementChild.classList.add('fadein'); lastRoute = r; UI.lastChatKey = chatKey; if (r === 'chat' && CHAT.room && CHAT.msgs.length) paintLog(true); }
+  else morphHTML(v, html);
   if (r === 'timer') updateTimerUI();
 }
 window.addEventListener('hashchange', () => { UI.sel = null; UI.place = null; if (route() === 'room') UI.buddyIdx = 0; if (route() === 'room' || route() === 'home') setTimeout(familyTick, 300); if (route() !== 'chat') closeChat(); if (route() !== 'review') UI.rvDate = null; render(); window.scrollTo(0, 0); });
@@ -2885,6 +2937,11 @@ const AudioEng = {
     g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
     o.connect(g); g.connect(dest || ch.g); o.start(t); o.stop(t + dur + .05);
   },
+  // 左右に音を置く（ひとつひとつの雨つぶや鳥の声を、いろんな方向から聞こえるように）
+  pan(ch, p){ const C = this.ctx; if (!C.createStereoPanner) return ch.g; const sp = C.createStereoPanner(); sp.pan.value = Math.max(-1, Math.min(1, p)); sp.connect(ch.g); setTimeout(() => { try { sp.disconnect(); } catch {} }, 4000); return sp; },
+  osc(ch, {f0, f1, t, dur, gain, type = 'sine', dest, att = .005, vib = 0, vibF = 30}){ const C = this.ctx, o = C.createOscillator(), g = C.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    let v = null; if (vib) { v = C.createOscillator(); const vg = C.createGain(); v.frequency.value = vibF; vg.gain.value = vib; v.connect(vg); vg.connect(o.frequency); v.start(t); v.stop(t + dur + .03); }
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + att); g.gain.exponentialRampToValueAtTime(.0001, t + dur); o.connect(g); g.connect(dest || ch.g); o.start(t); o.stop(t + dur + .03); },
   loop(ch, fn, minMs, maxMs){ const h = {id: null, live: true}; ch.loops.push(h); const run = () => { if (!h.live) return; try { fn(); } catch {} h.id = setTimeout(run, minMs + Math.random() * (maxMs - minMs)); }; run(); },
   every(ch, fn, ms){ try { fn(); } catch {} ch.timers.push(setInterval(() => { try { fn(); } catch {} }, ms)); },
   echo(ch, time = .4, fb = .35, wet = .5){ const C = this.ctx, d = C.createDelay(); d.delayTime.value = time; const f = C.createGain(); f.gain.value = fb; const w = C.createGain(); w.gain.value = wet;
@@ -2928,37 +2985,68 @@ const AudioEng = {
 };
 const A = AudioEng, mf = n => 440 * Math.pow(2, (n - 69) / 12);
 const GEN = {
-  rain(ch){ A.src(ch, 'pink', .9, [['highpass', 400], ['lowpass', 7000]]); A.src(ch, 'brown', .35, [['lowpass', 600]]);
-    A.loop(ch, () => A.burst(ch, 2500 + Math.random() * 3500, .03 + Math.random() * .04, .04 + Math.random() * .08, 'bandpass', 2), 25, 90); },
-  fire(ch){ A.src(ch, 'brown', .9, [['lowpass', 420]]); A.src(ch, 'pink', .06, [['bandpass', 900, .7]]);
-    A.loop(ch, () => A.burst(ch, 1200 + Math.random() * 3000, .008 + Math.random() * .03, .1 + Math.random() * .45, 'bandpass', 3), 40, 420); },
-  wave(ch){ const C = A.ctx, g = A.src(ch, 'brown', .65, [['lowpass', 1000]]), g2 = A.src(ch, 'pink', .14, [['highpass', 1500]]);
-    const lfo = C.createOscillator(); lfo.frequency.value = .085; const d = C.createGain(); d.gain.value = .55; lfo.connect(d); d.connect(g.gain);
-    const d2 = C.createGain(); d2.gain.value = .12; lfo.connect(d2); d2.connect(g2.gain); lfo.start(); ch.nodes.push(lfo, d, d2); },
-  forest(ch){ const C = A.ctx, g = A.src(ch, 'pink', .12, [['bandpass', 1100, .5]]); const lfo = C.createOscillator(); lfo.frequency.value = .05; const d = C.createGain(); d.gain.value = .07; lfo.connect(d); d.connect(g.gain); lfo.start(); ch.nodes.push(lfo, d);
-    A.loop(ch, () => { const t = C.currentTime + .05, base = 2200 + Math.random() * 2400, n = 2 + Math.floor(Math.random() * 4);
-      for (let i = 0; i < n; i++) { const o = C.createOscillator(), gg = C.createGain(), st = t + i * (.11 + Math.random() * .05);
-        o.frequency.setValueAtTime(base, st); o.frequency.exponentialRampToValueAtTime(base * (1.25 + Math.random() * .4), st + .07);
-        gg.gain.setValueAtTime(0, st); gg.gain.linearRampToValueAtTime(.05, st + .015); gg.gain.exponentialRampToValueAtTime(.0001, st + .09);
-        o.connect(gg); gg.connect(ch.g); o.start(st); o.stop(st + .12); } }, 1400, 5200); },
-  stream(ch){ const C = A.ctx, g = A.src(ch, 'pink', .45, [['bandpass', 2200, .8]]); A.src(ch, 'brown', .22, [['lowpass', 500]]);
-    A.loop(ch, () => g.gain.setTargetAtTime(.2 + Math.random() * .5, C.currentTime, .05), 60, 170);
-    A.loop(ch, () => { const t = C.currentTime, o = C.createOscillator(), gg = C.createGain(), f = 500 + Math.random() * 900;
-      o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 1.9, t + .06); gg.gain.setValueAtTime(0, t); gg.gain.linearRampToValueAtTime(.045, t + .01); gg.gain.exponentialRampToValueAtTime(.0001, t + .08);
-      o.connect(gg); gg.connect(ch.g); o.start(t); o.stop(t + .1); }, 70, 380); },
-  wind(ch){ const C = A.ctx, g = A.src(ch, 'pink', .6, [['bandpass', 450, .7]]), f = g.filters[0];
-    const l1 = C.createOscillator(); l1.frequency.value = .06; const d1 = C.createGain(); d1.gain.value = 280; l1.connect(d1); d1.connect(f.frequency);
-    const l2 = C.createOscillator(); l2.frequency.value = .11; const d2 = C.createGain(); d2.gain.value = .3; l2.connect(d2); d2.connect(g.gain);
-    l1.start(); l2.start(); ch.nodes.push(l1, d1, l2, d2); A.src(ch, 'brown', .3, [['lowpass', 300]]); },
-  night(ch){ const C = A.ctx; A.src(ch, 'pink', .04, [['highpass', 1800]]);
-    const cricket = (freq, n, gap) => () => { const t = C.currentTime + .02; for (let i = 0; i < n; i++) A.tone(ch, freq, t + i * gap, .035, .03, 'sine', null, .005); };
-    A.loop(ch, cricket(4400, 3, .05), 700, 1300); A.loop(ch, cricket(3900, 4, .045), 1100, 2000); A.loop(ch, cricket(5000, 2, .06), 1600, 3200); },
-  train(ch){ const C = A.ctx; A.src(ch, 'brown', .85, [['lowpass', 260]]); A.src(ch, 'pink', .05, [['bandpass', 1200, .5]]);
-    A.every(ch, () => { const t = C.currentTime; [0, .17, .62, .79].forEach(o => setTimeout(() => A.burst(ch, 160 + Math.random() * 40, .14, .55, 'lowpass', 1), o * 1000)); }, 1500); },
-  clock(ch){ let k = 0; A.every(ch, () => A.burst(ch, k++ % 2 ? 2400 : 3100, .02, .45, 'bandpass', 10), 1000); },
-  cafe(ch){ const C = A.ctx, g1 = A.src(ch, 'pink', .3, [['bandpass', 650, .6]]), g2 = A.src(ch, 'pink', .15, [['bandpass', 1500, .8]]); A.src(ch, 'brown', .2, [['lowpass', 300]]);
-    A.loop(ch, () => { g1.gain.setTargetAtTime(.15 + Math.random() * .3, C.currentTime, .12); g2.gain.setTargetAtTime(.05 + Math.random() * .18, C.currentTime, .08); }, 120, 400);
-    A.loop(ch, () => { const t = C.currentTime + .02, f = 3000 + Math.random() * 2200; A.tone(ch, f, t, .35, .025, 'sine', null, .003); A.tone(ch, f * 1.51, t, .25, .012, 'sine', null, .003); }, 2500, 7500); },
+  // 雨：サーッという雨音（強さがゆっくり変わる）＋ いろんな所に当たる雨つぶ ＋ ときどき「ポタッ」というしずく
+  rain(ch){ const C = A.ctx, R = (a, b) => a + Math.random() * (b - a);
+    const hiss = A.src(ch, 'pink', .5, [['highpass', 900], ['lowpass', 8500]]), body = A.src(ch, 'pink', .3, [['bandpass', 2400, .5]]); A.src(ch, 'brown', .22, [['lowpass', 280]]);
+    A.loop(ch, () => { const v = R(.32, .7); hiss.gain.setTargetAtTime(v, C.currentTime, 1.6); body.gain.setTargetAtTime(v * .6, C.currentTime, 1.6); }, 2000, 5000);
+    A.loop(ch, () => A.burst(ch, R(1800, 7000), R(.006, .022), R(.03, .14), 'bandpass', R(1, 4), A.pan(ch, R(-.9, .9))), 6, 40);
+    A.loop(ch, () => A.osc(ch, {f0: R(900, 1500), f1: R(1900, 3200), t: C.currentTime + .01, dur: R(.04, .07), gain: R(.015, .04), att: .002, dest: A.pan(ch, R(-.8, .8))}), 150, 900); },
+  // 焚き火：ゴォーという炎のゆらぎ ＋ パチパチ（小さな音がかたまって鳴る）＋ ときどき「パンッ」とはぜる
+  fire(ch){ const C = A.ctx, R = (a, b) => a + Math.random() * (b - a);
+    const roar = A.src(ch, 'brown', .7, [['lowpass', 320]]), hiss = A.src(ch, 'pink', .04, [['highpass', 2800]]);
+    A.loop(ch, () => { roar.gain.setTargetAtTime(R(.4, .9), C.currentTime, .25); hiss.gain.setTargetAtTime(R(.015, .07), C.currentTime, .15); }, 120, 500);
+    A.loop(ch, () => { const n = Math.random() < .35 ? 3 + Math.floor(Math.random() * 6) : 1, d = A.pan(ch, R(-.5, .5)); for (let k = 0; k < n; k++) setTimeout(() => A.burst(ch, R(2500, 7500), R(.002, .009), R(.15, .6), 'highpass', 1, d), k * R(8, 45)); }, 50, 450);
+    A.loop(ch, () => A.burst(ch, R(500, 1400), R(.02, .06), R(.25, .55), 'bandpass', 3, A.pan(ch, R(-.4, .4))), 900, 4000); },
+  // 波：ザザーッと寄せて（音が高く大きくなる）、シュワーッと引いていく、をくり返す
+  wave(ch){ const C = A.ctx, R = (a, b) => a + Math.random() * (b - a);
+    const roar = A.src(ch, 'brown', .0001, [['lowpass', 400]]), foam = A.src(ch, 'pink', .0001, [['highpass', 1300], ['lowpass', 9000]]), f = roar.filters[0]; A.src(ch, 'brown', .1, [['lowpass', 180]]);
+    const one = () => { const t = C.currentTime, up = R(2, 3.2), pk = R(.6, 1), dn = R(3.5, 5.5);
+      roar.gain.cancelScheduledValues(t); roar.gain.setValueAtTime(Math.max(.0001, roar.gain.value), t); roar.gain.linearRampToValueAtTime(pk, t + up); roar.gain.exponentialRampToValueAtTime(.04, t + up + dn);
+      f.frequency.cancelScheduledValues(t); f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(R(1300, 2400), t + up); f.frequency.exponentialRampToValueAtTime(320, t + up + dn);
+      foam.gain.cancelScheduledValues(t); foam.gain.setValueAtTime(Math.max(.0001, foam.gain.value), t); foam.gain.linearRampToValueAtTime(.002, t + up * .8); foam.gain.linearRampToValueAtTime(pk * .3, t + up + .3); foam.gain.exponentialRampToValueAtTime(.002, t + up + dn + 1); };
+    A.loop(ch, one, 6500, 10500); },
+  // 森：葉っぱのざわざわ ＋ いろんな鳥（チュンチュン・さえずり・ウグイスの「ホーホケキョ」）
+  forest(ch){ const C = A.ctx, R = (a, b) => a + Math.random() * (b - a);
+    const leaves = A.src(ch, 'pink', .07, [['bandpass', 3000, .6]]); A.loop(ch, () => leaves.gain.setTargetAtTime(R(.02, .16), C.currentTime, .9), 1500, 4000);
+    A.loop(ch, () => { const t = C.currentTime + .05, d = A.pan(ch, R(-.9, .9)), kind = Math.floor(Math.random() * 5), b = R(2300, 4200), nt = (st, f0, f1, dur, g, vib) => A.osc(ch, {f0, f1, t: st, dur, gain: g, dest: d, att: .008, vib, vibF: R(25, 45)});
+      if (kind === 0) { const n = 2 + Math.floor(Math.random() * 4); for (let k = 0; k < n; k++) nt(t + k * .15, b, b * 1.35, .08, .04); }
+      else if (kind === 1) { const n = 6 + Math.floor(Math.random() * 8); for (let k = 0; k < n; k++) nt(t + k * .055, b * 1.15, b * 1.05, .045, .028); }
+      else if (kind === 2) { nt(t, 1050, 1150, .95, .035, 8); nt(t + 1.1, 2300, 2600, .12, .045); nt(t + 1.26, 2150, 1950, .1, .045); nt(t + 1.4, 2900, 2400, .32, .045); }
+      else if (kind === 3) { nt(t, b, b * .6, .22, .035, b * .02); nt(t + .3, b * 1.1, b * .7, .22, .03, b * .02); }
+      else { nt(t, b * .8, b * 1.1, .18, .03, 60); nt(t + .22, b * 1.1, b * .8, .18, .03, 60); } }, 1000, 4500); },
+  // 川：さらさらした流れ ＋ ぷくぷく・ちょろちょろ（いろんな高さの水の音が、細かく次々に）
+  stream(ch){ const C = A.ctx, R = (a, b) => a + Math.random() * (b - a);
+    const base = A.src(ch, 'pink', .22, [['bandpass', 1300, .45]]); A.src(ch, 'brown', .16, [['lowpass', 380]]);
+    A.loop(ch, () => base.gain.setTargetAtTime(R(.12, .32), C.currentTime, .08), 70, 220);
+    A.loop(ch, () => A.burst(ch, R(500, 2800), R(.03, .09), R(.12, .35), 'bandpass', R(8, 18), A.pan(ch, R(-.7, .7))), 14, 65);
+    A.loop(ch, () => A.osc(ch, {f0: R(380, 900), f1: R(900, 2200), t: C.currentTime, dur: R(.05, .08), gain: R(.015, .035), att: .006, dest: A.pan(ch, R(-.6, .6))}), 60, 320); },
+  // 風：ヒュー…ゴォー…と強さと高さが不規則に変わる ＋ ときどき「ヒュルル」という口笛のような音
+  wind(ch){ const C = A.ctx, R = (a, b) => a + Math.random() * (b - a);
+    const g = A.src(ch, 'pink', .4, [['bandpass', 500, .8]]), f = g.filters[0]; A.src(ch, 'brown', .22, [['lowpass', 240]]);
+    const wh = A.src(ch, 'white', .0001, [['bandpass', 900, 18]]), wf = wh.filters[0];
+    A.loop(ch, () => { const t = C.currentTime, tc = R(.8, 2.2); g.gain.setTargetAtTime(R(.15, .85), t, tc); f.frequency.setTargetAtTime(R(250, 1100), t, tc); }, 1200, 3500);
+    A.loop(ch, () => { const t = C.currentTime; wf.frequency.setTargetAtTime(R(600, 1700), t, 1); wh.gain.setTargetAtTime(Math.random() < .5 ? R(.05, .16) : .0001, t, 1.2); }, 2500, 6000); },
+  // 夏の夜：リーリーと鳴く虫（左右から何びきも）＋ 遠くのカエル「ケロケロ」＋ やさしい夜風
+  night(ch){ const C = A.ctx, R = (a, b) => a + Math.random() * (b - a); A.src(ch, 'pink', .03, [['bandpass', 700, .5]]);
+    const bug = (pan, fq) => () => { const d = A.pan(ch, pan), t = C.currentTime + .02, n = 3 + Math.floor(Math.random() * 3); for (let k = 0; k < n; k++) A.osc(ch, {f0: fq, t: t + k * .045, dur: .03, gain: .045, att: .004, dest: d}); };
+    A.loop(ch, bug(-.65, 4300), 550, 1100); A.loop(ch, bug(.55, 4700), 700, 1400); A.loop(ch, bug(.1, 3900), 1200, 2600);
+    A.loop(ch, () => { const d = A.pan(ch, R(-.8, .8)), t = C.currentTime + .05, n = 2 + Math.floor(Math.random() * 3), fq = R(380, 470); for (let k = 0; k < n; k++) for (let i2 = 0; i2 < 6; i2++) A.osc(ch, {f0: fq, t: t + k * .3 + i2 * .018, dur: .016, gain: .012, type: 'triangle', att: .002, dest: d}); }, 3000, 9000); },
+  // 電車：ゴトンゴトン…（2回ずつ）＋ 低いゴォーという走行音 ＋ ときどき「キーッ」とレールがきしむ
+  train(ch){ const C = A.ctx, R = (a, b) => a + Math.random() * (b - a);
+    const rum = A.src(ch, 'brown', .7, [['lowpass', 220]]); A.src(ch, 'pink', .05, [['bandpass', 900, .6]]);
+    A.loop(ch, () => rum.gain.setTargetAtTime(R(.55, .85), C.currentTime, .8), 1500, 3000);
+    const hit = d => setTimeout(() => { A.burst(ch, R(110, 150), .16, .7, 'lowpass', 1); A.burst(ch, R(1800, 2600), .025, .1, 'bandpass', 4); }, d);
+    A.every(ch, () => { [0, 130, 600, 730].forEach(hit); }, 1450);
+    A.loop(ch, () => { const t = C.currentTime; A.osc(ch, {f0: R(2900, 3500), f1: R(2700, 3800), t, dur: 1.6, gain: .007, att: .4}); }, 15000, 40000); },
+  // 時計：カチッ（高い）・コチッ（少し低い）を1秒ごとに
+  clock(ch){ let k = 0; A.every(ch, () => { const tick = k++ % 2 === 0; A.burst(ch, tick ? 4200 : 2700, .012, .45, 'bandpass', tick ? 12 : 9); A.burst(ch, tick ? 1500 : 1100, .03, .14, 'bandpass', 15); }, 1000); },
+  // カフェ：何人かの話し声のざわざわ（声の高さ・区切りが変わる）＋ カップとスプーンの「カチャン」＋ ときどきエスプレッソマシンの「シューッ」
+  cafe(ch){ const C = A.ctx, R = (a, b) => a + Math.random() * (b - a); A.src(ch, 'brown', .14, [['lowpass', 240]]);
+    const voices = [0, 1, 2, 3].map(() => A.src(ch, 'pink', .0001, [['bandpass', R(350, 900), 1.3], ['lowpass', 2600]]));
+    A.loop(ch, () => { for (const g of voices) g.gain.setTargetAtTime(Math.random() < .35 ? .0001 : R(.06, .26), C.currentTime, R(.03, .07)); }, 90, 220);
+    A.loop(ch, () => { for (const g of voices) g.filters[0].frequency.setTargetAtTime(R(300, 1000), C.currentTime, .25); }, 500, 1100);
+    A.loop(ch, () => { const t = C.currentTime + .02, d = A.pan(ch, R(-.8, .8)), fq = R(2200, 3400); for (const [m, g, dur] of [[1, .028, .5], [2.76, .014, .3], [5.4, .007, .15]]) A.osc(ch, {f0: fq * m, t, dur, gain: g, att: .002, dest: d}); }, 2500, 8000);
+    const steam = A.src(ch, 'white', .0001, [['highpass', 2600]]); A.loop(ch, () => { const t = C.currentTime; steam.gain.cancelScheduledValues(t); steam.gain.setValueAtTime(.0001, t); steam.gain.linearRampToValueAtTime(.05, t + .4); steam.gain.setValueAtTime(.05, t + 2.2); steam.gain.linearRampToValueAtTime(.0001, t + 2.8); }, 25000, 50000); },
   white(ch){ A.src(ch, 'white', .32, [['lowpass', 9000]]); },
   bgm(ch){ const C = A.ctx, lp = C.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200; const ech = A.echo(ch, .42, .35); lp.connect(ech); ch.nodes.push(lp);
     const chords = [[57,60,64,67],[53,57,60,64],[48,52,55,59],[55,59,62,65]]; let ci = 0;
@@ -3403,8 +3491,8 @@ VIEWS.home = () => {
   return `
   ${showReview ? `<a class="banner" href="#review" style="text-decoration:none;color:inherit">${icon('moon')}<span style="flex:1">夜の振り返りの時間です。今日がんばったことを記録しよう。</span>${icon('chevR')}</a>` : ''}
   ${showY ? `<button class="banner" data-act="rv-yesterday" style="width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer">${icon('pen')}<span style="flex:1">昨日（${fmtMD(yk)}）の振り返りがまだです。今からでも書けます。</span>${icon('chevR')}</button>` : ''}
-  ${evStatusHTML()}
-  ${planHomeHTML()}
+  ${homeOn('events') ? evStatusHTML() : ''}
+  ${homeOn('plan') ? planHomeHTML() : ''}
   ${(() => { UI.homeLive = T.state !== 'idle'; return ''; })()}
   <section class="panel hero"><div class="home-hero">
     <div class="rings ${T.state !== 'idle' ? 'two' : ''}">${T.state !== 'idle' ? (() => { const D = timerDisplay(), sj = subjOf(T.subj); return `<a class="ringwrap live ${T.state === 'pause' ? 'paused' : ''}" href="#timer" id="h-ring" aria-label="計測中のタイマーを開く">${ringSVG(D.pct, 176, 12, 'hl', ['#3ee6a0', '#22e4ff'])}<div class="rc"><span class="disp" id="h-ttime">${D.time}</span><small id="h-tlabel">${T.phase === 'break' ? '休憩中' : T.state === 'pause' ? '一時停止中' : '計測中'} · ${esc(sj.name)}</small><small class="rinfo" id="h-tinfo">${esc(D.info.replace(/（.*?）/, ''))}</small></div></a>`; })() : ''}<div class="ringwrap">${ringSVG(pct, 176, 12, 'hr')}<div class="rc"><span class="disp">${th}<small style="font-size:16px;margin:0 2px">h</small>${pad2(tm)}<small style="font-size:16px;margin-left:2px">m</small></span><small>今日の勉強時間</small></div></div></div>
@@ -3414,7 +3502,7 @@ VIEWS.home = () => {
       ${T.state !== 'idle' ? `<div class="row wrap" style="gap:8px">${T.state === 'run' ? `<button class="btn" data-act="t-pause">${icon('pause')}一時停止</button>` : `<button class="btn primary" data-act="t-resume">${icon('play')}再開</button>`}<button class="btn" data-act="t-finish">${icon('stop')}${T.phase === 'break' ? '休憩を終える' : '終了して記録'}</button><button class="btn ghost" data-act="mini-open" aria-label="${miniName()}" title="${miniName()}">${icon('pip')}</button></div>` : ''}
       <div class="row wrap" style="gap:10px">${T.state === 'idle' ? `<a class="btn primary big" href="#timer">${icon('play')}勉強を始める</a>` : ''}<a class="btn big" href="#room" style="font-size:15px">${icon('room')}自分の部屋へ</a></div>
     </div></div></section>
-  ${liveStrip()}
+  ${homeOn('live') ? liveStrip() : ''}
 
   <div class="grid3">
     <section class="panel lvcard"><div class="row" style="align-items:flex-end;gap:10px"><span class="lvnum">${lv}</span><div class="kv"><span class="k">LEVEL</span><b style="font-size:14px">${esc(titleFor(lv))}</b></div></div>
@@ -3427,22 +3515,25 @@ VIEWS.home = () => {
       <p class="note" style="margin:8px 0 0">${ex ? fmtDate(ex.date) : '入試カウントダウンから追加できます'}</p></a>
   </div>
 
-  ${(() => { const td = todayTodos(); return td.list.length ? `<section class="panel"><div class="ph"><div><span class="eyebrow">TODAY'S PLAN</span><h2>今日やること</h2></div><span class="pill ${td.list.every(t => t.done) ? 'good' : ''}">${td.list.filter(t => t.done).length}/${td.list.length}</span></div>
+  ${(() => { const td = todayTodos(); return td.list.length && homeOn('todo') ? `<section class="panel"><div class="ph"><div><span class="eyebrow">TODAY'S PLAN</span><h2>今日やること</h2></div><span class="pill ${td.list.every(t => t.done) ? 'good' : ''}">${td.list.filter(t => t.done).length}/${td.list.length}</span></div>
     <div>${td.list.map((t, i) => `<div class="todo ${t.done ? 'done' : ''}"><button class="mcheck" data-act="todo-tog" data-v="${i}" aria-label="${esc(t.t)}を${t.done ? '未完了に戻す' : '完了にする'}">${t.done ? icon('check') : ''}</button><span class="t" style="flex:1;min-width:0;font-size:14px">${esc(t.t)}</span></div>`).join('')}</div>
     <p class="note" style="margin:8px 0 0">昨日の振り返りで決めたことです。</p></section>` : ''; })()}
-  <div class="grid2">
+  ${homeOn('mission') ? `<div class="grid2">
     <section class="panel"><div class="ph"><div><span class="eyebrow">DAILY MISSION</span><h2>今日のミッション</h2></div><span class="pill">${done.length}/${missionsFor(today).length}</span></div>
       <div>${missionsFor(today).map(id => { const m = MISSIONS[id], ok = done.includes(id); return `<div class="mission ${ok ? 'done' : ''}"><span class="mcheck">${ok ? icon('check') : ''}</span><span class="mt">${m.t}</span><span class="pill ${ok ? 'good' : ''}">${icon('coin')}${m.r}</span></div>`; }).join('')}</div>
       <p class="note" style="margin:10px 0 0">達成すると自動でコインがもらえます。コインは部屋の家具に使えます。</p></section>
     <a class="panel roomcard" href="#room"><div class="ph"><div><span class="eyebrow">MY ROOM · LEVEL ${stg + 1}</span><h2>${esc(STAGES[stg].name)}</h2></div>${icon('chevR')}</div>
       <div class="rv">${roomSVG(st.room, STAGES[stg].size, {rid: 'study'})}</div>
       ${st.room.items.some(i => i.t === 'buddy') ? `<p class="note" style="margin:8px 0 0"><b style="color:var(--cyan)">${esc(st.buddy.name)}</b>「${esc((buddyLines()[1] || buddyLines()[0]))}」</p>` : ''}</a>
-  </div>
+  </div>` : ''}
 
-  <section class="panel"><span class="eyebrow">WORDS OF THE DAY</span><p class="quote" style="margin:8px 0 0">${esc(q[0])}<cite>— ${esc(q[1])}</cite></p></section>
-  ${info.sessions.length ? `<section class="panel"><div class="ph"><h3>今日の記録</h3><a class="btn sm ghost" href="#stats">すべて見る</a></div><div class="list">${info.sessions.slice().reverse().slice(0, 5).map(s => { const sj = subjOf(s.s); const t = new Date(s.t); return `<div class="li"><span class="dot" style="--c:${sj.color}"></span><div class="t"><b>${esc(sj.name)}</b><span>${pad2(t.getHours())}:${pad2(t.getMinutes())} 開始</span></div><span class="disp">${fmtHM(s.m)}</span></div>`; }).join('')}</div></section>` : ''}
+  ${homeOn('quote') ? `<section class="panel"><span class="eyebrow">WORDS OF THE DAY</span><p class="quote" style="margin:8px 0 0">${esc(q[0])}<cite>— ${esc(q[1])}</cite></p></section>` : ''}
+  ${info.sessions.length && homeOn('log') ? `<section class="panel"><div class="ph"><h3>今日の記録</h3><a class="btn sm ghost" href="#stats">すべて見る</a></div><div class="list">${info.sessions.slice().reverse().slice(0, 5).map(s => { const sj = subjOf(s.s); const t = new Date(s.t); return `<div class="li"><span class="dot" style="--c:${sj.color}"></span><div class="t"><b>${esc(sj.name)}</b><span>${pad2(t.getHours())}:${pad2(t.getMinutes())} 開始</span></div><span class="disp">${fmtHM(s.m)}</span></div>`; }).join('')}</div></section>` : ''}
   `;
 };
+// ホームに出すもの（設定で切りかえ）
+const HOME_PARTS = [['plan', '合格プラン（おすすめ配分）'], ['events', '発動中のイベント'], ['live', '勉強中の仲間'], ['todo', '今日やること'], ['mission', '今日のミッション・部屋'], ['quote', '今日のことば'], ['log', '今日の記録']];
+const homeOn = k => { const h = (S().prefs.home || {}); return h[k] !== false; };
 const nowHM = () => { const d = new Date(); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
 
 VIEWS.timer = () => {
@@ -3578,7 +3669,7 @@ VIEWS.room = () => {
   else if (selIt) { const d = F[selIt.t];
     if (d.person) { const info = personInfo(selIt), who = whoOfItem(selIt), role = selIt.t === 'buddy' ? 'ルームメイト' : selIt.t === 'partner' ? (st.family.partner && st.family.partner.role || 'パートナー') : KID_STAGE[info.stage || 0];
       bar = `<div class="roombar"><div class="rb-head"><b>${esc(info.name)}（${esc(role)}）</b></div>
-      <div class="rb-tools"><button class="tool go" data-act="buddy-talk">${icon('chat')}話す</button><button class="tool" data-act="buddy-name">${icon('pen')}名前</button><button class="tool" data-act="wear-open" data-v="${esc(who)}">${icon('shirt')}着せ替え</button><button class="tool" data-act="rm-move">${icon('move')}移動</button><button class="tool" data-act="rm-rot">${icon('rotate')}向き</button><button class="tool" data-act="rm-store">${icon('box')}しまう</button><button class="tool" data-act="rm-desel">${icon('x')}閉じる</button></div></div>`; }
+      <div class="rb-tools"><button class="tool go" data-act="buddy-talk">${icon('chat')}話す</button><button class="tool" data-act="buddy-name">${icon('pen')}名前</button><button class="tool" data-act="wear-open" data-v="${esc(who)}">${icon('shirt')}着せ替え</button><button class="tool" data-act="rm-move">${icon('move')}移動</button><button class="tool" data-act="rm-rot">${icon('rotate')}向き</button><button class="tool" data-act="rm-store">${icon('box')}しまう</button><button class="tool" data-act="rm-sell-sel">${icon('coin')}売る</button><button class="tool" data-act="rm-desel">${icon('x')}閉じる</button></div></div>`; }
     else bar = `<div class="roombar"><div class="rb-head"><b>${esc(d.n)}</b></div>
       <div class="rb-tools"><button class="tool" data-act="rm-move">${icon('move')}移動</button>${!d.wall ? `<button class="tool" data-act="rm-rot">${icon('rotate')}回転</button>` : ''}<button class="tool ${UI.colorOpen ? 'on' : ''}" data-act="rm-color" aria-pressed="${!!UI.colorOpen}">${icon('palette')}色</button><button class="tool" data-act="rm-store">${icon('box')}しまう</button><button class="tool" data-act="rm-desel">${icon('x')}閉じる</button></div>
       ${UI.colorOpen ? `<div class="swatches" style="margin-top:8px;padding:0 2px">${d.colors.map((c, i) => `<button class="sw ${(selIt.c || 0) === i ? 'on' : ''}" style="--c:${c}" data-act="rm-setc" data-v="${i}" aria-label="色${i + 1}"></button>`).join('')}</div>` : ''}</div>`; }
@@ -3586,7 +3677,7 @@ VIEWS.room = () => {
   let panel = '';
   if (UI.roomTab === 'inv') { const ppl = unplacedPeople();
     panel = (ppl.length ? `<h3 style="margin:0 0 8px;font-size:14px">家族・ルームメイト</h3><div class="shop" style="margin-bottom:16px">${ppl.map(p => `<div class="item"><div class="thumb">${personThumb(p.look, p.stage)}</div><b>${esc(p.name)}</b><div class="meta"><span>${esc(p.role)}</span></div><button class="btn sm primary" data-act="rm-place" data-v="${esc(p.key)}">この部屋に呼ぶ</button></div>`).join('')}</div>` : '')
-      + (inv.length ? `<div class="shop">${inv.map(t => `<div class="item"><div class="thumb">${thumbSVG(t)}</div><b>${esc(F[t].n)}</b><div class="meta"><span>残り ${(st.owned[t] || 0) - placedCountG(t)}個</span></div><button class="btn sm primary" data-act="rm-place" data-v="${t}">置く</button></div>`).join('')}</div>`
+      + (inv.length ? `<div class="shop">${inv.map(t => `<div class="item"><div class="thumb">${thumbSVG(t)}</div><b>${esc(F[t].n)}</b><div class="meta"><span>残り ${(st.owned[t] || 0) - placedCountG(t)}個</span></div><div class="row" style="gap:6px"><button class="btn sm primary" data-act="rm-place" data-v="${t}" style="flex:1">置く</button><button class="btn sm ghost" data-act="rm-sell" data-v="${t}" title="売る">${sellPrice(t) ? sellPrice(t) + 'cで売る' : '手放す'}</button></div></div>`).join('')}</div>`
       : `<div class="empty">しまってある家具はありません。<br>ショップで家具を手に入れるか、部屋の家具をタップして「しまう」とここに戻ります。<br>しまった家具や人は、別の部屋で置くこともできます。</div>`); }
   if (UI.roomTab === 'shop') panel = `<p class="note" style="margin:0 0 10px">勉強1分＝1コイン。レベルが上がると新しい家具が解放されます。所持コイン <b class="disp" style="color:var(--warn)">${Math.max(0, x.coins).toLocaleString()}</b></p>
       <div class="seg" style="margin-bottom:12px">${[['all','すべて'],['room','部屋の専用'],['floor','家具'],['light','照明'],['small','机の上の小物'],['wall','壁'],['rug','床']].map(([k, n]) => `<button data-act="shop-cat" data-v="${k}" class="${(UI.shopCat || 'all') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
@@ -3616,7 +3707,7 @@ function unplacedPeople(){
   for (const k of st.family.kids) if (!k.left && !all.some(i => i.t === 'kid' && i.kid === k.id)) out.push({key: 'kid:' + k.id, name: k.name, role: KID_STAGE[k.stage || 0], look: k.look, stage: k.stage});
   return out;
 }
-const HAIR_N = {short: 'ショート', spiky: 'ツンツン', bob: 'ボブ', long: 'ロング', pony: 'ポニーテール'};
+const HAIR_N = {short: 'ショート', spiky: 'ツンツン', bob: 'ボブ', long: 'ロング', pony: 'ポニーテール', center: 'センター分け', buzz: 'ぼうず', twin: 'ツインテール', side: 'サイドテール', bun: 'おだんご', braid: 'みつあみ', wavy: 'ゆるふわ', afro: 'アフロ'};
 /* ---------- 360°プレビュー：人をぐるっと回して見る（面ごとに奥から順に描く） ---------- */
 function spinSVG(L, stage, ang, pose){
   const o = {stage}, now = Date.now(); if (pose === 'walk') o.walk = Math.floor(now / 140); if (pose === 'wave') o.mo = {type: 'wave', ph: Math.floor(now / 380)};
@@ -3932,21 +4023,29 @@ function PL(){ const st = S(); if (!st.plan || typeof st.plan !== 'object') st.p
   return p; }
 function planInfo(id){ const p = PL(); if (!p.info[id]) p.info[id] = {exam: '', date: '', goalK: 75, goalN: 65, goalDev: null, subs: [], mode: 'gap'}; const inf = p.info[id];
   if (!Array.isArray(inf.subs)) { inf.subs = Object.entries(inf.pts || {}).map(([sid, [k, n]], i) => ({id: sid, name: subjOf(sid).name, color: subjOf(sid).color, tsid: sid, k, n, gk: null, gn: null, pref: 1, fix: null})); delete inf.pts; }
-  inf.mode = inf.mode || 'gap'; return inf; }
-function planDate(inf){ if (inf.date) return inf.date; const ex = S().exams.find(e => e.id === inf.exam); return ex ? ex.date : ''; }
+  if (inf.examK === undefined) { const ex = S().exams; inf.examK = ex.some(e => e.id === 'kyotsu') ? 'kyotsu' : ''; inf.dateK = ''; inf.examN = inf.exam && inf.exam !== 'kyotsu' ? inf.exam : (ex.some(e => e.id === 'zenki') && !inf.date ? 'zenki' : ''); inf.dateN = inf.date || ''; if (inf.exam === 'kyotsu') inf.examK = 'kyotsu'; delete inf.exam; delete inf.date; }
+  inf.mode = inf.mode || 'gap'; inf.phase = inf.phase || 'auto'; return inf; }
+// 共通テストと二次試験は、日付・目標・模試をそれぞれ別に
+function planDate(inf, ph){ const id = ph === 'k' ? inf.examK : inf.examN, d = ph === 'k' ? inf.dateK : inf.dateN; if (d) return d; const ex = S().exams.find(e => e.id === id); return ex ? ex.date : ''; }
+function curPhase(inf){ if (inf.phase === 'k' || inf.phase === 'n') return inf.phase; const subs = inf.subs.filter(x => x.name); if (subs.length && !subs.some(x => +x.k > 0)) return 'n'; if (subs.length && !subs.some(x => +x.n > 0)) return 'k';
+  const dk = planDate(inf, 'k'); return dk && dkey() <= dk ? 'k' : (dk ? 'n' : 'k'); }
+const PH = {k: '共通テスト', n: '二次試験'};
 const rowRate = r => r && +r.m > 0 && r.g !== '' && r.g != null ? clamp(+r.g / +r.m, 0, 1) : null;
 const mockRow = (m, sub) => m.rows.find(r => r.sid && r.sid === sub.id) || m.rows.find(r => r.n && r.n === sub.name);
 const mockTotal = m => { let g = 0, mx = 0; for (const r of m.rows) if (rowRate(r) != null) { g += +r.g; mx += +r.m; } return mx ? g / mx : null; };
-const mocksAsc = () => PL().mocks.slice().sort((a, b) => a.date.localeCompare(b.date));
-function latestOf(sub){ for (const m of mocksAsc().reverse()) { const r = mockRow(m, sub), rate = rowRate(r); if (rate != null) return {rate, dev: numOr(r.dev), g: +r.g, m: +r.m, date: m.date}; } return null; }
+const mocksAsc = kind => PL().mocks.filter(m => !kind || kind === 'all' || (m.kind || 'k') === kind).sort((a, b) => a.date.localeCompare(b.date));
+function latestOf(sub, kind){ for (const pass of kind ? [kind, null] : [null]) for (const m of mocksAsc(pass).reverse()) { const r = mockRow(m, sub), rate = rowRate(r); if (rate != null) return {rate, dev: numOr(r.dev), g: +r.g, m: +r.m, date: m.date, kind: m.kind || 'k'}; } return null; }
 const subPts = sub => (+sub.k || 0) + (+sub.n || 0);
-function subGoalRate(inf, sub){ const pts = subPts(sub), gp = (+sub.gk || 0) + (+sub.gn || 0); return gp > 0 && pts > 0 ? clamp(gp / pts, 0, 1) : (inf.goalK || 70) / 100; }
-function planGoalRate(inf){ const subs = inf.subs.filter(x => x.name && subPts(x) > 0); if (subs.length && subs.every(x => (+x.gk || 0) + (+x.gn || 0) > 0)) { const P = subs.reduce((a, x) => a + subPts(x), 0), G = subs.reduce((a, x) => a + (+x.gk || 0) + (+x.gn || 0), 0); return G / P; } return (inf.goalK || 70) / 100; }
+const phPts = (sub, ph) => ph === 'k' ? (+sub.k || 0) : ph === 'n' ? (+sub.n || 0) : subPts(sub);
+const phGoal = (sub, ph) => ph === 'k' ? (+sub.gk || 0) : ph === 'n' ? (+sub.gn || 0) : (+sub.gk || 0) + (+sub.gn || 0);
+function subGoalRate(inf, sub, ph){ const pts = phPts(sub, ph), gp = phGoal(sub, ph); return gp > 0 && pts > 0 ? clamp(gp / pts, 0, 1) : ((ph === 'n' ? inf.goalN : inf.goalK) || 70) / 100; }
+function planGoalRate(inf, ph){ const subs = inf.subs.filter(x => x.name && phPts(x, ph) > 0); if (subs.length && subs.every(x => phGoal(x, ph) > 0)) return subs.reduce((a, x) => a + phGoal(x, ph), 0) / subs.reduce((a, x) => a + phPts(x, ph), 0); return ((ph === 'n' ? inf.goalN : inf.goalK) || 70) / 100; }
 // おすすめ配分：自分で決めた分（固定）を先にとって、残りを「配点 × 必要度 × 希望」で分ける
 function planAlloc(inf, goal){
   const subs = inf.subs.filter(x => x.name); if (!subs.length) return [];
   const since = addDays(dkey(), -6), done = {}; for (const ss of stats().sessions) if (ss.d >= since) done[ss.s] = (done[ss.s] || 0) + ss.m;
-  const rows = subs.map(sub => { const L = latestOf(sub), rate = L ? L.rate : null, pts = subPts(sub) || 100, gr = subGoalRate(inf, sub), pref = sub.pref ?? 1;
+  const ph = curPhase(inf), anyPh = subs.some(x => phPts(x, ph) > 0);
+  const rows = subs.map(sub => { const L = latestOf(sub, ph), rate = L ? L.rate : null, pts = anyPh ? phPts(sub, ph) : (subPts(sub) || 100), gr = subGoalRate(inf, sub, ph), pref = pts > 0 ? (sub.pref ?? 1) : 0;
     const need = inf.mode === 'pts' ? 1 : inf.mode === 'weak' ? Math.pow(1 - (rate ?? .5), 1.5) + .1 : Math.max(0, gr - (rate ?? gr - .15)) + .2;
     return {sub, L, rate, pts, gr, pref, w: pts * need * pref, fixed: numOr(sub.fix) != null}; });
   const fixedSum = rows.filter(r => r.fixed).reduce((a, r) => a + numOr(r.sub.fix, 0), 0), rest = Math.max(0, goal - fixedSum), wsum = rows.filter(r => !r.fixed).reduce((a, r) => a + r.w, 0) || 1;
@@ -3957,9 +4056,10 @@ function planAlloc(inf, goal){
 }
 function mockChart(inf){
   const metric = UI.mockMetric || 'rate', sid = UI.mockSub || 'total', sub = inf.subs.find(x => x.id === sid), dev = metric === 'dev';
-  const pts = []; for (const m of mocksAsc()) { let v = null; if (sid === 'total') v = dev ? numOr(m.dev) : (mockTotal(m) != null ? mockTotal(m) * 100 : null); else if (sub) { const r = mockRow(m, sub); v = dev ? numOr(r && r.dev) : (rowRate(r) != null ? rowRate(r) * 100 : null); } if (v != null) pts.push([m, v]); }
+  const kind = UI.mockKind || 'all', gph = kind === 'n' ? 'n' : kind === 'k' ? 'k' : curPhase(inf);
+  const pts = []; for (const m of mocksAsc(kind)) { let v = null; if (sid === 'total') v = dev ? numOr(m.dev) : (mockTotal(m) != null ? mockTotal(m) * 100 : null); else if (sub) { const r = mockRow(m, sub); v = dev ? numOr(r && r.dev) : (rowRate(r) != null ? rowRate(r) * 100 : null); } if (v != null) pts.push([m, v]); }
   if (pts.length < 1) return `<div class="empty" style="padding:14px">${dev ? '偏差値' : '点数'}が入った模試がまだありません。</div>`;
-  const lo = dev ? 30 : 0, hi = dev ? 80 : 100, goal = dev ? numOr(inf.goalDev) : Math.round((sub ? subGoalRate(inf, sub) : planGoalRate(inf)) * 100);
+  const lo = dev ? 30 : 0, hi = dev ? 80 : 100, goal = dev ? numOr(inf.goalDev) : Math.round((sub ? subGoalRate(inf, sub, gph) : planGoalRate(inf, gph)) * 100);
   const W = 340, H = 150, L = 30, B = 22, T0 = 14, R = 10, n = pts.length, xp = i => L + (W - L - R) * (n === 1 ? .5 : i / (n - 1)), yp = v => T0 + (H - T0 - B) * (1 - (clamp(v, lo, hi) - lo) / (hi - lo));
   let g = ''; for (let v = lo; v <= hi; v += dev ? 10 : 25) g += `<line x1="${L}" x2="${W - R}" y1="${yp(v)}" y2="${yp(v)}" stroke="rgba(255,255,255,.07)"/><text x="${L - 6}" y="${yp(v) + 4}" text-anchor="end" font-size="10" fill="var(--mute)">${v}</text>`;
   if (goal != null) g += `<line x1="${L}" x2="${W - R}" y1="${yp(goal)}" y2="${yp(goal)}" stroke="#ffc24d" stroke-dasharray="5 4"/><text x="${W - R}" y="${yp(goal) - 4}" text-anchor="end" font-size="10" fill="#ffc24d">目標 ${goal}${dev ? '' : '%'}</text>`;
@@ -3981,6 +4081,7 @@ function subsEditor(){
 function mockEditor(inf){
   const D = UI.mockDraft, judges = ['', 'A', 'B', 'C', 'D', 'E'];
   return `<div class="mockform stack" style="gap:10px;margin-bottom:14px"><div class="row wrap" style="gap:8px"><label class="fld" style="width:150px">日付<input type="date" value="${esc(D.date)}" data-mh="date"></label><label class="fld" style="flex:1;min-width:150px">模試の名前<input type="text" maxlength="30" value="${esc(D.name)}" data-mh="name" placeholder="例：第2回 共通テスト模試"></label></div>
+    <div class="seg mkkind">${[['k', '共通テスト模試'], ['n', '二次・記述模試']].map(([k, n]) => `<button type="button" data-act="mk-dkind" data-v="${k}" class="${(D.kind || 'k') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
     <div class="row wrap" style="gap:8px"><label class="fld" style="width:120px">判定<select data-mh="judge">${judges.map(j => `<option ${D.judge === j ? 'selected' : ''} value="${j}">${j || '—'}</option>`).join('')}</select></label><label class="fld" style="width:120px">総合の偏差値<input type="number" step="0.1" inputmode="decimal" value="${D.dev ?? ''}" data-mh="dev" placeholder="任意"></label></div>
     <div class="mrows"><div class="mrow head"><span>科目</span><span>点</span><span>満点</span><span>偏差値</span><span></span></div>
     ${D.rows.map((r, i) => `<div class="mrow"><input type="text" maxlength="16" value="${esc(r.n)}" data-mf="${i}:n" placeholder="科目" aria-label="科目名"><input type="number" min="0" inputmode="numeric" value="${r.g ?? ''}" data-mf="${i}:g" aria-label="点" placeholder="点"><input type="number" min="1" inputmode="numeric" value="${r.m ?? ''}" data-mf="${i}:m" aria-label="満点" placeholder="満点"><input type="number" step="0.1" inputmode="decimal" value="${r.dev ?? ''}" data-mf="${i}:dev" aria-label="偏差値" placeholder="偏差値"><button type="button" class="btn sm ghost" data-act="mrow-del" data-v="${i}" aria-label="この科目を消す">${icon('x')}</button></div>`).join('')}</div>
@@ -3991,34 +4092,38 @@ function mockEditor(inf){
 VIEWS.plan = () => {
   const st = S(), p = PL(), today = dkey();
   if (!st.targets.length) return `<div class="pagehead"><div><span class="eyebrow">ROAD TO 合格</span><h1>合格プラン</h1></div></div><section class="panel"><div class="empty">まず志望校を登録しよう。<br><a class="btn primary" href="#exams" style="margin-top:12px">${icon('plus')}志望大学を登録する</a></div></section>`;
-  const t = st.targets.find(x => x.id === p.main) || st.targets[0], inf = planInfo(t.id), date = planDate(inf), left = date ? daysBetween(today, date) : null;
+  const t = st.targets.find(x => x.id === p.main) || st.targets[0], inf = planInfo(t.id), ph = curPhase(inf);
   const goal = goalFor(today), alloc = planAlloc(inf, goal), subs = inf.subs.filter(x => x.name);
-  const ms = mocksAsc(), last = ms[ms.length - 1], lastRate = last ? mockTotal(last) : null, gRate = planGoalRate(inf);
+  const ms = mocksAsc(UI.mockKind || 'all'), phInfo = k => { const date = planDate(inf, k), left = date ? daysBetween(today, date) : null, list = mocksAsc(k), last = list[list.length - 1], rate = last ? mockTotal(last) : null, g = planGoalRate(inf, k); return {date, left, last, rate, g}; };
+  const PK = phInfo('k'), PN = phInfo('n'), cur = ph === 'k' ? PK : PN, left = cur.left;
   const sumK = subs.reduce((a, x) => a + (+x.k || 0), 0), sumN = subs.reduce((a, x) => a + (+x.n || 0), 0), sumGK = subs.reduce((a, x) => a + (+x.gk || 0), 0), sumGN = subs.reduce((a, x) => a + (+x.gn || 0), 0);
   const doneN = p.check.filter(c => c.done).length, allocSum = alloc.reduce((a, r) => a + r.min, 0);
   const judgeC = j => ({A: '#3ee6a0', B: '#22e4ff', C: '#ffc24d', D: '#ff9350', E: '#ff5c7a'})[j] || 'var(--mute)';
   return `<div class="pagehead"><div><span class="eyebrow">ROAD TO 合格</span><h1>合格プラン</h1></div><a class="btn sm ghost" href="#exams">${icon('pen')}志望校を編集</a></div>
   <section class="panel"><div class="note" style="margin:0 0 6px">第一志望をえらぶ</div><div class="chips">${st.targets.map(x => `<button class="chip ${x.id === t.id ? 'on' : ''}" style="--c:#ffc24d" data-act="pl-main" data-v="${x.id}"><i></i>${esc(x.univ)}${x.fac ? ' ' + esc(x.fac) : ''}</button>`).join('')}</div></section>
-  <section class="panel hero plancard"><div class="row wrap" style="gap:18px;align-items:center">
-    <div style="flex:1;min-width:200px"><span class="eyebrow">🎯 第一志望</span><h2 style="margin:4px 0">${esc(t.univ)} <small style="font-size:15px;color:var(--mute)">${esc(t.fac || '')}</small></h2>
-      <div class="row wrap" style="gap:6px">${left != null ? `<span class="pill ${left <= 30 ? 'warn' : 'cy'}">本番まで ${left < 0 ? '終了' : left + '日'}</span>` : '<span class="pill">試験日を選んでね</span>'}${lastRate != null ? `<span class="pill">最新模試 ${Math.round(lastRate * 100)}%</span>` : ''}${last && last.dev ? `<span class="pill">偏差値 ${last.dev}${inf.goalDev ? ` / 目標 ${inf.goalDev}` : ''}</span>` : ''}${last && last.judge ? `<span class="pill" style="color:${judgeC(last.judge)};border-color:${judgeC(last.judge)}">判定 ${last.judge}</span>` : ''}</div></div>
-    <div class="kv" style="text-align:right"><span class="k">目標との差（得点率）</span><span class="v" style="font-size:26px;color:${lastRate == null ? 'var(--mute)' : lastRate >= gRate ? '#3ee6a0' : '#ffc24d'}">${lastRate == null ? '—' : (lastRate >= gRate ? '+' : '') + Math.round((lastRate - gRate) * 100) + '<small>pt</small>'}</span><span class="note">目標 ${Math.round(gRate * 100)}%${sumGK + sumGN ? `（${sumGK + sumGN}点）` : ''}</span></div></div>
-    ${left != null && left > 0 ? `<p class="note" style="margin:10px 0 0">1日の目標 ${fmtHM(goal)} を続けると、本番までにあと <b style="color:var(--ink)">約${Math.round(goal * left / 60).toLocaleString()}時間</b> 勉強できます。</p>` : ''}
-    <form class="row wrap" data-form="pl-info" style="gap:8px;margin-top:12px;align-items:flex-end">
-      <label class="fld" style="flex:1;min-width:150px">試験日<select id="pl-exam"><option value="">（日付を直接入れる）</option>${st.exams.map(e => `<option value="${e.id}" data-date="${e.date}" ${inf.exam === e.id ? 'selected' : ''}>${esc(e.name)}（${fmtMD(e.date)}）</option>`).join('')}</select></label>
-      <label class="fld" style="width:150px">日付<input id="pl-date" type="date" value="${esc(planDate(inf) || '')}"></label>
-      <label class="fld" style="width:110px">共通 目標%<input id="pl-gk" type="number" min="0" max="100" inputmode="numeric" value="${inf.goalK}"></label>
-      <label class="fld" style="width:100px">二次 目標%<input id="pl-gn" type="number" min="0" max="100" inputmode="numeric" value="${inf.goalN}"></label>
-      <label class="fld" style="width:100px">目標偏差値<input id="pl-gd" type="number" step="0.1" inputmode="decimal" value="${inf.goalDev ?? ''}" placeholder="任意"></label>
+  <section class="panel hero plancard"><span class="eyebrow">🎯 第一志望</span><h2 style="margin:4px 0 10px">${esc(t.univ)} <small style="font-size:15px;color:var(--mute)">${esc(t.fac || '')}</small></h2>
+    <div class="phgrid">${[['k', PK], ['n', PN]].map(([k, X]) => `<div class="phbox ${ph === k ? 'cur' : ''}"><div class="row wrap" style="justify-content:space-between;gap:4px 6px"><b style="white-space:nowrap">${PH[k]}</b>${ph === k ? '<span class="pill cy" style="font-size:10.5px">いまの対策</span>' : ''}</div>
+      <div class="phleft">${X.left == null ? '<span class="note">日付を選んでね</span>' : X.left < 0 ? '終了' : `あと<b class="disp">${X.left}</b>日`}</div>
+      <div class="note">${X.date ? fmtDate(X.date) : ''}</div>
+      <div class="phrow"><span>目標 ${Math.round(X.g * 100)}%</span><span>${X.rate != null ? `最新 ${Math.round(X.rate * 100)}%` : '模試なし'}</span></div>
+      ${X.rate != null ? `<div class="phdiff" style="color:${X.rate >= X.g ? '#3ee6a0' : '#ffc24d'}">${X.rate >= X.g ? '+' : ''}${Math.round((X.rate - X.g) * 100)}pt${X.last.judge ? ` · <span style="color:${judgeC(X.last.judge)}">${X.last.judge}判定</span>` : ''}${X.last.dev ? ` · 偏差値${X.last.dev}` : ''}</div>` : ''}</div>`).join('')}</div>
+    ${left != null && left > 0 ? `<p class="note" style="margin:10px 0 0">1日の目標 ${fmtHM(goal)} を続けると、${PH[ph]}までにあと <b style="color:var(--ink)">約${Math.round(goal * left / 60).toLocaleString()}時間</b> 勉強できます。</p>` : ''}
+    <form class="stack" data-form="pl-info" style="gap:8px;margin-top:12px">
+      ${[['k', inf.examK], ['n', inf.examN]].map(([k, ex]) => `<div class="row wrap" style="gap:8px;align-items:flex-end"><label class="fld" style="flex:1;min-width:150px">${PH[k]}の日<select id="pl-exam-${k}" data-ph="${k}"><option value="">（日付を直接入れる）</option>${st.exams.map(e => `<option value="${e.id}" data-date="${e.date}" ${ex === e.id ? 'selected' : ''}>${esc(e.name)}（${fmtMD(e.date)}）</option>`).join('')}</select></label>
+        <label class="fld" style="width:150px">日付<input id="pl-date-${k}" data-ph="${k}" type="date" value="${esc(planDate(inf, k) || '')}"></label>
+        <label class="fld" style="width:96px">目標%<input id="pl-g${k}" type="number" min="0" max="100" inputmode="numeric" value="${k === 'k' ? inf.goalK : inf.goalN}"></label></div>`).join('')}
+      <div class="row wrap" style="gap:8px;align-items:flex-end"><label class="fld" style="width:110px">目標偏差値<input id="pl-gd" type="number" step="0.1" inputmode="decimal" value="${inf.goalDev ?? ''}" placeholder="任意"></label>
       <button class="btn primary" type="submit">${icon('check')}保存</button></form>
-    <p class="note" style="margin:6px 0 0">科目ごとの目標点を全部入れると、目標の得点率はその合計から計算されます。</p></section>
+      </div></form>
+    <p class="note" style="margin:6px 0 0">科目ごとの目標点を全部入れると、目標の得点率はその合計から計算されます。共通テストの日が過ぎると、おすすめ配分は自動で二次試験向けに切りかわります。</p></section>
 
   <div class="grid2">
   <section class="panel"><div class="ph"><div><span class="eyebrow">TODAY</span><h2>今日のおすすめ配分</h2></div><button class="btn sm ${UI.allocEdit ? 'primary' : ''}" data-act="alloc-edit">${UI.allocEdit ? icon('check') + 'できた' : icon('pen') + '調整する'}</button></div>
+    <div class="row wrap" style="gap:6px;margin-bottom:8px;align-items:center"><span class="note" style="margin:0">対策</span><div class="seg">${[['auto', `自動（${PH[curPhase({...inf, phase: 'auto'})]}）`], ['k', '共通テスト'], ['n', '二次試験']].map(([k, n]) => `<button data-act="alloc-phase" data-v="${k}" class="${(inf.phase || 'auto') === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
     <div class="seg" style="margin-bottom:10px">${[['gap', '目標との差'], ['weak', '苦手を重視'], ['pts', '配点どおり']].map(([k, n]) => `<button data-act="alloc-mode" data-v="${k}" class="${inf.mode === k ? 'on' : ''}">${n}</button>`).join('')}</div>
     ${alloc.length ? `<div class="stack" style="gap:12px">${alloc.map(a => `<div class="allocrow"><div class="row" style="justify-content:space-between;font-size:13px;gap:6px"><span style="min-width:0"><span class="dot" style="--c:${a.sub.color};display:inline-block;margin-right:6px"></span><b>${esc(a.sub.name)}</b>${a.fixed ? ' <span class="pill" style="font-size:10px;padding:1px 6px">固定</span>' : ''}</span><b class="disp">${fmtHM(a.min)}</b></div>
       <div class="bar" style="margin-top:4px"><i style="width:${(clamp(a.share, 0, 1) * 100).toFixed(1)}%;background:${a.sub.color}"></i></div>
-      <div class="note" style="margin-top:2px">${subPts(a.sub) ? `配点${subPts(a.sub)}` : '配点なし'}${(+a.sub.gk || 0) + (+a.sub.gn || 0) ? ` · 目標${(+a.sub.gk || 0) + (+a.sub.gn || 0)}点` : ''}${a.L ? ` · 最新 ${a.L.g}/${a.L.m}${a.L.dev ? `（偏差値${a.L.dev}）` : ''}` : ''} · 最近7日 ${fmtHM(a.did7)}${a.shared ? '（同じ科目の合計）' : ''}${!a.fixed && a.didShare + .08 < a.share ? ' <b style="color:#ffc24d">← もっと時間を</b>' : ''}</div>
+      <div class="note" style="margin-top:2px">${phPts(a.sub, ph) ? `${PH[ph]}の配点${phPts(a.sub, ph)}` : `${PH[ph]}では使わない`}${phGoal(a.sub, ph) ? ` · 目標${phGoal(a.sub, ph)}点` : ''}${a.L ? ` · 最新 ${a.L.g}/${a.L.m}${a.L.dev ? `（偏差値${a.L.dev}）` : ''}` : ''} · 最近7日 ${fmtHM(a.did7)}${a.shared ? '（同じ科目の合計）' : ''}${!a.fixed && a.didShare + .08 < a.share ? ' <b style="color:#ffc24d">← もっと時間を</b>' : ''}</div>
       ${UI.allocEdit ? `<div class="row wrap" style="gap:6px;margin-top:6px;align-items:center"><div class="seg prefseg">${PREFS.map(([v, n]) => `<button data-act="alloc-pref" data-v="${a.sub.id}" data-p="${v}" class="${(a.sub.pref ?? 1) === v ? 'on' : ''}">${n}</button>`).join('')}</div>
         <label class="row fixlbl" style="gap:4px;font-size:12px;color:var(--mute)">時間を自分で決める<input type="number" min="0" max="600" step="5" inputmode="numeric" data-fix="${a.sub.id}" value="${numOr(a.sub.fix) ?? ''}" placeholder="自動" style="width:72px">分</label></div>` : ''}</div>`).join('')}</div>
       <p class="note" style="margin:10px 0 0">合計 ${fmtHM(allocSum)}${allocSum > goal + 4 ? `（1日の目標 ${fmtHM(goal)} をこえています）` : ` / 1日の目標 ${fmtHM(goal)}`}。${inf.mode === 'gap' ? '目標点との差が大きい科目ほど多めにしています。' : inf.mode === 'weak' ? '模試の点が低い科目ほど多めにしています。' : '配点の大きさどおりに分けています。'}「調整する」で、科目ごとに多め・少なめや、時間を自分で決められます。</p>
@@ -4027,17 +4132,20 @@ VIEWS.plan = () => {
 
   <section class="panel"><div class="ph"><div><span class="eyebrow">SUBJECTS</span><h2>科目・配点・目標点</h2></div>${UI.subsDraft ? '' : `<div class="row" style="gap:6px">${subs.length || inf.goalDev != null || inf.goalK !== 75 || inf.goalN !== 65 ? `<button class="btn sm ghost" data-act="sub-reset">${icon('rotate')}リセット</button>` : ''}<button class="btn sm" data-act="sub-edit">${icon('pen')}編集</button></div>`}</div>
     <div class="chips" style="margin-bottom:10px">${Object.entries(PLAN_TPL).map(([k, [n]]) => `<button class="chip" style="--c:#a46bff" data-act="pl-tpl" data-v="${k}"><i></i>${n}</button>`).join('')}</div>
-    ${UI.subsDraft ? subsEditor() : subs.length ? `<div class="subtbl"><div class="strow head"><span>科目</span><span>配点<br>共通/二次</span><span>目標点</span><span>最新</span></div>${subs.map(x => { const L = latestOf(x); return `<div class="strow"><span><span class="dot" style="--c:${x.color};display:inline-block;margin-right:5px"></span>${esc(x.name)}</span><span>${+x.k || 0} / ${+x.n || 0}</span><span>${(+x.gk || 0) + (+x.gn || 0) ? `${x.gk ?? '—'} / ${x.gn ?? '—'}` : '—'}</span><span>${L ? `${Math.round(L.rate * 100)}%${L.dev ? `<br><small>偏差値${L.dev}</small>` : ''}` : '—'}</span></div>`; }).join('')}
-      <div class="strow foot"><span>合計</span><span>${sumK} / ${sumN}</span><span>${sumGK + sumGN ? `${sumGK} / ${sumGN}` : '—'}</span><span></span></div></div>` : `<div class="empty" style="padding:14px">科目がまだありません。上のテンプレートを使うか「編集」から追加してね。</div>`}
+    ${UI.subsDraft ? subsEditor() : subs.length ? `<div class="stcards">${subs.map(x => { const LK = latestOf(x, 'k'), LN = latestOf(x, 'n'), col = (k, L) => { const pts = phPts(x, k), g = phGoal(x, k), mine = L && L.kind === k ? L : null;
+        return `<div class="stc ${pts ? '' : 'off'}"><small>${PH[k]}</small><b>${pts ? pts + '<i>点</i>' : '—'}</b><span>${g ? `目標 ${g}` : pts ? '目標 未設定' : 'なし'}</span>${mine ? `<span class="lt">最新 ${mine.g}/${mine.m}${mine.dev ? `<br>偏差値 ${mine.dev}` : ''}</span>` : ''}</div>`; };
+      return `<div class="stcard"><div class="sthead"><span class="dot" style="--c:${x.color}"></span><b>${esc(x.name)}</b><span class="note" style="margin-left:auto">⏱ ${esc(subjOf(x.tsid).name)}</span></div><div class="stcols">${col('k', LK)}${col('n', LN)}</div></div>`; }).join('')}
+      <div class="stcard total"><div class="sthead"><b>合計</b></div><div class="stcols"><div class="stc"><small>共通テスト</small><b>${sumK}<i>点</i></b><span>${sumGK ? `目標 ${sumGK}（${sumK ? Math.round(sumGK / sumK * 100) : 0}%）` : '目標 未設定'}</span></div><div class="stc"><small>二次試験</small><b>${sumN}<i>点</i></b><span>${sumGN ? `目標 ${sumGN}（${sumN ? Math.round(sumGN / sumN * 100) : 0}%）` : '目標 未設定'}</span></div></div></div></div>` : `<div class="empty" style="padding:14px">科目がまだありません。上のテンプレートを使うか「編集」から追加してね。</div>`}
     <p class="note" style="margin:8px 0 0">テンプレートはあくまで例です。正しい配点は、${esc(t.univ)}の募集要項（学部ごと）で確認して入れてね。</p></section>
   </div>
 
   <section class="panel"><div class="ph"><div><span class="eyebrow">MOCK EXAMS</span><h2>模試の記録</h2></div>${UI.mockDraft ? '' : `<button class="btn sm primary" data-act="mock-new">${icon('plus')}記録する</button>`}</div>
     ${UI.mockDraft ? mockEditor(inf) : ''}
+    ${PL().mocks.length ? `<div class="seg" style="margin-bottom:8px">${[['all', 'すべて'], ['k', '共通テスト模試'], ['n', '二次・記述模試']].map(([k, n]) => `<button data-act="mk-kind" data-v="${k}" class="${(UI.mockKind || 'all') === k ? 'on' : ''}">${n}</button>`).join('')}</div>` : ''}
     ${ms.length ? `<div class="row wrap" style="gap:8px;margin-bottom:8px"><div class="seg">${[['rate', '得点率'], ['dev', '偏差値']].map(([k, n]) => `<button data-act="mk-metric" data-v="${k}" class="${(UI.mockMetric || 'rate') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
       <div class="chips">${[['total', '総合', '#22e4ff'], ...subs.map(x => [x.id, x.name, x.color])].map(([k, n, c]) => `<button class="chip ${(UI.mockSub || 'total') === k ? 'on' : ''}" style="--c:${c}" data-act="mk-sub" data-v="${esc(k)}"><i></i>${esc(n)}</button>`).join('')}</div></div>
       ${mockChart(inf)}
-      <div class="list">${ms.slice().reverse().map(m => { const r = mockTotal(m); return `<div class="li" style="align-items:flex-start"><div class="t"><b>${esc(m.name || '模試')}${m.judge ? ` <span class="pill" style="color:${judgeC(m.judge)};border-color:${judgeC(m.judge)}">${m.judge}判定</span>` : ''}</b>
+      <div class="list">${ms.slice().reverse().map(m => { const r = mockTotal(m); return `<div class="li" style="align-items:flex-start"><div class="t"><b><span class="pill" style="font-size:10.5px;padding:1px 7px;margin-right:4px">${(m.kind || 'k') === 'k' ? '共通' : '二次'}</span>${esc(m.name || '模試')}${m.judge ? ` <span class="pill" style="color:${judgeC(m.judge)};border-color:${judgeC(m.judge)}">${m.judge}判定</span>` : ''}</b>
         <span>${fmtDate(m.date)} · ${r != null ? Math.round(r * 100) + '%' : '—'}${m.dev ? ` · 偏差値 ${m.dev}` : ''}</span>
         <span>${m.rows.filter(x => x.n).map(x => `${esc(x.n)} ${x.g ?? '—'}/${x.m ?? '—'}${numOr(x.dev) != null ? `（${x.dev}）` : ''}`).join('、')}</span>
         ${m.memo ? `<span class="mockmemo">💭 ${esc(m.memo)}</span>` : ''}</div>
@@ -4057,9 +4165,9 @@ VIEWS.plan = () => {
 // ホームの小さなカード
 function planHomeHTML(){
   const st = S(); if (!st.plan || !st.targets.length) return ''; const p = PL(), t = st.targets.find(x => x.id === p.main); if (!t) return '';
-  const inf = planInfo(t.id), date = planDate(inf), left = date ? daysBetween(dkey(), date) : null, al = planAlloc(inf, goalFor(dkey())).filter(a => a.min > 0).slice(0, 3);
-  return `<a class="panel planhome" href="#plan"><div class="row wrap" style="gap:10px;align-items:center"><span style="font-size:24px">🎯</span><div style="flex:1;min-width:0"><b>${esc(t.univ)}${left != null && left >= 0 ? ` まであと${left}日` : ''}</b>
-    <div class="note">${al.length ? '今日のおすすめ：' + al.map(a => `${esc(a.sub.name)} ${fmtHM(a.min)}`).join('・') : '科目と配点を入れると、今日のおすすめ配分が出ます'}${p.dream && hashStr(dkey()) % 3 === 0 ? `<br>💭 ${esc(p.dream.split('\n')[0].slice(0, 40))}` : ''}</div></div>${icon('chevR')}</div></a>`;
+  const inf = planInfo(t.id), ph = curPhase(inf), al = planAlloc(inf, goalFor(dkey())).filter(a => a.min > 0).slice(0, 3), dl = k => { const d = planDate(inf, k), l = d ? daysBetween(dkey(), d) : null; return l != null && l >= 0 ? `${PH[k]}まで${l}日` : ''; };
+  return `<a class="panel planhome" href="#plan"><div class="row wrap" style="gap:10px;align-items:center"><span style="font-size:24px">🎯</span><div style="flex:1;min-width:0"><b>${esc(t.univ)}</b> <span class="note">${[dl('k'), dl('n')].filter(Boolean).join('・')}</span>
+    <div class="note">${al.length ? `今日のおすすめ（${PH[ph]}対策）：` + al.map(a => `${esc(a.sub.name)} ${fmtHM(a.min)}`).join('・') : '科目と配点を入れると、今日のおすすめ配分が出ます'}${p.dream && hashStr(dkey()) % 3 === 0 ? `<br>💭 ${esc(p.dream.split('\n')[0].slice(0, 40))}` : ''}</div></div>${icon('chevR')}</div></a>`;
 }
 VIEWS.exams = () => {
   const st = S(), today = dkey();
@@ -4314,6 +4422,16 @@ async function loadPreviews(force){
   try { chatNotifyCheck(); } catch {}
 }
 // 写真・プレゼントのメッセージ
+// 売るときの値段：買った値段の半分（無料の家具は0コインで手放すだけ）
+const sellPrice = t => Math.floor((F[t] && F[t].cost || 0) * .5);
+function sellItem(t, fromRoomIt){
+  const st = S(), d = F[t], price = sellPrice(t);
+  if (!fromRoomIt && (st.owned[t] || 0) - placedCountG(t) < 1) return;
+  confirmBox(`${d.n}を${price ? price + 'コインで売り' : '手放し'}ますか？`, fromRoomIt ? '部屋から取りのぞいて売ります。売った家具はもとにもどせません（また買うことはできます）。' : `しまってある${d.n}を1つ${price ? '売ります' : '手放します'}。もとにはもどせません（また買うことはできます）。`, price ? '売る' : '手放す', () => {
+    if (fromRoomIt) { const items = CR().items; if (d.surf && smallsOn(items, fromRoomIt).length) { toast('上に置いてある小物を先にしまってください。', 'box'); return; } CR().items = items.filter(i => i.id !== fromRoomIt.id); UI.sel = null; }
+    st.owned[t] = Math.max(0, (st.owned[t] || 0) - 1); if (price) addCoins(price); dataV++; queueWrite('state'); publishPub(); render();
+    toast(price ? `${d.n}を売って +${price}コイン！` : `${d.n}を手放しました。`, 'coin', 3500); }, true);
+}
 const placedCountG = t => allItems().filter(i => i.t === t).length;
 const GIFT_RE = /^🎁GIFT:([a-z0-9_]+):([a-z0-9]{6,40})$/;
 const IMG_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
@@ -4443,7 +4561,7 @@ VIEWS.chat = () => {
     return `<div class="chatwrap">
       <div class="chathead"><button class="btn sm ghost" data-act="chat-back" aria-label="一覧に戻る">${icon('chevL')}</button>${dmPartner(CHAT.room) ? avHTML(dmPartner(CHAT.room), 34) : ''}<div style="min-width:0;flex:1"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.name)} ${liveTag(dmPartner(CHAT.room))}</b><span class="note">${esc(r.sub)}</span></div></div>
       ${setup}
-      <div class="chatlog" id="chat-log" aria-live="polite"><div class="empty">読み込み中…</div></div>
+      <div class="chatlog" id="chat-log" aria-live="polite" data-keep><div class="empty">読み込み中…</div></div>
       ${(() => { const o = dmPartner(CHAT.room), busy = o && isLive(o), lives = r.kind === 'g' ? groupMembers(CHAT.room.slice(2)).filter(d => d.uid !== UID && isLive(d)) : [];
         return (busy ? `<div class="focusnote">${icon('timer')}<div><b>${esc(o.nick || 'ななしの受験生')}さんは勉強中です${liveMin(o) >= 1 ? `（${fmtHM(liveMin(o))}）` : ''}</b><span>送ることはできます。集中をじゃましないよう、相手への通知は勉強が終わってから届きます。</span></div></div>` : '')
           + (lives.length ? `<div class="focusnote soft">${icon('timer')}<div><span>${lives.map(d => esc(d.nick || 'ななしの受験生')).join('、')}さんが勉強中です。勉強中の人には通知が届かず、終わってから表示されます。</span></div></div>` : '')
@@ -4485,6 +4603,9 @@ VIEWS.prefs = () => {
       <p class="note" style="margin:-6px 0 0">ここで変えると、今日の目標もすぐ変わります。夜の振り返りで「明日の目標」を決めると、次の日はそちらが使われます。</p>
       <label class="fld" for="pf-rt">振り返りのお知らせ時刻<input id="pf-rt" type="time" value="${esc(st.prefs.reviewTime)}"></label>
       <button class="btn primary" type="submit">${icon('check')}保存する</button></form>
+    <section class="panel"><div class="ph"><h2>ホームに表示するもの</h2></div>
+      <div class="stack" style="gap:8px">${HOME_PARTS.map(([k, n]) => `<div class="row" style="justify-content:space-between;gap:8px"><span>${n}</span><button class="tgl ${homeOn(k) ? 'on' : ''}" data-act="home-part" data-v="${k}" role="switch" aria-checked="${homeOn(k)}" aria-label="${n}をホームに表示"><i></i></button></div>`).join('')}</div>
+      <p class="note" style="margin:8px 0 0">オフにすると、ホーム画面に出なくなります（それぞれのページでは見られます）。</p></section>
     <section class="panel"><div class="ph"><h2>通知・${IS_PHONE ? '全画面表示' : 'ミニ表示'}</h2></div>
       ${(() => { const sup = notifSupported(), perm = sup ? Notification.permission : 'none', on = sup && perm === 'granted' && st.prefs.notify;
         return `<div class="row wrap" style="gap:8px;align-items:center"><span class="pill ${on ? 'good' : ''}">${on ? '通知オン' : !sup ? 'このブラウザは未対応' : perm === 'denied' ? 'ブロック中' : '通知オフ'}</span>
@@ -4553,10 +4674,15 @@ const ACT = {
     inf.subs = D.filter(x => (x.name || '').trim()).map(x => ({...x, name: x.name.trim().slice(0, 16), k: numOr(x.k), n: numOr(x.n), gk: numOr(x.gk), gn: numOr(x.gn)}));
     UI.subsDraft = null; queueWrite('state'); render(); toast('科目・配点・目標点を保存しました。おすすめ配分に反映されます。', 'check'); },
   'alloc-edit'(){ UI.allocEdit = !UI.allocEdit; render(); },
+  'alloc-phase'(b){ planInfo(PL().main).phase = b.dataset.v; queueWrite('state'); render(); },
+  'mk-dkind'(b){ if (!UI.mockDraft) return; UI.mockDraft.kind = b.dataset.v; const inf = planInfo(PL().main), k = b.dataset.v;
+    if (!UI.mockDraft.id && UI.mockDraft.rows.every(r => r.g === '' || r.g == null)) UI.mockDraft.rows = inf.subs.filter(x => x.name && phPts(x, k) > 0).map(x => ({sid: x.id, n: x.name, g: '', m: phPts(x, k), dev: ''})).concat(inf.subs.some(x => x.name && phPts(x, k) > 0) ? [] : [{sid: '', n: '', g: '', m: 100, dev: ''}]);
+    render(); },
+  'mk-kind'(b){ UI.mockKind = b.dataset.v; render(); },
   'alloc-mode'(b){ planInfo(PL().main).mode = b.dataset.v; queueWrite('state'); render(); },
   'alloc-pref'(b){ const sub = planInfo(PL().main).subs.find(x => x.id === b.dataset.v); if (sub) { sub.pref = +b.dataset.p; queueWrite('state'); render(); } },
   'alloc-go'(b){ T.subj = b.dataset.v; saveTimer(); location.hash = '#timer'; },
-  'mock-new'(){ const inf = planInfo(PL().main); UI.mockDraft = {date: dkey(), name: '', judge: '', dev: '', memo: '', rows: inf.subs.filter(x => x.name).map(x => ({sid: x.id, n: x.name, g: '', m: +x.k || +x.n || 100, dev: ''}))}; if (!UI.mockDraft.rows.length) UI.mockDraft.rows.push({sid: '', n: '', g: '', m: 100, dev: ''}); render(); },
+  'mock-new'(){ const inf = planInfo(PL().main), k = curPhase(inf), list = inf.subs.filter(x => x.name && phPts(x, k) > 0); UI.mockDraft = {kind: k, date: dkey(), name: '', judge: '', dev: '', memo: '', rows: (list.length ? list : inf.subs.filter(x => x.name)).map(x => ({sid: x.id, n: x.name, g: '', m: phPts(x, k) || +x.k || +x.n || 100, dev: ''}))}; if (!UI.mockDraft.rows.length) UI.mockDraft.rows.push({sid: '', n: '', g: '', m: 100, dev: ''}); render(); },
   'mock-edit'(b){ const m = PL().mocks.find(x => x.id === b.dataset.v); if (!m) return; UI.mockDraft = JSON.parse(JSON.stringify({...m, dev: m.dev ?? '', memo: m.memo || ''})); render(); setTimeout(() => $('.mockform')?.scrollIntoView({behavior: 'smooth', block: 'center'}), 50); },
   'mrow-add'(){ const D = UI.mockDraft; if (!D) return; D.rows.push({sid: '', n: '', g: '', m: 100, dev: ''}); render(); setTimeout(() => { const el = $(`[data-mf="${D.rows.length - 1}:n"]`); if (el) el.focus(); }, 30); },
   'mrow-del'(b){ const D = UI.mockDraft; if (!D) return; D.rows.splice(+b.dataset.v, 1); render(); },
@@ -4564,13 +4690,15 @@ const ACT = {
   'mock-save'(){ const D = UI.mockDraft, p = PL(), inf = planInfo(p.main); if (!D) return;
     const rows = D.rows.filter(r => (r.n || '').trim() && r.g !== '' && r.g != null && +r.m > 0).map(r => { const sub = inf.subs.find(x => x.id === r.sid) || inf.subs.find(x => x.name === r.n.trim()); return {sid: sub ? sub.id : '', n: r.n.trim().slice(0, 16), g: clamp(+r.g, 0, +r.m), m: +r.m, dev: numOr(r.dev) != null ? Math.round(+r.dev * 10) / 10 : null}; });
     if (!rows.length) { toast('1科目以上、科目名・点・満点を入れてください。', 'x'); return; }
-    const rec = {id: D.id || uid6(), date: D.date || dkey(), name: (D.name || '').trim().slice(0, 30), judge: D.judge || '', dev: numOr(D.dev) != null ? Math.round(+D.dev * 10) / 10 : null, memo: (D.memo || '').trim().slice(0, 300), rows};
+    const rec = {id: D.id || uid6(), kind: D.kind === 'n' ? 'n' : 'k', date: D.date || dkey(), name: (D.name || '').trim().slice(0, 30), judge: D.judge || '', dev: numOr(D.dev) != null ? Math.round(+D.dev * 10) / 10 : null, memo: (D.memo || '').trim().slice(0, 300), rows};
     const k = p.mocks.findIndex(m => m.id === rec.id); if (k >= 0) p.mocks[k] = rec; else p.mocks.push(rec); p.mocks = p.mocks.slice(-60);
     UI.mockDraft = null; queueWrite('state'); render(); toast(k >= 0 ? '模試の記録を直しました。' : '模試を記録しました！ おすすめ配分が更新されます。', 'check'); },
   'mk-metric'(b){ UI.mockMetric = b.dataset.v; render(); },
   'mk-sub'(b){ UI.mockSub = b.dataset.v; render(); },
   'pl-mockdel'(b){ confirmBox('この模試の記録を消しますか？', '', '消す', () => { const p = PL(); p.mocks = p.mocks.filter(m => m.id !== b.dataset.v); queueWrite('state'); render(); }, true); },
-  'pl-chk'(b){ const c = PL().check.find(x => x.id === b.dataset.v); if (c) { c.done = b.checked; queueWrite('state'); if (c.done) toast(`「${c.t}」クリア！`, 'check', 2500); setTimeout(render, 250); } },
+  'pl-chk'(b){ const c = PL().check.find(x => x.id === b.dataset.v); if (!c) return; b.checked = c.done;
+    if (c.done) { c.done = false; queueWrite('state'); render(); return; }
+    confirmBox(`「${c.t}」、本当にできた？`, '完了にすると、チェックがつきます。あとから外すこともできます。', 'できた！', () => { c.done = true; queueWrite('state'); render(); toast(`「${c.t}」クリア！`, 'check', 2500); }, false, 'まだ'); },
   'pl-chkdel'(b){ const p = PL(); p.check = p.check.filter(x => x.id !== b.dataset.v); queueWrite('state'); render(); },
   'help-jump'(b){ setTimeout(() => { const el = document.getElementById('help-' + b.dataset.v); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 30); },
   'sheet-close'(){ $('#sheet')?.remove(); },
@@ -4627,7 +4755,8 @@ const ACT = {
   'rv-todo-add'(){ syncRvDraft(); const d = rvDraft(); if (d.todo.length < 8) d.todo.push({t: '', done: false}); render(); setTimeout(() => $('#rv-todo-' + (d.todo.length - 1))?.focus(), 0); },
   'rv-todo-del'(b){ syncRvDraft(); const d = rvDraft(); d.todo.splice(+b.dataset.v, 1); if (!d.todo.length) d.todo.push({t: '', done: false}); render(); },
   'todo-tog'(b){ const {key} = todayTodos(), r = data.months[monthOf(key)]?.reviews?.[key]; if (!r) return; const items = r.todo.filter(t => t && t.t), t = items[+b.dataset.v]; if (!t) return;
-    t.done = !t.done; queueWrite('m-' + monthOf(key), 300); render(); if (t.done && items.every(x => x.done)) toast('今日やることを全部クリア！おみごと。', 'check', 4000); },
+    const apply = () => { t.done = !t.done; queueWrite('m-' + monthOf(key), 300); render(); if (t.done && items.every(x => x.done)) toast('今日やることを全部クリア！おみごと。', 'check', 4000); };
+    if (t.done) apply(); else confirmBox(`「${t.t}」、本当にできた？`, '完了にすると、チェックがつきます。あとから外すこともできます。', 'できた！', apply, false, 'まだ'); },
   'shop-cat'(b){ UI.shopCat = b.dataset.v; render(); },
   'rm-tab'(b){ UI.roomTab = b.dataset.v; render(); },
   'rm-desel'(){ UI.sel = null; UI.colorOpen = false; render(); },
@@ -4644,6 +4773,9 @@ const ACT = {
     it.r = nr; if (SIM.p[it.id]) SIM.p[it.id].r = nr; queueWrite('state'); publishPub(); render(); },
   'rm-color'(){ UI.colorOpen = !UI.colorOpen; render(); },
   'rm-setc'(b){ const it = selectedItem(); if (!it) return; it.c = +b.dataset.v; queueWrite('state'); publishPub(); render(); },
+  'home-part'(b){ const st = S(), k = b.dataset.v; st.prefs.home = Object.assign({}, st.prefs.home || {}); st.prefs.home[k] = !homeOn(k); queueWrite('state'); render(); },
+  'rm-sell'(b){ sellItem(b.dataset.v); },
+  'rm-sell-sel'(){ const it = selectedItem(); if (it && !F[it.t].person) sellItem(it.t, it); },
   'rm-store'(){ const it = selectedItem(); if (!it) return; const items = CR().items;
     if (F[it.t].surf && smallsOn(items, it).length) { toast('上に置いてある小物を先にしまってください。', 'box'); return; }
     if (F[it.t].person) { for (const r of allRooms()) r.items = r.items.filter(i => i.id !== it.id); delete SIM.p[it.id]; } else CR().items = items.filter(i => i.id !== it.id); UI.sel = null; UI.colorOpen = false; queueWrite('state'); publishPub(); toast(F[it.t].person ? `${personInfo(it).name}は「持ち物」で待っています。別の部屋に呼ぶこともできます。` : `${F[it.t].n}を持ち物にしまいました。`, 'box'); render(); },
@@ -5056,7 +5188,10 @@ document.addEventListener('submit', e => {
       else { st.nickname = nn; st.nickChangedM = monthOf(dkey()); toast(`名前を「${nn || 'ななしの受験生'}」に変更しました。次の変更は ${nextMonthLabel()} からできます。`, 'check', 5000); }
     } const ng = clamp(+val('pf-goal') || 180, 10, 1200); if (ng !== st.dailyGoal || ng !== goalFor(dkey())) st.goalDay = {d: dkey(), m: ng}; st.dailyGoal = ng; dataV++; if (val('pf-rt')) st.prefs.reviewTime = val('pf-rt'); queueWrite('state'); publishPub(); toast('設定を保存しました。', 'check'); pendingRender = false; render(); }
   if (k === 'subj-add') { const n = val('sj-name'); if (!n) return; const used = st.subjects.length; st.subjects.push({id: 'c' + uid6(), name: n.slice(0, 12), color: EXTRA_COLORS[used % EXTRA_COLORS.length], hidden: false}); queueWrite('state'); pendingRender = false; render(); toast(`「${n}」を追加しました。`, 'plus'); }
-  if (k === 'pl-info') { const p = PL(), inf = planInfo(p.main); inf.exam = val('pl-exam'); const ed = (S().exams.find(e => e.id === inf.exam) || {}).date; if (inf.exam && val('pl-date') && val('pl-date') !== ed) inf.exam = ''; inf.date = inf.exam ? '' : val('pl-date'); inf.goalK = clamp(+val('pl-gk') || 0, 0, 100); inf.goalN = clamp(+val('pl-gn') || 0, 0, 100); inf.goalDev = val('pl-gd') ? Math.round(+val('pl-gd') * 10) / 10 : null; queueWrite('state'); toast('保存しました。', 'check'); pendingRender = false; render(); return; }
+  if (k === 'pl-info') { const p = PL(), inf = planInfo(p.main);
+    for (const ph of ['k', 'n']) { let ex = val('pl-exam-' + ph); const d = val('pl-date-' + ph), ed = (S().exams.find(e => e.id === ex) || {}).date; if (ex && d && d !== ed) ex = '';
+      if (ph === 'k') { inf.examK = ex; inf.dateK = ex ? '' : d; } else { inf.examN = ex; inf.dateN = ex ? '' : d; } }
+    inf.goalK = clamp(+val('pl-gk') || 0, 0, 100); inf.goalN = clamp(+val('pl-gn') || 0, 0, 100); inf.goalDev = val('pl-gd') ? Math.round(+val('pl-gd') * 10) / 10 : null; queueWrite('state'); toast('保存しました。', 'check'); pendingRender = false; render(); return; }
   if (k === 'pl-chkadd') { const t = val('pl-chkt'); if (!t) return; PL().check.push({id: uid6(), t: t.slice(0, 50), done: false, ph: +val('pl-ph') || 0}); queueWrite('state'); pendingRender = false; render(); return; }
   if (k === 'm1') { st.m1 = val('m1-in').slice(0, 40); queueWrite('state'); publishPub(200); toast(st.m1 ? '1位のひとことをのせました！ みんなのランキングに表示されます。' : 'ひとことを消しました。', 'trophy', 4000); pendingRender = false; render(); return; }
   if (k === 'add-friend') { addFriend(val('fr-code')); return; }
@@ -5112,8 +5247,8 @@ document.addEventListener('change', e => {
   if (t.dataset && t.dataset.fix && route() === 'plan') render();
   if (t.dataset && (t.dataset.sf || t.dataset.mh) && t.tagName === 'SELECT') { /* 値はinputイベントで保存済み */ }
   // 試験を選んだら、日付をその試験の日に。日付を自分で変えたら「直接入れる」に
-  if (t.id === 'pl-exam') { const o = t.selectedOptions[0], d = $('#pl-date'); if (d && o && o.dataset.date) d.value = o.dataset.date; }
-  if (t.id === 'pl-date') { const sel = $('#pl-exam'), o = sel && sel.selectedOptions[0]; if (o && o.dataset.date && o.dataset.date !== t.value) sel.value = ''; }
+  if (/^pl-exam-[kn]$/.test(t.id)) { const o = t.selectedOptions[0], d = $('#pl-date-' + t.dataset.ph); if (d && o && o.dataset.date) d.value = o.dataset.date; }
+  if (/^pl-date-[kn]$/.test(t.id)) { const sel = $('#pl-exam-' + t.dataset.ph), o = sel && sel.selectedOptions[0]; if (o && o.dataset.date && o.dataset.date !== t.value) sel.value = ''; }
   if (t.id === 'chat-photo' && t.files && t.files[0]) { sendPhoto(t.files[0]); t.value = ''; }
   if (t.id === 'av-file' && t.files && t.files[0]) { if (/^image\//.test(t.files[0].type)) avatarEditor(t.files[0]); else toast('画像ファイルを選んでください。', 'x'); t.value = ''; }
 });
