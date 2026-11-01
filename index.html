@@ -275,7 +275,10 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
 .rk.top1 .n{color:#ffd66b;text-shadow:0 0 10px rgba(255,214,107,.7)}
 .rk.top2 .n{color:#d8e0f0}
 .rk.top3 .n{color:#e3a072}
-.rk-t{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none;font-family:var(--f-disp);font-size:13px;color:var(--mute);min-width:84px}.rk-t span{white-space:nowrap}.rk-t small{font-family:var(--f-body,inherit);font-size:10.5px;margin-right:6px;color:var(--mute)}.rk-t span.on{color:var(--ink);font-size:15px;font-weight:700}
+.rk-m{flex:1;min-width:0}.rk-m b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rk-m .note{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rk-room{display:inline-flex;align-items:center;gap:3px;border:1px solid var(--line);background:none;color:var(--mute);border-radius:99px;padding:1px 7px;font:inherit;font-size:11px;cursor:pointer}.rk-room .ic{width:12px;height:12px}
+.rank-ctl{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.rank-per{display:flex;align-items:center;gap:8px}.rank-per .note{flex:none}.seg.wide{display:flex;flex-wrap:nowrap;width:100%}.seg.wide button{flex:1;padding:7px 4px;white-space:nowrap}
+.rk-t{display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex:none;font-family:var(--f-disp);font-size:12.5px;color:var(--mute);min-width:84px}.rk-t span{white-space:nowrap}.rk-t small{font-family:var(--f-body,inherit);font-size:10.5px;margin-right:6px;color:var(--mute)}.rk-t span.on{color:var(--ink);font-size:15px;font-weight:700}
 .rk.me{background:rgba(34,228,255,.07);border-radius:12px}
 .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;color:#04050b;background:var(--c);flex:none}
 .code{font-family:var(--f-disp);font-size:24px;letter-spacing:.2em;font-weight:700}
@@ -318,6 +321,8 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
 .scrim{position:fixed;inset:0;z-index:54;background:rgba(0,0,0,.5)}
 .fadein{animation:fadeup .35s ease-out}
 @keyframes fadeup{from{opacity:.4;transform:translateY(6px)}}
+@media (max-width:480px){.rk{gap:8px}.rk .av{display:none}.rk .n{width:20px}.rk-t{min-width:0}.roomtop .hint{display:none}}
+.row>input,.row>select{min-width:0;flex:1 1 120px}.btn{max-width:100%;white-space:normal;text-align:center}
 @media (max-width:430px){#synctxt{display:none}.brand{font-size:15px;letter-spacing:.1em}.hchip{padding:0 8px}.topbar-in{gap:6px}}
 .authmode .dock,.authmode .rail,.authmode #hc-coin,.authmode #hc-lv{display:none}
 .authmode .shell{display:block}
@@ -373,6 +378,9 @@ details.rv dd{margin:0;white-space:pre-wrap;min-width:0}
 .list .chatitem:first-child{border-top:0}
 .chatitem .av{color:#04050b}
 .chatitem .av .ic{width:18px;height:18px}
+.dock a,.dock button,.sheet-grid a{position:relative}
+.nbadge{position:absolute;top:3px;left:calc(50% + 5px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#ff3d6e;color:#fff;font-size:11px;font-weight:700;font-style:normal;line-height:18px;text-align:center;box-shadow:0 0 0 2px #070a14,0 0 10px rgba(255,61,110,.7)}
+.sheet-grid .nbadge{top:8px;left:auto;right:10px}.rail .nbadge{position:static;margin-left:auto;box-shadow:none}
 .udot{width:10px;height:10px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);flex:none}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
@@ -1480,12 +1488,20 @@ function renderHeader(){
   $('#hc-coin').innerHTML = icon('coin') + `<span>${Math.max(0, x.coins).toLocaleString()}</span>`;
   $('#hc-lv').innerHTML = `<span style="color:var(--cyan)">LV</span><span>${x.level}</span>`;
 }
+function notifCounts(){
+  if (MODE !== 'cloud' || !S()) return {chat: 0, rank: 0};
+  const rm = readMap(); let chat = 0;
+  for (const room of chatRooms()) { const p = CHAT.previews[room.id]; if (p && p.user_id !== UID && CHAT.room !== room.id && new Date(p.created_at).getTime() > (rm[room.id] || 0)) chat++; }
+  return {chat, rank: incomingReqs().length};
+}
+const nbadge = (n, lbl) => n ? `<i class="nbadge" aria-label="${lbl}${n}件">${n > 9 ? '9+' : n}</i>` : '';
 function renderNav(){
-  const r = route();
-  $('#rail').innerHTML = Object.entries(ROUTES).map(([k, [n, ic]]) => `<a href="#${k}" class="${k === r ? 'on' : ''}">${icon(ic)}<span>${n}</span></a>`).join('');
+  const r = route(), nc = notifCounts(), nfor = k => k === 'chat' ? nbadge(nc.chat, '未読のチャット') : k === 'rank' ? nbadge(nc.rank, 'フレンド申請') : '';
+  try { if (navigator.setAppBadge) { const t = nc.chat + nc.rank; t ? navigator.setAppBadge(t) : navigator.clearAppBadge(); } } catch {}
+  $('#rail').innerHTML = Object.entries(ROUTES).map(([k, [n, ic]]) => `<a href="#${k}" class="${k === r ? 'on' : ''}">${icon(ic)}<span>${n}</span>${nfor(k)}</a>`).join('');
   const dock = ['home','timer','stats','room'];
   $('#dock').innerHTML = dock.map(k => `<a href="#${k}" class="${k === r ? 'on' : ''}">${icon(ROUTES[k][1])}<span>${ROUTES[k][0].replace('記録・分析','記録').replace('勉強部屋','部屋')}</span></a>`).join('')
-    + `<button data-act="more" class="${dock.includes(r) ? '' : 'on'}">${icon('menu')}<span>メニュー</span></button>`;
+    + `<button data-act="more" class="${dock.includes(r) ? '' : 'on'}">${icon('menu')}<span>メニュー</span>${nbadge(nc.chat + nc.rank, 'お知らせ')}</button>`;
 }
 function render(){
   if (!S()) return;
@@ -2245,7 +2261,7 @@ VIEWS.room = () => {
   ${roomSel}
   <div class="roomstage" id="roomstage">${roomSVG(room, N, {sel: UI.sel, place: UI.place})}
     ${buddyBubble()}
-    <div class="roomtop"><span class="row" style="gap:6px"><span class="pill cy" style="background:rgba(5,8,18,.7)">${N}×${N}</span><button class="pill lightbtn ${LS0.lit ? 'on' : ''}" data-act="rm-light" aria-label="電気の切り替え（今は${lightLbl}）">${icon('bulb')}電気 ${lightLbl}</button></span>${!UI.place && !selIt ? '<span class="pill" style="background:rgba(5,8,18,.7)">タップ → 移動・回転・色・会話</span>' : ''}</div>${bar}</div>
+    <div class="roomtop"><span class="row" style="gap:6px"><span class="pill cy" style="background:rgba(5,8,18,.7)">${N}×${N}</span><button class="pill lightbtn ${LS0.lit ? 'on' : ''}" data-act="rm-light" aria-label="電気の切り替え（今は${lightLbl}）">${icon('bulb')}電気 ${lightLbl}</button></span>${!UI.place && !selIt ? '<span class="pill hint" style="background:rgba(5,8,18,.7)">タップ → 移動・回転・色・会話</span>' : ''}</div>${bar}</div>
   <section class="panel" id="roompanel"><div class="seg" style="margin-bottom:14px">${tabs.map(([k, n]) => `<button data-act="rm-tab" data-v="${k}" class="${UI.roomTab === k ? 'on' : ''}">${n}</button>`).join('')}</div>${panel}</section>`;
 };
 function unplacedPeople(){
@@ -2310,15 +2326,19 @@ VIEWS.rank = () => {
   const rows = pool.map(d => ({...d, v: val(d)})).sort((a, b) => b.v - a.v || (b.lv || 0) - (a.lv || 0));
   const meIn = rows.some(r => r.uid === UID);
   const avColor = id => ['#22e4ff','#a46bff','#3d7bff','#3ee6a0','#ffc24d','#ff6fb0','#ff9350'][hashStr(id) % 7];
-  return `<div class="pagehead"><h1>ランキング</h1><div class="seg">${[['day','今日'],['week','週間'],['month','月間'],['total','累計']].map(([k, n]) => `<button data-act="rank-p" data-v="${k}" class="${UI.rankPeriod === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+  const PER = {day: ['今日', '今日の勉強時間'], week: ['今週', '今週の勉強時間（月曜から）'], month: ['今月', `${+mo.slice(5)}月の勉強時間`], total: ['累計', 'これまでの合計']};
+  const sub = d => UI.rankPeriod === 'day' ? [['累計', d.tot || 0]] : UI.rankPeriod === 'total' ? [['今日', dayMin(d)]] : [['今日', dayMin(d)], ['累計', d.tot || 0]];
+  return `<div class="pagehead"><h1>ランキング</h1></div>
   <div class="grid2">
-    <section class="panel"><div class="ph"><div class="seg">${[['friends','友達'],['group','グループ'],['all','全員']].map(([k, n]) => `<button data-act="rank-s" data-v="${k}" class="${UI.rankScope === k ? 'on' : ''}">${n}</button>`).join('')}</div><span class="note">${UI.rankPeriod === 'day' ? '今日の勉強時間順' : UI.rankPeriod === 'week' ? '今週（月曜はじまり）の順' : UI.rankPeriod === 'month' ? `${+mo.slice(5)}月の順` : '累計の順'}</span></div>
+    <section class="panel"><div class="rank-ctl"><div class="seg wide">${[['friends','友達'],['group','グループ'],['all','全員']].map(([k, n]) => `<button data-act="rank-s" data-v="${k}" class="${UI.rankScope === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+      <div class="rank-per" role="group" aria-label="時間の種類"><span class="note">時間</span><div class="seg wide">${Object.entries(PER).map(([k, [n]]) => `<button data-act="rank-p" data-v="${k}" class="${UI.rankPeriod === k ? 'on' : ''}" aria-pressed="${UI.rankPeriod === k}">${n}</button>`).join('')}</div></div>
+      <p class="note" style="margin:0">${PER[UI.rankPeriod][1]}が多い順</p></div>
       ${st.privacy.vis === 'none' ? '<p class="banner" style="margin:0 0 10px">ランキングを非公開にしています。ほかの人の画面にあなたは表示されません（下の設定で変更できます）。</p>' : st.privacy.vis === 'friends' ? '<p class="note" style="margin:0 0 10px">あなたの記録は「互いにフレンド」の人にだけ見えています。</p>' : ''}
       ${UI.rankScope === 'group' && gs.length ? `<div class="chips" style="margin:-2px 0 12px">${gs.map(g => `<button class="chip ${UI.rankGroup === g.c ? 'on' : ''}" style="--c:#a46bff" data-act="rank-g" data-v="${esc(g.c)}"><i></i>${esc(groupName(g.c))}</button>`).join('')}</div>` : ''}
       ${UI.rankScope === 'group' && !gs.length ? `<div class="empty">まだグループに入っていません。<br><a class="btn primary" href="#groups" style="margin-top:12px">${icon('plus')}グループを作る・参加する</a></div>` :
         rows.length ? `<div>${rows.map((r, i) => `<div class="rk ${i < 3 && r.v > 0 ? 'top' + (i + 1) : ''} ${r.uid === UID ? 'me' : ''}"><span class="n">${i + 1}</span><span class="av" style="--c:${avColor(r.uid)}">${esc((r.nick || '?').slice(0, 1))}</span>
-          <div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.nick || 'ななしの受験生')}${r.uid === UID ? '（あなた）' : ''}</b><span class="note">LV${r.lv || 1} · 連続${r.streak || 0}日${UI.rankPeriod === 'week' ? ` · 今週 ${fmtHM(r.v)}` : UI.rankPeriod === 'month' ? ` · 今月 ${fmtHM(r.v)}` : ''}</span></div>
-          <div class="rk-t"><span class="${UI.rankPeriod === 'day' ? 'on' : ''}"><small>今日</small>${fmtHM(dayMin(r))}</span><span class="${UI.rankPeriod === 'total' ? 'on' : ''}"><small>累計</small>${fmtHM(r.tot || 0)}</span></div>${r.room && r.uid !== UID ? `<button class="btn sm ghost" data-act="see-room" data-v="${esc(r.uid)}" aria-label="部屋を見る">${icon('eye')}</button>` : ''}</div>`).join('')}</div>`
+          <div class="rk-m"><b>${esc(r.nick || 'ななしの受験生')}${r.uid === UID ? '（あなた）' : ''}</b><span class="note">LV${r.lv || 1} · 連続${r.streak || 0}日${r.room && r.uid !== UID ? ` <button class="rk-room" data-act="see-room" data-v="${esc(r.uid)}" aria-label="${esc(r.nick || '')}の部屋を見る">${icon('eye')}部屋</button>` : ''}</span></div>
+          <div class="rk-t"><span class="on"><small>${PER[UI.rankPeriod][0]}</small>${fmtHM(r.v)}</span>${sub(r).map(([n, v]) => `<span><small>${n}</small>${fmtHM(v)}</span>`).join('')}</div></div>`).join('')}</div>`
         : `<div class="empty">${UI.rankScope === 'friends' ? 'まだフレンドがいません。招待リンクを送るか、フレンドコードで申請しよう。' : 'まだ参加者がいません。'}</div>`}
 
     </section>
@@ -2580,7 +2600,7 @@ function chatRooms(){
 }
 const chatMissing = e => e && (/42P01|PGRST205|PGRST202/.test(e.code || '') || /messages|schema cache|does not exist/i.test(e.message || ''));
 const readMap = () => LS.get('sh-chat-read') || {};
-function markRead(room){ const m = readMap(); m[room] = Date.now(); LS.set('sh-chat-read', m); }
+function markRead(room){ const m = readMap(); m[room] = Date.now(); LS.set('sh-chat-read', m); try { renderNav(); } catch {} }
 async function loadPreviews(force){
   if (MODE !== 'cloud' || (!force && Date.now() - CHAT.prevAt < 15000)) return; CHAT.prevAt = Date.now();
   const rooms = chatRooms(); if (!rooms.length) { CHAT.ready = CHAT.ready ?? true; return; }
@@ -2719,7 +2739,7 @@ const ACT = {
   more(){
     if ($('#sheet')) { $('#sheet').remove(); return; }
     const el = document.createElement('div');
-    el.innerHTML = `<div class="scrim" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-label="メニュー"><div class="sheet-grid">${['rank','groups','chat','exams','review','badges','prefs'].map(k => `<a href="#${k}" data-act="sheet-close">${icon(ROUTES[k][1])}${ROUTES[k][0]}</a>`).join('')}</div></div>`;
+    el.innerHTML = `<div class="scrim" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-label="メニュー"><div class="sheet-grid">${(() => { const nc = notifCounts(); return ['rank','groups','chat','exams','review','badges','prefs'].map(k => `<a href="#${k}" data-act="sheet-close">${icon(ROUTES[k][1])}${ROUTES[k][0]}${k === 'chat' ? nbadge(nc.chat, '未読のチャット') : k === 'rank' ? nbadge(nc.rank, 'フレンド申請') : ''}</a>`).join(''); })()}</div></div>`;
     el.id = 'sheet'; document.body.appendChild(el);
   },
   'sheet-close'(){ $('#sheet')?.remove(); },
@@ -3268,6 +3288,10 @@ render = function(){
   const rs = $('#roomstage'); if (rs) { wireRoom(rs); requestAnimationFrame(placeBubble); } };
 document.addEventListener('visibilitychange', () => { if (!document.hidden && MODE === 'cloud' && !pending.size) { pullCloud(false); refreshPub(true); } });
 setInterval(() => { if (MODE === 'cloud' && S() && !document.hidden && ['rank', 'groups', 'chat'].includes(route()) && !modalOpen) refreshPub(); }, 20000);
+// unread chats / friend requests → badges on the menu, even when you're on another page
+async function pollNotifs(){ if (MODE !== 'cloud' || !S() || document.hidden) return; try { await refreshPub(); await loadPreviews(true); } catch {} renderNav(); }
+setInterval(pollNotifs, 30000); setTimeout(pollNotifs, 4000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(pollNotifs, 500); });
 window.addEventListener('pagehide', () => { if (MODE === 'cloud' && pending.size) flushAll(); });
 
 window.addEventListener('error', e => { try { toast('エラーが起きました：' + (e.message || '不明') + '（ページを開き直してください）', 'x', 6000); } catch {} });
