@@ -251,6 +251,7 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
 .sw.sm{width:24px;height:24px}
 .item.equipped{box-shadow:inset 0 0 0 1.5px var(--cyan)}
 .lightbtn{background:rgba(5,8,18,.7);cursor:pointer;font:inherit;font-size:12.5px;padding:6px 11px;color:var(--mute)}.lightbtn.on{color:#ffe2ad;border-color:rgba(255,226,173,.5)}.lightbtn svg{width:14px;height:14px}
+.linkbtn{border:0;background:none;padding:0;color:var(--cyan);font:inherit;text-decoration:underline;cursor:pointer}
 .vis-opts{display:grid;gap:8px}.vis-opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--glass);color:var(--ink);font:inherit;cursor:pointer}.vis-opt span{font-size:12px;color:var(--mute)}.vis-opt.on{border-color:var(--cyan);background:rgba(34,228,255,.1);box-shadow:inset 0 0 0 1px var(--cyan)}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:var(--c)}
@@ -1070,6 +1071,7 @@ function normState(s){
   o.privacy = Object.assign({}, d.privacy, s.privacy || {});
   if (!['all', 'friends', 'none'].includes(o.privacy.vis)) o.privacy.vis = s.privacy && s.privacy.share === false ? 'none' : 'all';
   o.privacy.share = o.privacy.vis !== 'none';
+  if (!Array.isArray(o.declined)) o.declined = []; if (!o.friendVia || typeof o.friendVia !== 'object') o.friendVia = {};
   o.room = Object.assign({}, d.room, s.room || {});
   o.buddy = Object.assign({}, d.buddy, s.buddy || {});
   o.buddy.look = normLook(o.buddy.look, o.buddy.gender); if (!o.buddy.closet || typeof o.buddy.closet !== 'object') o.buddy.closet = {};
@@ -1163,7 +1165,7 @@ const SECRET_KEY = !!(CFG.supabaseKey && isSecretKey(CFG.supabaseKey));
 const CONFIGURED = !!(window.supabase && CFG.supabaseUrl && CFG.supabaseKey && !/YOUR_/.test(CFG.supabaseUrl + CFG.supabaseKey) && !SECRET_KEY);
 async function boot(){
   try { const qs = new URLSearchParams(location.search), q = qs.get('friend'), g = qs.get('group');
-    if (q) LS.set('sh-pending-friend', q.toUpperCase().slice(0, 6));
+    if (q) { LS.set('sh-pending-friend', q.toUpperCase().slice(0, 6)); LS.set('sh-pending-friend-k', (qs.get('k') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)); }
     if (g) LS.set('sh-pending-group', g.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6));
     if (q || g) history.replaceState(null, '', location.pathname + location.hash); } catch {}
   if (!CONFIGURED && !LS.get('sh-local-ok')) { MODE = 'setup'; setSync('local'); $('#synctxt').textContent = '設定前'; render(); return; }
@@ -1269,8 +1271,10 @@ async function refreshPub(force){
     return d; });
   // a friend link opened before signing in
   const pf = LS.get('sh-pending-friend');
-  if (pf && S()) { LS.del('sh-pending-friend'); const st = S();
-    if (pf !== st.code && !st.friends.includes(pf) && pubDocs.find(d => d.code === pf)) { st.friends.push(pf); queueWrite('state'); publishPub(200); const f = pubDocs.find(d => d.code === pf); toast(`${f.nick || 'ななしの受験生'}さんを友達に追加しました。`, 'users', 5000); } }
+  if (pf && S()) { const pk = LS.get('sh-pending-friend-k') || ''; LS.del('sh-pending-friend'); LS.del('sh-pending-friend-k'); const st = S();
+    if (pf !== st.code && !st.friends.includes(pf) && pubDocs.find(d => d.code === pf)) { st.friends.push(pf); st.declined = st.declined.filter(c => c !== pf); if (pk) st.friendVia[pf] = pk; queueWrite('state'); publishPub(200); const f = pubDocs.find(d => d.code === pf);
+      toast(pk ? `${f.nick || 'ななしの受験生'}さんの招待リンクで登録しました。まもなくフレンドになります。` : `${f.nick || 'ななしの受験生'}さんにフレンド申請を送りました。`, 'users', 5000); } }
+  checkRequests();
   const pg = LS.get('sh-pending-group');
   if (pg && S()) { LS.del('sh-pending-group'); joinGroup(pg, true); }
   dataV++; scheduleRender(); publishPub();
@@ -1294,7 +1298,8 @@ let STATS_OK = null;   // null: unknown, true: rank_stats table exists, false: n
 const STAT_KEYS = ['lv', 'tot', 'wk', 'wMin', 'mo', 'mMin', 'streak', 'room'];
 function buildSocial(){
   const st = S(); if (!st) return null;
-  return {code: st.code, nick: (st.nickname || '').slice(0, 20), vis: st.privacy.vis, groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200)};
+  const inv = {}; for (const [c, k] of Object.entries(st.friendVia || {})) if (st.friends.includes(c) && !isMutualCode(c)) inv[c] = hashStr(k + ':' + st.code).toString(36);
+  return {code: st.code, nick: (st.nickname || '').slice(0, 20), vis: st.privacy.vis, groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200), ...(Object.keys(inv).length ? {inv} : {})};
 }
 function buildPub(){
   const so = buildSocial(); if (!so) return null; const sx = buildStats();
@@ -2295,7 +2300,7 @@ VIEWS.rank = () => {
   if (MODE !== 'cloud') return `<div class="pagehead"><h1>ランキング</h1></div><section class="panel"><div class="empty">${icon('users')}<br>ランキングと友達機能は、ログインして使えます。<br>今はこの端末だけに記録しています（config.js の設定を確認してください）。</div></section>`;
   const val = d => UI.rankPeriod === 'week' ? (d.wk === wk ? d.wMin || 0 : 0) : UI.rankPeriod === 'month' ? (d.mo === mo ? d.mMin || 0 : 0) : (d.tot || 0);
   let pool = pubDocs.filter(d => d.code && d.uid !== UID && d.hasStats); const mine = buildPub(); if (mine && mine.hasStats) pool.push({uid: UID, ...mine});
-  if (UI.rankScope === 'friends') pool = pool.filter(d => d.uid === UID || st.friends.includes(d.code) || (Array.isArray(d.fr) && d.fr.includes(st.code)));
+  if (UI.rankScope === 'friends') pool = pool.filter(d => d.uid === UID || isMutualDoc(d));
   const gs = st.groups || [];
   if (UI.rankScope === 'group') { if (!gs.some(g => g.c === UI.rankGroup)) UI.rankGroup = gs[0] ? gs[0].c : null; pool = UI.rankGroup ? pool.filter(d => inGroup(d, UI.rankGroup)) : []; }
   const rows = pool.map(d => ({...d, v: val(d)})).sort((a, b) => b.v - a.v || (b.lv || 0) - (a.lv || 0));
@@ -2310,21 +2315,21 @@ VIEWS.rank = () => {
         rows.length ? `<div>${rows.map((r, i) => `<div class="rk ${i < 3 && r.v > 0 ? 'top' + (i + 1) : ''} ${r.uid === UID ? 'me' : ''}"><span class="n">${i + 1}</span><span class="av" style="--c:${avColor(r.uid)}">${esc((r.nick || '?').slice(0, 1))}</span>
           <div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.nick || 'ななしの受験生')}${r.uid === UID ? '（あなた）' : ''}</b><span class="note">LV${r.lv || 1} · ${esc(titleFor(r.lv || 1))} · 連続${r.streak || 0}日</span></div>
           <span class="disp" style="font-size:16px">${fmtHM(r.v)}</span>${r.room && r.uid !== UID ? `<button class="btn sm ghost" data-act="see-room" data-v="${esc(r.uid)}" aria-label="部屋を見る">${icon('eye')}</button>` : ''}</div>`).join('')}</div>`
-        : `<div class="empty">${UI.rankScope === 'friends' ? 'まだ友達がいません。右の「友達を追加」から、友達のコードを登録しよう。' : 'まだ参加者がいません。'}</div>`}
+        : `<div class="empty">${UI.rankScope === 'friends' ? 'まだフレンドがいません。招待リンクを送るか、フレンドコードで申請しよう。' : 'まだ参加者がいません。'}</div>`}
 
     </section>
     <div class="stack">
       <section class="panel hero"><div class="ph"><div><span class="eyebrow">INVITE</span><h3>友達を招待する</h3></div></div>
-        <p class="note" style="margin:0 0 12px">招待リンクから登録した友達とは、自動でお互いのランキングに表示されます。</p>
+        <p class="note" style="margin:0 0 12px">招待リンクから登録した人とは、承認なしですぐフレンドになります。リンクは信頼できる友達にだけ送ってね。</p>
         <div class="row wrap" style="gap:8px"><button class="btn primary" data-act="invite">${icon('users')}招待リンクを送る</button><button class="btn" data-act="invite-copy">${icon('copy')}リンクをコピー</button></div></section>
       <section class="panel"><div class="ph"><h3>あなたのフレンドコード</h3></div><div class="row"><span class="code" id="mycode">${esc(st.code)}</span><span class="sp"></span><button class="btn sm" data-act="copy-code">${icon('copy')}コピー</button></div>
-        <p class="note" style="margin:8px 0 0">このコードを友達に教えて、追加してもらおう。お互いに追加すると「互いにフレンド」になります。</p></section>
-      <section class="panel"><div class="ph"><h3>友達を追加</h3></div><form class="row" data-form="add-friend"><input id="fr-code" type="text" maxlength="6" placeholder="例：K7QX2M" autocomplete="off" style="text-transform:uppercase"><button class="btn primary" type="submit">${icon('plus')}追加</button></form>
+        <p class="note" style="margin:8px 0 0">このコードで申請してもらい、あなたが承認するとフレンドになります。</p></section>
+      <section class="panel"><div class="ph"><h3>フレンド申請を送る</h3></div><form class="row" data-form="add-friend"><input id="fr-code" type="text" maxlength="6" placeholder="例：K7QX2M" autocomplete="off" style="text-transform:uppercase"><button class="btn primary" type="submit">${icon('plus')}申請</button></form>
         ${friendListHTML()}</section>
       <section class="panel"><div class="ph"><h3>グループ</h3><a class="btn sm" href="#groups">${gs.length ? '管理する' : '作る・参加する'}</a></div>
         ${gs.length ? `<div class="chips">${gs.map(g => `<span class="chip on" style="--c:#a46bff"><i></i>${esc(groupName(g.c))}</span>`).join('')}</div>` : '<p class="note" style="margin:0">クラスや塾の仲間でグループを作ると、そのメンバーだけのランキングで競えます。</p>'}</section>
       <section class="panel"><div class="ph"><h3>ランキングの公開範囲</h3></div>
-        <div class="vis-opts">${[['all', '全員に公開', 'ランキングの「全員」にも表示されます'], ['friends', '互いにフレンドのみ', 'お互いにコードを登録した人にだけ表示'], ['none', '非公開', 'だれのランキングにも表示されません']].map(([k, n, d]) => `<button class="vis-opt ${st.privacy.vis === k ? 'on' : ''}" data-act="vis" data-v="${k}" aria-pressed="${st.privacy.vis === k}"><b>${n}</b><span>${d}</span></button>`).join('')}</div>
+        <div class="vis-opts">${[['all', '全員に公開', 'ランキングの「全員」にも表示されます'], ['friends', '互いにフレンドのみ', 'フレンド（承認しあった人）にだけ表示'], ['none', '非公開', 'だれのランキングにも表示されません']].map(([k, n, d]) => `<button class="vis-opt ${st.privacy.vis === k ? 'on' : ''}" data-act="vis" data-v="${k}" aria-pressed="${st.privacy.vis === k}"><b>${n}</b><span>${d}</span></button>`).join('')}</div>
         <div class="row" style="margin-top:12px"><span style="flex:1;font-size:14px">勉強部屋も見せる<br><span class="note">上の範囲の人に、部屋の見た目を見せます</span></span><button class="tog ${st.privacy.room && st.privacy.vis !== 'none' ? 'on' : ''}" data-act="priv" data-k="room" aria-pressed="${st.privacy.room}" aria-label="勉強部屋も見せる" ${st.privacy.vis === 'none' ? 'disabled' : ''}></button></div>
         <p class="note" style="margin:10px 0 0">どの設定でも、フレンド追加・グループ・チャットは使えます（そのためにニックネームとフレンドコードだけは使われます）。科目の内訳・振り返りの文章・志望校は公開されません。</p>
         ${STATS_OK === false && st.privacy.vis === 'friends' ? '<p class="banner" style="margin:10px 0 0">「互いにフレンドのみ」を使うには、Supabase で friends.sql を実行してください。実行するまでは、あなたの記録はだれにも表示されません。</p>' : ''}</section>
@@ -2519,22 +2524,37 @@ function addFriend(raw, retried){
   const st = S(), c = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (c.length !== 6) { toast('6文字のコードを入力してください。', 'x'); return; }
   if (c === st.code) { toast('それはあなた自身のコードです。', 'x'); return; }
-  if (st.friends.includes(c)) { toast('すでに登録済みです。', 'users'); return; }
+  if (st.friends.includes(c)) { toast(isMutualCode(c) ? 'すでにフレンドです。' : 'すでに申請しています。相手の承認を待ってね。', 'users'); return; }
   const fd = pubDocs.find(p => p.code === c);
   if (!fd) { if (!retried) refreshPub(true).then(() => addFriend(c, true)); else toast('そのコードの人が見つかりません。コードを確認するか、相手が一度ログインしてから試してください。', 'x', 5000); return; }
-  st.friends.push(c); queueWrite('state'); publishPub(200); pendingRender = false; render();
-  toast(Array.isArray(fd.fr) && fd.fr.includes(st.code) ? `${fd.nick || 'ななしの受験生'}さんと互いにフレンドになりました。` : `${fd.nick || 'ななしの受験生'}さんを追加しました。相手もあなたを追加すると「互いにフレンド」になります。`, 'users', 5000);
+  st.friends.push(c); st.declined = st.declined.filter(x => x !== c); queueWrite('state'); publishPub(200); pendingRender = false; render();
+  toast(Array.isArray(fd.fr) && fd.fr.includes(st.code) ? `${fd.nick || 'ななしの受験生'}さんとフレンドになりました。` : `${fd.nick || 'ななしの受験生'}さんにフレンド申請を送りました。相手が承認するとフレンドになります。`, 'users', 5000);
+}
+const isMutualDoc = d => { const st = S(); return !!(d && st && st.friends.includes(d.code) && Array.isArray(d.fr) && d.fr.includes(st.code)); };
+const isMutualCode = c => isMutualDoc(pubDocs.find(p => p.code === c));
+const incomingReqs = () => { const st = S(); return pubDocs.filter(d => d.uid !== UID && d.code && Array.isArray(d.fr) && d.fr.includes(st.code) && !st.friends.includes(d.code) && !st.declined.includes(d.code)); };
+function checkRequests(){
+  const st = S(); if (!st || MODE !== 'cloud') return; let changed = false;
+  for (const d of incomingReqs()) {
+    // someone who signed up from my invite link: accept automatically
+    if (st.inviteKey && d.inv && d.inv[st.code] === hashStr(st.inviteKey + ':' + d.code).toString(36)) { st.friends.push(d.code); changed = true; toast(`${d.nick || 'ななしの受験生'}さんが招待リンクから登録しました。フレンドになりました！`, 'users', 5000); }
+  }
+  for (const [c] of Object.entries(st.friendVia || {})) if (isMutualCode(c)) { delete st.friendVia[c]; changed = true; }
+  if (changed) { queueWrite('state'); publishPub(200); }
+  const seen = LS.get('sh-req-seen') || [], fresh = incomingReqs().filter(d => !seen.includes(d.code));
+  if (fresh.length) { LS.set('sh-req-seen', [...seen, ...fresh.map(d => d.code)].slice(-300)); toast(fresh.length === 1 ? `${fresh[0].nick || 'ななしの受験生'}さんからフレンド申請が来ています。ランキング画面で承認できます。` : `フレンド申請が${fresh.length}件来ています。ランキング画面で承認できます。`, 'users', 6000); }
 }
 function friendListHTML(){
-  const st = S(), mine = st.code;
-  const row = (c, d, req) => { const mutual = d && Array.isArray(d.fr) && d.fr.includes(mine) && st.friends.includes(c);
-    const status = !d ? 'まだ見つかりません（コードを確認してね）' : req ? 'あなたをフレンドに追加しました' : d.hasStats ? `LV${d.lv || 1}${mutual ? ' · 互いにフレンド' : ''}` : d.vis === 'none' ? `ランキング非公開${mutual ? ' · 互いにフレンド' : ''}` : mutual ? '互いにフレンド' : '相手もあなたを追加すると、記録が見られます';
-    return `<div class="li"><span class="disp" style="letter-spacing:.15em">${esc(c)}</span><div class="t"><b>${d ? esc(d.nick || 'ななしの受験生') : '—'}</b><span>${esc(status)}</span></div>
-      ${d ? `<button class="btn sm ghost" data-act="chat-open" data-v="${esc(dmRoom(d.uid))}" aria-label="チャット">${icon('chat')}</button>` : ''}
-      ${req ? `<button class="btn sm primary" data-act="fr-accept" data-v="${esc(c)}">${icon('plus')}追加</button>` : `<button class="btn sm ghost" data-act="fr-del" data-v="${esc(c)}" aria-label="友達を削除">${icon('x')}</button>`}</div>`; };
-  const reqs = pubDocs.filter(d => d.uid !== UID && d.code && Array.isArray(d.fr) && d.fr.includes(mine) && !st.friends.includes(d.code));
-  return (reqs.length ? `<h3 style="margin:14px 0 4px;font-size:14px">あなたを追加した人 <span class="pill cy">${reqs.length}</span></h3><div class="list">${reqs.map(d => row(d.code, d, true)).join('')}</div>` : '')
-    + (st.friends.length ? `<h3 style="margin:14px 0 4px;font-size:14px">フレンド</h3><div class="list">${st.friends.map(c => row(c, pubDocs.find(p => p.code === c), false)).join('')}</div>` : '');
+  const st = S(), name = d => esc((d && d.nick) || 'ななしの受験生');
+  const reqs = incomingReqs(), mutual = [], out = [];
+  for (const c of st.friends) { const d = pubDocs.find(p => p.code === c); if (isMutualDoc(d)) mutual.push(d); else out.push([c, d]); }
+  const chatBtn = d => `<button class="btn sm ghost" data-act="chat-open" data-v="${esc(dmRoom(d.uid))}" aria-label="${name(d)}さんとチャット">${icon('chat')}</button>`;
+  let h = '';
+  if (reqs.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フレンド申請 <span class="pill cy">${reqs.length}</span></h3><div class="list">${reqs.map(d => `<div class="li"><div class="t"><b>${name(d)}</b><span>あなたとフレンドになりたいそうです</span></div><button class="btn sm primary" data-act="fr-accept" data-v="${esc(d.code)}">承認</button><button class="btn sm ghost" data-act="fr-decline" data-v="${esc(d.code)}">拒否</button></div>`).join('')}</div>`;
+  if (mutual.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フレンド</h3><div class="list">${mutual.map(d => `<div class="li"><div class="t"><b>${name(d)}</b><span>${d.hasStats ? `LV${d.lv || 1}` : 'ランキング非公開'}</span></div>${chatBtn(d)}<button class="btn sm ghost" data-act="fr-del" data-v="${esc(d.code)}" data-n="${name(d)}" aria-label="フレンドをやめる">${icon('x')}</button></div>`).join('')}</div>`;
+  if (out.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">申請中</h3><div class="list">${out.map(([c, d]) => `<div class="li"><span class="disp" style="letter-spacing:.15em">${esc(c)}</span><div class="t"><b>${d ? name(d) : '—'}</b><span>${d ? '相手の承認を待っています' : 'まだ見つかりません'}</span></div><button class="btn sm ghost" data-act="fr-cancel" data-v="${esc(c)}">取り消す</button></div>`).join('')}</div>`;
+  if (st.declined.length) h += `<p class="note" style="margin:10px 0 0">拒否した申請 ${st.declined.length}件 · <button class="linkbtn" data-act="fr-undecline">もう一度表示する</button></p>`;
+  return h;
 }
 /* ---------- chat (groups + friends) ---------- */
 const CHAT = {room: null, msgs: [], chan: null, poll: null, ready: null, previews: {}, prevAt: 0, sending: false, draft: ''};
@@ -2544,7 +2564,7 @@ function chatRooms(){
   for (const g of (st.groups || [])) rooms.push({id: 'g:' + g.c, name: groupName(g.c) || g.n, sub: `グループ · ${groupMembers(g.c).length}人`, kind: 'g'});
   const seen = new Set();
   for (const d of pubDocs) { if (d.uid === UID || seen.has(d.uid)) continue;
-    if (st.friends.includes(d.code) || (Array.isArray(d.fr) && d.fr.includes(st.code))) { seen.add(d.uid); rooms.push({id: dmRoom(d.uid), name: d.nick || 'ななしの受験生', sub: d.hasStats ? `フレンド · LV${d.lv || 1}` : 'フレンド', kind: 'd'}); } }
+    if (isMutualDoc(d)) { seen.add(d.uid); rooms.push({id: dmRoom(d.uid), name: d.nick || 'ななしの受験生', sub: d.hasStats ? `フレンド · LV${d.lv || 1}` : 'フレンド', kind: 'd'}); } }
   return rooms;
 }
 const chatMissing = e => e && (/42P01|PGRST205|PGRST202/.test(e.code || '') || /messages|schema cache|does not exist/i.test(e.message || ''));
@@ -2818,11 +2838,14 @@ const ACT = {
       queueWrite('state'); publishPub(200); render(); toast(`「${name}」から抜けました。`, 'x'); }, true); },
   'copy-code'(){ const c = S().code; const done = () => toast('フレンドコードをコピーしました。', 'copy');
     try { navigator.clipboard.writeText(c).then(done, () => selectCode()); } catch { selectCode(); } },
-  'fr-del'(b){ S().friends = S().friends.filter(c => c !== b.dataset.v); queueWrite('state'); publishPub(200); render(); },
+  'fr-del'(b){ const c = b.dataset.v; confirmBox(`${b.dataset.n || c}さんとのフレンドをやめますか？`, 'ランキングの「友達」とチャットに表示されなくなります。もう一度フレンドになるには、また申請と承認が必要です。', 'フレンドをやめる', () => { const st = S(); st.friends = st.friends.filter(x => x !== c); delete st.friendVia[c]; if (!st.declined.includes(c)) st.declined.push(c); queueWrite('state'); publishPub(200); render(); }, true); },
+  'fr-cancel'(b){ const st = S(), c = b.dataset.v; st.friends = st.friends.filter(x => x !== c); delete st.friendVia[c]; queueWrite('state'); publishPub(200); render(); toast('申請を取り消しました。', 'x'); },
+  'fr-decline'(b){ const st = S(), c = b.dataset.v; if (!st.declined.includes(c)) st.declined.push(c); queueWrite('state'); render(); toast('申請を拒否しました。相手には通知されません。', 'x'); },
+  'fr-undecline'(){ S().declined = []; queueWrite('state'); render(); },
   priv(b){ const k = b.dataset.k; S().privacy[k] = !S().privacy[k]; queueWrite('state'); publishPub(200); render(); },
   vis(b){ const st = S(), v = b.dataset.v; if (st.privacy.vis === v) return; st.privacy.vis = v; st.privacy.share = v !== 'none'; queueWrite('state'); publishPub(200); render();
     toast({all: 'ランキングを全員に公開します。', friends: '「互いにフレンド」の人にだけ記録を見せます。', none: 'ランキングを非公開にしました。チャットやフレンドはそのまま使えます。'}[v], 'lock', 4000); },
-  'fr-accept'(b){ const st = S(), c = b.dataset.v; if (!st.friends.includes(c)) st.friends.push(c); queueWrite('state'); publishPub(200); render(); const d = pubDocs.find(p => p.code === c); toast(`${d ? d.nick || 'ななしの受験生' : c}さんと互いにフレンドになりました。`, 'users', 4000); },
+  'fr-accept'(b){ const st = S(), c = b.dataset.v; if (!st.friends.includes(c)) st.friends.push(c); st.declined = st.declined.filter(x => x !== c); queueWrite('state'); publishPub(200); render(); const d = pubDocs.find(p => p.code === c); toast(`${d ? d.nick || 'ななしの受験生' : c}さんと互いにフレンドになりました。`, 'users', 4000); },
   'see-room'(b){ const d = pubDocs.find(p => p.uid === b.dataset.v); if (!d || !d.room) return;
     showModal(`<div class="ph"><div><span class="eyebrow">ROOM LEVEL ${(d.room.stage || 0) + 1}</span><h3>${esc(d.nick || 'ななしの受験生')}の部屋</h3></div><button class="btn sm ghost" data-act="modal-close" aria-label="閉じる">${icon('x')}</button></div><div class="roomstage">${roomSVG({...d.room, people: d.room.people || {}}, d.room.size || 5, {})}</div><p class="note">LV${d.lv} · ${esc(titleFor(d.lv))} · 累計 ${fmtHM(d.tot)}</p>`); },
   // exams
@@ -2863,7 +2886,8 @@ const ACT = {
       {mount: m => m.querySelector('#wipe-ok').addEventListener('click', () => { if (m.querySelector('#wipe-in').value.trim() !== '削除') { toast('「削除」と入力してください。', 'x'); return; } closeModal(); wipeAll(); })});
   }
 };
-const inviteUrl = () => `${location.origin}${location.pathname}?friend=${S() ? S().code : ''}`;
+function inviteKey(){ const st = S(); if (!st.inviteKey) { st.inviteKey = genCode(); queueWrite('state'); } return st.inviteKey; }
+const inviteUrl = () => `${location.origin}${location.pathname}?friend=${S() ? S().code : ''}&k=${S() ? inviteKey() : ''}`;
 function selectCode(){ const el = $('#mycode'); if (!el) return; const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('コードを選択しました。長押しでコピーしてください。', 'copy'); }
 async function wipeAll(){
   for (const p of pending.values()) clearTimeout(p.timer); pending.clear();
