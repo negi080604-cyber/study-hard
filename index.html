@@ -253,6 +253,14 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
 .lightbtn{background:rgba(5,8,18,.7);cursor:pointer;font:inherit;font-size:12.5px;padding:6px 11px;color:var(--mute)}.lightbtn.on{color:#ffe2ad;border-color:rgba(255,226,173,.5)}.lightbtn svg{width:14px;height:14px}
 .linkbtn{border:0;background:none;padding:0;color:var(--cyan);font:inherit;text-decoration:underline;cursor:pointer}
 .vis-opts{display:grid;gap:8px}.vis-opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--glass);color:var(--ink);font:inherit;cursor:pointer}.vis-opt span{font-size:12px;color:var(--mute)}.vis-opt.on{border-color:var(--cyan);background:rgba(34,228,255,.1);box-shadow:inset 0 0 0 1px var(--cyan)}
+.lightctl{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:99px;background:rgba(5,8,18,.78);border:1px solid var(--line-2);font-size:12px}
+.lightctl>.ic{width:16px;height:16px;margin:0 3px 0 5px;color:#6b7390;transition:color .2s,filter .2s}
+.lightctl.lit>.ic{color:#ffd66b;filter:drop-shadow(0 0 6px rgba(255,214,107,.9))}
+.lightctl button{border:0;background:none;color:var(--mute);font:inherit;font-size:12px;padding:5px 9px;border-radius:99px;cursor:pointer;white-space:nowrap}
+.lightctl button.on{background:rgba(255,214,107,.18);color:#ffe7a8;box-shadow:inset 0 0 0 1px rgba(255,214,107,.55)}
+.lightctl em{font-style:normal;font-size:11px;color:var(--mute);padding:0 8px 0 4px;white-space:nowrap}
+.lightctl.lit em{color:#ffd66b}
+@media (max-width:400px){.lightctl em{display:none}.lightctl button{padding:5px 7px}}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:var(--c)}
 .sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--cyan)}
@@ -556,7 +564,7 @@ const MISSIONS = {
   subj2:{t:'2科目以上に取り組む', r:20, chk:d => d.subjCount >= 2},
   goal50:{t:'今日の目標の半分に到達', r:20, chk:d => d.goal > 0 && d.total >= d.goal * .5},
   goal100:{t:'今日の目標時間を達成する', r:40, chk:d => d.goal > 0 && d.total >= d.goal},
-  review:{t:'夜の振り返りを書く', r:15, chk:d => d.reviewed}
+  review:{t:'夜の振り返りを書く（18時以降）', r:15, chk:d => d.reviewedNight}
 };
 const missionsFor = k => { const h = hashStr(k); return [['focus25','total60','morning'][h % 3], ['subj2','goal50'][(h >> 4) % 2], 'goal100', 'review']; };
 
@@ -877,7 +885,9 @@ function lightState(room){
   const h = new Date().getHours(), mode = (room && room.light) || 'auto', studying = typeof T !== 'undefined' && T.state === 'run';
   const dark = h >= 18 || h < 6, dusk = h === 17 || h === 6;
   const lit = mode === 'on' || (mode === 'auto' && (studying || (h >= 16 && h < 23) || (h >= 5 && h < 8)));
-  return {h, mode, dark, dusk, lit, shade: dark ? (lit ? .1 : .6) : dusk ? (lit ? .04 : .22) : 0};
+  // "消す" always shows: the room dims even in the daytime (only the window light is left)
+  const shade = dark ? (lit ? .08 : .62) : dusk ? (lit ? .03 : .3) : (mode === 'off' ? .28 : 0);
+  return {h, mode, dark, dusk, lit, shade};
 }
 function computePoses(items, room){
   const out = {}, h = new Date().getHours(), night = h >= 23 || h < 6, studying = T.state === 'run' && T.phase === 'study' && !(room && room.people);
@@ -1395,8 +1405,9 @@ function todayInfo(){
   const ss = x.sessions.filter(s => s.d === today);
   const rv = data.months[monthOf(today)]?.reviews?.[today];
   return { total: x.today, goal: goalFor(today), maxSession: ss.reduce((a, s) => Math.max(a, s.m), 0), subjCount: new Set(ss.map(s => s.s)).size,
-    morning: ss.some(s => new Date(s.t).getHours() < 12), reviewed: hasReview(rv), sessions: ss };
+    morning: ss.some(s => new Date(s.t).getHours() < 12), reviewed: hasReview(rv), reviewedNight: hasReview(rv) && [rv.at, rv.edited].some(t => t && new Date(t).getHours() >= NIGHT_H && dkey(new Date(t)) === today), sessions: ss };
 }
+const NIGHT_H = 18;
 const hasReview = r => !!(r && (r.did || r.tomorrow || r.bad || r.improve || r.ach != null || (Array.isArray(r.todo) && r.todo.length)));
 const MOODS = [['絶好調','#3ee6a0'],['いい感じ','#22e4ff'],['ふつう','#9aa3c0'],['つかれた','#ffc24d'],['しんどい','#ff6fb0']];
 const subjOf = id => S().subjects.find(s => s.id === id) || {id, name: '削除した科目', color: '#6b7390'};
@@ -1745,7 +1756,7 @@ function roomSVG(room, N, opts = {}){
     s += `<g data-i="${it.id}" class="${sel === it.id ? 'sel' : ''}${gcls(it.id)}"><rect x="${it.x + .05}" y="${it.y + .05}" width="${w - .1}" height="${dd - .1}" fill="${c}" stroke="${sel === it.id ? '#22e4ff' : mix(c, '#000000', .3)}" stroke-width="2" vector-effect="non-scaling-stroke"/><rect x="${it.x + .22}" y="${it.y + .22}" width="${w - .44}" height="${dd - .44}" fill="none" stroke="${mix(c, '#ffffff', .3)}" stroke-width="1.2" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/></g>`; }
   s += `<rect x="0" y="0" width="${N}" height="${N}" fill="url(#${pfx}shade)"/></g></g>`;
   // light pools
-  const LS0 = lightState(room), poolsOn = LS0.lit || (!LS0.dark && !LS0.dusk);
+  const LS0 = lightState(room), poolsOn = LS0.lit;
   if (poolsOn) for (const it of items.filter(i => F[i.t].glow)) { const [w, dd] = footprint(it); const [cx, cy] = P(it.x + w / 2, it.y + dd / 2, 0); const big = F[it.t].hang ? 1.5 : 1;
     s += `<ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${TW * 3.2 * big}" ry="${TH * 3.2 * big}" fill="url(#${pfx}g${glowIds.indexOf(F[it.t].glow)})" pointer-events="none"/>`; }
   // placement tiles
@@ -1770,6 +1781,7 @@ function roomSVG(room, N, opts = {}){
     for (const p of d.parts) { const q = rotPart(p, d.W, d.D, r); const col = resolveCol(q[6], d, it.c || 0);
       boxes.push({x: it.x + q[0], y: it.y + q[1], z: z0 + q[2], w: q[3], d: q[4], h: q[5], ...col, iid: it.id}); }
   }
+  if (!LS0.lit) { const glowIds0 = new Set(items.filter(i => F[i.t].glow).map(i => i.id)); for (const b of boxes) if (b.emi && glowIds0.has(b.iid)) { b.emi = false; b.c = mix(b.c, '#8a8f9c', .55); } }
   const sorted = sortBoxes(boxes);
   const noPtr = place ? ' pointer-events="none"' : '';
   for (const b of sorted) s += `<g data-i="${b.iid}" class="${sel === b.iid ? 'sel' : ''}${gcls(b.iid)}${b.anim ? ' ' + b.anim : ''}"${b.anim ? ` style="animation-delay:-${(hashStr(b.iid) % 40) / 10}s"` : ''}${noPtr}>${b.blink ? `<g class="blink" style="animation-delay:-${(hashStr(b.iid) % 50) / 10}s">${boxSVG(b)}</g>` : boxSVG(b)}</g>`;
@@ -2261,7 +2273,7 @@ VIEWS.room = () => {
   ${roomSel}
   <div class="roomstage" id="roomstage">${roomSVG(room, N, {sel: UI.sel, place: UI.place})}
     ${buddyBubble()}
-    <div class="roomtop"><span class="row" style="gap:6px"><span class="pill cy" style="background:rgba(5,8,18,.7)">${N}×${N}</span><button class="pill lightbtn ${LS0.lit ? 'on' : ''}" data-act="rm-light" aria-label="電気の切り替え（今は${lightLbl}）">${icon('bulb')}電気 ${lightLbl}</button></span>${!UI.place && !selIt ? '<span class="pill hint" style="background:rgba(5,8,18,.7)">タップ → 移動・回転・色・会話</span>' : ''}</div>${bar}</div>
+    <div class="roomtop"><span class="row" style="gap:6px"><span class="pill cy" style="background:rgba(5,8,18,.7)">${N}×${N}</span><span class="lightctl ${LS0.lit ? 'lit' : 'unlit'}" role="group" aria-label="電気">${icon('bulb')}${[['on', 'つける'], ['off', '消す'], ['auto', '自動']].map(([k, n]) => `<button data-act="rm-light" data-v="${k}" class="${LS0.mode === k ? 'on' : ''}" aria-pressed="${LS0.mode === k}">${n}</button>`).join('')}<em>${LS0.lit ? '点灯中' : '消灯中'}</em></span></span>${!UI.place && !selIt ? '<span class="pill hint" style="background:rgba(5,8,18,.7)">タップ → 移動・回転・色・会話</span>' : ''}</div>${bar}</div>
   <section class="panel" id="roompanel"><div class="seg" style="margin-bottom:14px">${tabs.map(([k, n]) => `<button data-act="rm-tab" data-v="${k}" class="${UI.roomTab === k ? 'on' : ''}">${n}</button>`).join('')}</div>${panel}</section>`;
 };
 function unplacedPeople(){
@@ -2829,8 +2841,8 @@ const ACT = {
     showModal(`<h3>部屋の名前</h3><form class="stack" data-form="room-name" style="gap:12px"><input id="rn-name" type="text" maxlength="12" value="${esc(e.name || ROOM_KINDS[e.kind].n)}" aria-label="名前" autofocus><div class="acts"><button class="btn ghost" type="button" data-act="modal-close">やめる</button><button class="btn primary" type="submit">決定</button></div></form>`); },
   'room-demolish'(){ const e = curEntry(); if (!e) return; const nm = e.name || ROOM_KINDS[e.kind].n;
     confirmBox(`「${nm}」をこわしますか？`, '家具と家族は持ち物に戻ります。使ったコインは戻りません。', 'こわす', () => { const st = S(); st.house.rooms = st.house.rooms.filter(r => r.id !== e.id); UI.roomId = 'house'; queueWrite('state', 0); publishPub(); render(); toast(`${nm}をこわしました。`, 'trash'); }, true); },
-  'rm-light'(){ const r = CR(); r.light = {auto: 'on', on: 'off', off: 'auto'}[r.light || 'auto']; queueWrite('state'); publishPub(); render();
-    toast({auto: '電気：自動（夕方〜夜11時と勉強中につきます）', on: '電気：つけっぱなし', off: '電気：消しました'}[r.light], 'bulb', 2600); },
+  'rm-light'(b){ const r = CR(); r.light = b && b.dataset && b.dataset.v ? b.dataset.v : {auto: 'on', on: 'off', off: 'auto'}[r.light || 'auto']; queueWrite('state'); publishPub(); render();
+    toast({auto: '電気を「自動」にしました。夕方〜夜11時と、タイマーで勉強中につきます。', on: '電気をつけました（つけっぱなし）。', off: '電気を消しました。'}[r.light], 'bulb', 3000); },
   'wear-open'(b){ UI.roomTab = 'wear'; UI.wearWho = b.dataset.v; UI.sel = null; render(); $('#roompanel')?.scrollIntoView({behavior: 'smooth', block: 'start'}); },
   'wr-who'(b){ UI.wearWho = b.dataset.v; render(); },
   'wr-slot'(b){ UI.wearSlot = b.dataset.v; render(); },
@@ -3010,7 +3022,8 @@ function placeBubble(){
   const R = rs.getBoundingClientRect(); b.hidden = false;
   const bw = b.offsetWidth, bh = b.offsetHeight, cx = (l + r) / 2 - R.left;
   const left = clamp(cx, bw / 2 + 8, R.width - bw / 2 - 8);
-  b.style.left = left + 'px'; b.style.top = Math.max(bh + 16, top - R.top) + 'px';
+  const rt = rs.querySelector('.roomtop'), rtB = rt ? rt.getBoundingClientRect().bottom - R.top : 0;
+  b.style.left = left + 'px'; b.style.top = Math.max(bh + 16, rtB + bh + 14, top - R.top) + 'px';
   b.style.setProperty('--tail', clamp(50 + (cx - left) / bw * 100, 12, 88) + '%');
 }
 window.addEventListener('resize', () => { if (route() === 'room') placeBubble(); });
@@ -3173,6 +3186,7 @@ document.addEventListener('submit', e => {
       todo: dr.todo.filter(t => t.t.trim()).slice(0, 8).map(t => ({t: t.t.trim().slice(0, 60), done: !!(oldTodo.find(o => o.t === t.t.trim()) || {}).done})),
       at: old.at || Date.now(), ...(old.at ? {edited: Date.now()} : {})};
     UI.review = null; queueWrite('m-' + mk, 0); checkMissions(false); checkBadges(false); pendingRender = false;
+    if (isToday && new Date().getHours() < NIGHT_H) setTimeout(() => toast(`保存しました。ミッション「夜の振り返り」は${NIGHT_H}時以降に書く（または書き直して保存する）と達成になります。`, 'moon', 6000), 900);
     if (isToday) { render(); toast('振り返りを保存しました。今日もおつかれさま。', 'moon', 4000); }
     else { UI.rvDate = null; UI.rvTab = 'list'; UI.rvMonth = mk; UI.rvOpen = day; render(); toast(`${fmtMD(day)}の振り返りを更新しました。`, 'check'); }
   }
