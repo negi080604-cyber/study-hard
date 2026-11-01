@@ -322,6 +322,21 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .av.live{box-shadow:0 0 0 2px #3ee6a0,0 0 10px rgba(62,230,160,.6)}
 .av.big{box-shadow:0 0 0 2px var(--line-2)}
 .hav{display:flex;text-decoration:none;flex:none}
+.pttable{display:flex;flex-direction:column;gap:6px}.ptrow{display:grid;grid-template-columns:minmax(0,1fr) 88px 88px;gap:8px;align-items:center;font-size:13px}.ptrow.head{color:var(--mute);font-size:11.5px}.ptrow input{padding:7px 8px;min-width:0}
+.chk{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:14px;cursor:pointer}.chk span{flex:1}.chk span.done{color:var(--mute);text-decoration:line-through}.chk .btn{padding:4px 7px;opacity:.55}.chk .btn .ic{width:14px;height:14px}.chk input{width:18px;height:18px;flex:none;accent-color:#22e4ff}
+.planhome{display:block;text-decoration:none;color:inherit;border-color:rgba(255,194,77,.45)}
+.plancard h2 small{font-weight:400}
+#pl-dream{width:100%;resize:vertical}
+#ring-overlay{position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:radial-gradient(circle at 50% 35%,#5a4214,#04050b 62%);color:#fff}
+#ring-overlay h2{margin:0;font-size:clamp(26px,8vw,40px)}#ring-overlay p{margin:0;color:var(--mute);max-width:420px}
+#ring-overlay .btn.big{min-width:220px;font-size:22px;padding:18px 28px}
+.ringbell{font-size:80px;line-height:1;animation:bellshake .5s ease-in-out infinite}
+@keyframes bellshake{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+@media (prefers-reduced-motion:reduce){.ringbell{animation:none}}
+.guide{margin:0;padding-left:20px;font-size:14px;line-height:1.7}
+.champbox{display:flex;gap:12px;align-items:flex-start;margin:0 0 12px;padding:12px;border-radius:14px;background:linear-gradient(120deg,rgba(255,194,77,.16),rgba(255,111,176,.1));border:1px solid rgba(255,194,77,.5)}
+.champbox .eyebrow{color:#ffd66b}.champmsg{font-size:14px;margin-top:4px;overflow-wrap:anywhere}
+.av.crown{box-shadow:0 0 0 2px #ffd66b,0 0 14px rgba(255,214,107,.7)}
 @media (max-width:440px){.brand>span{font-size:14px;letter-spacing:.08em}.topbar-in{gap:6px}#hc-sync #synctxt{display:none}#hc-sync{padding:0 9px}.hchip{padding:0 8px;gap:4px}}
 @media (max-width:400px){.brand>span{display:none}}
 @media (max-width:380px){.hav .av{width:26px !important;height:26px !important}}.hav .av{box-shadow:0 0 0 1.5px rgba(34,228,255,.5)}
@@ -642,6 +657,7 @@ const missionsFor = k => { const h = hashStr(k); return [['focus25','total60','m
 const BADGE_R = {first: 30, h10: 50, h50: 100, h100: 200, h300: 400, h1000: 1000, st3: 30, st7: 80, st30: 300, st100: 1000, deep90: 60, goal1: 40, goal10: 150, allround: 60, early: 40, review7: 80, lv10: 150, lv25: 400, decor: 50, family: 100, baby: 150, grown: 300, house: 150};
 const titleR = i => i > 0 ? 50 + i * 50 : 0;
 const titleIdx = lv => { let k = 0; TITLES.forEach(([l], i) => { if (lv >= l) k = i; }); return k; };
+BADGE_R.rank1 = 150; BADGE_R.rank10 = 600;
 const BADGES = [
   {id:'first', n:'はじめの一歩', d:'初めて勉強を記録', c:'#22e4ff', chk:s => s.count >= 1},
   {id:'h10', n:'10時間突破', d:'累計10時間', c:'#3fb8ff', chk:s => s.total >= 600},
@@ -665,6 +681,8 @@ const BADGES = [
   {id:'family', n:'ふたり暮らし', d:'パートナーと暮らしはじめた', c:'#ff6fb0', chk:s => s.fam >= 1},
   {id:'baby', n:'家族がふえた', d:'子どもが生まれた', c:'#ffc24d', chk:s => s.kids >= 1},
   {id:'grown', n:'旅立ちの日', d:'子どもが独り立ちした', c:'#3ee6a0', chk:s => s.grown >= 1},
+  {id:'rank1', n:'はじめての1位', d:'ランキングで1位をとった', c:'#ffd66b', chk:() => champOK()},
+  {id:'rank10', n:'不動の王者', d:'ランキング1位を10回とった', c:'#ffc24d', chk:() => !!(S().r1 && S().r1.n >= 10)},
   {id:'house', n:'マイホーム', d:'家に部屋を3つ増築した', c:'#22e4ff', chk:s => s.rooms >= 3}
 ];
 
@@ -747,6 +765,7 @@ Object.assign(WEAR.head.items, {catears:{n:'ねこ耳',lv:3,cost:80,colors:['#2b
 Object.assign(WEAR.top.items, {shirt:{n:'ワイシャツ',lv:2,cost:60,colors:['#f4f6fb','#bfe0ff','#ffd6e2']}, pajamas:{n:'パジャマ',lv:2,cost:70,colors:['#bfe0ff','#ffd6e2','#d4f5d0','#ffe9a8']}, gakuran:{n:'学ラン',lv:3,cost:150,colors:['#1c2133','#1d2a6b']}, apron:{n:'エプロン',lv:3,cost:80,colors:['#ff9ec4','#3fb8ff','#f4f6fb','#3ee6a0']}, cardigan:{n:'カーディガン',lv:4,cost:110,colors:['#c9b79a','#2a3550','#ff9ec4','#7a2f45']}, dress:{n:'ワンピース',lv:4,cost:140,colors:['#ff8fb8','#3fb8ff','#f4f6fb','#1c2133','#ffd66b']}, aloha:{n:'アロハシャツ',lv:5,cost:120,colors:['#ff7a3a','#3fb8ff','#3ee6a0']}, downjacket:{n:'ダウンジャケット',lv:7,cost:260,colors:['#1c2133','#c4304a','#eef0f6','#ffc24d']}, coat:{n:'ロングコート',lv:8,cost:300,colors:['#c9a87a','#2b3045','#7a2f45']}});
 Object.assign(WEAR.bottom.items, {sweatpants:{n:'スウェット',lv:2,cost:50,colors:['#9aa3b5','#2b3045','#7a5cff']}, pleated:{n:'プリーツスカート',lv:3,cost:80,colors:['#2a3550','#7a2f45','#3b4058']}, cargo:{n:'カーゴパンツ',lv:4,cost:90,colors:['#6b6a3a','#3b4058','#c9b79a']}, hakama:{n:'袴（はかま）',lv:10,cost:400,colors:['#3a2a6b','#7a2f45','#1c2133']}});
 Object.assign(WEAR.shoes.items, {sandals:{n:'サンダル',lv:2,cost:40,colors:['#c79a5a','#2b3045','#ff6fb0']}, rainboots:{n:'長ぐつ',lv:4,cost:90,colors:['#ffc24d','#c4304a','#2a3550']}, running:{n:'ランニングシューズ',lv:5,cost:110,colors:['#3ee6a0','#ff5c7a','#3fb8ff']}, geta:{n:'下駄',lv:6,cost:120}});
+WEAR.head.items.champcrown = {n:'👑 チャンピオンの冠', lv:1, cost:500, champ:true};
 Object.assign(WEAR.acc.items, {omamori:{n:'お守り',lv:2,cost:40}, necktie:{n:'ネクタイ',lv:4,cost:80,colors:['#c4304a','#1d2a6b','#ffc24d']}, shoulderbag:{n:'ショルダーバッグ',lv:4,cost:120,colors:['#6b4a32','#1c2133','#ff9ec4']}, tail:{n:'ねこのしっぽ',lv:5,cost:150,colors:['#2b3045','#eef0f6','#c79a5a']}, halo:{n:'天使の輪',lv:25,cost:2000}});
 const WEAR_SLOTS = ['head','top','bottom','shoes','acc'];
 const DEF_WEAR = {head: 'none', top: 'hoodie', bottom: 'pants', shoes: 'sneakers', acc: 'none'};
@@ -800,6 +819,7 @@ function headParts(L){
   if (w.head === 'gradcap' && !astro) { b(.355, .355, 1.49, .29, .29, .08, '#1c2133'); b(.28, .28, 1.57, .44, .44, .025, '#1c2133'); b(.48, .48, 1.595, .04, .04, .02, '#ffc24d'); b(.69, .5, 1.44, .02, .02, .13, '#ffc24d'); }
   if (w.head === 'witch' && !astro) { b(.26, .26, 1.49, .48, .48, .02, hcl); b(.35, .35, 1.51, .3, .3, .1, hcl); b(.36, .36, 1.555, .28, .28, .03, '#ffc24d'); b(.39, .39, 1.61, .22, .22, .1, hcl); b(.43, .43, 1.71, .14, .14, .1, hcl); b(.47, .47, 1.81, .07, .07, .08, hcl); }
   if (w.acc === 'halo') b(.39, .39, (w.head === 'witch' ? 2.0 : 1.8), .22, .22, .02, '!#ffd66b');
+  if (w.head === 'champcrown') { b(.37, .37, 1.57, .26, .26, .06, '!#ffc24d'); for (const [px, py] of [[.37, .37], [.56, .37], [.37, .56], [.56, .56]]) b(px, py, 1.63, .07, .07, .08, '!#ffc24d'); b(.46, .6, 1.585, .08, .03, .04, '!#ff3a5a'); }
   if (w.head === 'crown') { b(.39, .39, 1.57, .22, .22, .07, '!#ffc24d'); b(.39, .39, 1.64, .05, .05, .05, '!#ffc24d'); b(.475, .475, 1.64, .05, .05, .07, '!#ff5c7a'); b(.56, .56, 1.64, .05, .05, .05, '!#ffc24d'); }
   if (astro) b(.3, .3, 1.15, .4, .4, .5, '~#bcd4ff');
   return P;
@@ -1929,7 +1949,14 @@ function rugInner(d, c, x, y, w, h, sel){
     default: return box() + `<rect x="${x + .22}" y="${y + .22}" width="${w - .44}" height="${h - .44}" fill="none" stroke="${lt}" stroke-width="1.2" stroke-dasharray="3 3" ${NS}/>`;
   }
 }
-const roomUnlocked = t => { const d = F[t]; return !d.room || (S() && allEntries().some(r => r.kind === d.room)); };
+Object.assign(F, {
+  champ_throne:{n:'王者の玉座', champ:true, lv:1, cost:800, W:1, D:1, colors:['#c4304a','#1d2a6b','#2b3045'], parts:[[.15,.15,0,.7,.7,.42,'#d6b25e'],[.2,.2,.42,.6,.6,.1,'m'],[.15,.1,.52,.7,.12,1.1,'#d6b25e'],[.22,.21,.6,.56,.02,.9,'m'],[.15,.15,.52,.1,.6,.3,'#d6b25e'],[.75,.15,.52,.1,.6,.3,'#d6b25e'],[.42,.1,1.62,.16,.12,.14,'!#ffd66b']]},
+  champ_cup:{n:'優勝カップ', champ:true, small:true, lv:1, cost:300, W:1, D:1, colors:['#ffc24d','#d8dde8'], parts:[[.36,.36,0,.28,.28,.08,'#2b3045'],[.45,.45,.08,.1,.1,.1,'m'],[.36,.36,.18,.28,.28,.26,'!m'],[.3,.45,.26,.06,.1,.12,'m'],[.64,.45,.26,.06,.1,.12,'m']]},
+  champ_flag:{n:'チャンピオンフラッグ', champ:true, lv:1, cost:400, W:1, D:1, colors:['#ffc24d','#c4304a','#3d7bff'], parts:[[.4,.4,0,.2,.2,.05,'#2b3045'],[.47,.47,.05,.06,.06,1.9,'#d8dde8'],[.53,.47,1.35,.4,.03,.5,'m'],[.6,.5,1.48,.2,.004,.22,'#ffffff']]}
+});
+SEATS.champ_throne = {z: .52};
+const champOK = () => { const st = S(); return !!(st && st.r1 && st.r1.n > 0); };
+const roomUnlocked = t => { const d = F[t]; if (d.champ) return champOK(); return !d.room || (S() && allEntries().some(r => r.kind === d.room)); };
 
 const F_ORDER_OLD = ['desk_basic','chair_basic','lamp_small','poster','banner','carpet','desk_pro','chair_gaming','bookshelf','plant','window','desklight','pc','monitor','clock','sofa','bed','trophy','neon','aquarium','bigwindow','hologram','trophycase'];
 const F_ORDER = Object.keys(F).filter(t => !F[t].buddy).sort((a, b) => F[a].lv - F[b].lv || F[a].cost - F[b].cost);
@@ -2228,7 +2255,7 @@ function buildSocial(){
   const st = S(); if (!st) return null;
   const inv = {}; for (const [c, k] of Object.entries(st.friendVia || {})) if (st.friends.includes(c) && !isFollowingCode(c)) inv[c] = hashStr(k + ':' + st.code).toString(36);
   const live = liveNow();
-  return {code: st.code, nick: (st.nickname || '').slice(0, 20), vis: st.privacy.vis, ...(live ? {live} : {}), groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200), ok: (st.approved || []).slice(0, 300), ...(avOK(st.avatar) ? {av: st.avatar} : {}), ...(Object.keys(inv).length ? {inv} : {})};
+  return {code: st.code, nick: (st.nickname || '').slice(0, 20), vis: st.privacy.vis, ...(live ? {live} : {}), groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200), ok: (st.approved || []).slice(0, 300), ...(st.m1 ? {m1: String(st.m1).slice(0, 40)} : {}), ...(avOK(st.avatar) ? {av: st.avatar} : {}), ...(Object.keys(inv).length ? {inv} : {})};
 }
 function buildPub(){
   const so = buildSocial(); if (!so) return null; const sx = buildStats();
@@ -2403,7 +2430,7 @@ function badgeToast(b){ toast(`実績解除「${b.n}」 ${b.d}　+${BADGE_R[b.id
 /* ================= router & render ================= */
 const ROUTES = {
   home:['ホーム','home'], timer:['タイマー','timer'], stats:['記録・分析','chart'], room:['勉強部屋','room'],
-  rank:['ランキング','trophy'], groups:['グループ','users'], chat:['チャット','chat'], exams:['入試カウントダウン','cal'], review:['今日の振り返り','pen'], badges:['実績・称号','medal'], prefs:['設定','gear'], help:['ヘルプ・機能一覧','help']
+  rank:['ランキング','trophy'], groups:['グループ','users'], chat:['チャット','chat'], exams:['入試カウントダウン','cal'], review:['今日の振り返り','pen'], badges:['実績・称号','medal'], plan:['合格プラン','flag'], prefs:['設定','gear'], help:['ヘルプ・機能一覧','help']
 };
 const route = () => { const h = (location.hash || '').replace('#', ''); return ROUTES[h] ? h : 'home'; };
 let pendingRender = false, renderQueued = false;
@@ -3023,9 +3050,10 @@ function stopTick(){ clearInterval(tickId); tickId = null; }
 async function requestWake(){ try { wakeLock = await navigator.wakeLock?.request('screen'); } catch {} }
 function releaseWake(){ try { wakeLock && wakeLock.release(); } catch {} wakeLock = null; }
 function tick(){
+  if (T.awayAt && !document.hidden) handleAwayReturn();   // ほかのアプリから戻った直後は、先によそ見の時間を差し引く
   if (T.state === 'run') {
     const el = elapsed();
-    if (T.phase === 'break' && el >= T.brk * 60000) { endBreak(); return; }
+    if (T.phase === 'break' && el >= T.brk * 60000) { endBreak(true); return; }
     if (T.phase === 'study' && T.mode === 'cd' && el >= T.target * 60000) { finishStudy(true); return; }
     if (T.phase === 'study' && el >= MAX_SESSION_MS) { finishStudy(true); return; }
   }
@@ -3072,11 +3100,13 @@ function timerStart(){
   }
   if (!S().subjects.find(s => s.id === T.subj && !s.hidden)) T.subj = S().subjects.find(s => !s.hidden)?.id || 'ot';
   Object.assign(T, {state: 'run', acc: 0, since: Date.now(), phase: 'study', startAt: Date.now(), alarmAt, cheer: CHEER_START[Math.floor(Math.random() * CHEER_START.length)]});
-  saveTimer(); startTick(); requestWake(); AudioEng.ensure();
+  if (lockOn()) { T.leaves = 0; T.awayMs = 0; T.awayAt = null; }
+  saveTimer(); startTick(); requestWake(); AudioEng.ensure(); primeRing();
   render();
+  if (lockOn()) lockStart();
 }
 function timerPause(){ if (T.state !== 'run') return; T.acc = elapsed(); T.since = null; T.state = 'pause'; saveTimer(); releaseWake(); render(); }
-function timerResume(){ if (T.state !== 'pause') return; T.since = Date.now(); T.state = 'run'; saveTimer(); requestWake(); render(); }
+function timerResume(){ if (T.state !== 'pause') return; T.since = Date.now(); T.state = 'run'; saveTimer(); requestWake(); primeRing(); render(); }
 function timerReset(){ Object.assign(T, {state: 'idle', acc: 0, since: null, phase: 'study', startAt: null, alarmAt: null}); saveTimer(); stopTick(); releaseWake(); render(); afterFocusNotice(); }
 function afterFocusNotice(){
   setTimeout(async () => { try { await loadPreviews(true); } catch {} const n = rawNotifCounts(); renderNav(); checkRequests();
@@ -3089,15 +3119,16 @@ function finishStudy(auto, alarm){
   const startAt = T.startAt || (Date.now() - el), subj = T.subj, mode = T.mode;
   Object.assign(T, {state: 'idle', acc: 0, since: null, startAt: null, alarmAt: null}); saveTimer(); stopTick(); releaseWake();
   if (S().prefs.stopSound) AudioEng.stopAll();
-  if (alarm) { ringAlarm(); queueOverlay(() => toast('⏰ アラームの時刻になりました。おつかれさま！', 'timer', 6000)); } else AudioEng.chime();
-  if (auto) notify(alarm ? '⏰ アラームの時刻です' : '✅ 時間になりました！', `${subjOf(subj).name}を${fmtHM(min)}勉強しました。${T.brk > 0 ? `${T.brk}分の休憩に入ります。` : 'おつかれさま！'}`, 'timer');
+  const leaves = T.leaves || 0, awayMs = T.awayMs || 0; T.leaves = 0; T.awayMs = 0; T.awayAt = null;
+  if (auto) startRing(alarm ? 'アラームの時刻です' : '時間になりました！', `${subjOf(subj).name}を${fmtHM(min)}勉強しました。${T.brk > 0 ? `${T.brk}分の休憩に入ります。` : 'おつかれさま！'}`); else AudioEng.chime();
+  if (MINI.overlay && MINI.locked) closeMini(); try { if (document.fullscreenElement) document.exitFullscreen(); } catch {}
   if (min < 1) { toast('1分未満の勉強は記録されません。', 'timer'); render(); return; }
   const startDate = new Date(startAt);
-  addSession({id: uid6(), d: dkey(startDate), t: startAt, s: subj, m: min, k: mode});
+  addSession({id: uid6(), d: dkey(startDate), t: startAt, s: subj, m: min, k: mode, ...(leaves ? {aw: leaves, awm: Math.round(awayMs / 60000)} : {})});
   if (auto && T.brk > 0) { Object.assign(T, {state: 'run', phase: 'break', acc: 0, since: Date.now()}); saveTimer(); startTick(); }
   render(); afterFocusNotice();
 }
-function endBreak(){ Object.assign(T, {state: 'idle', phase: 'study', acc: 0, since: null}); saveTimer(); if (!miniDocs().length) stopTick(); AudioEng.chime(); notify('☕ 休憩おわり', '準備ができたら次のセッションを始めよう！', 'timer'); toast('休憩おわり。準備ができたら次のセッションへ。', 'timer'); render(); }
+function endBreak(auto){ Object.assign(T, {state: 'idle', phase: 'study', acc: 0, since: null}); saveTimer(); if (!miniDocs().length) stopTick(); if (auto) startRing('休憩おわり', '準備ができたら次のセッションを始めよう！'); else AudioEng.chime(); toast('休憩おわり。準備ができたら次のセッションへ。', 'timer'); render(); }
 function addSession(sess){
   const before = stats(), lvBefore = before.level;
   const mk = monthOf(sess.d); monthDoc(mk).sessions.push(sess); queueWrite('m-' + mk, 0);
@@ -3114,6 +3145,7 @@ function showSessionDone(sess, before, after){
   showModal(`<div class="celebrate">${burst()}<div class="eyebrow">SESSION COMPLETE</div><div class="bigxp" style="margin-top:14px">+${sess.m} XP</div>
     <p style="margin:10px 0 4px;font-size:15px"><span class="dot" style="--c:${sj.color};display:inline-block;margin-right:6px"></span>${esc(sj.name)}を${fmtHM(sess.m)}勉強しました</p>
     <p class="mute" style="margin:0 0 16px;font-size:14px">${esc(CHEER_END[Math.floor(Math.random() * CHEER_END.length)])}</p>
+    ${sess.aw != null ? `<p class="note" style="margin:-8px 0 14px">${sess.aw ? `集中ロック：よそ見 ${sess.aw}回${sess.awm ? `（${sess.awm}分は記録から外しました）` : '（ぜんぶ許可時間内）'}` : '集中ロック：よそ見ゼロ！ すばらしい集中力！'}</p>` : ''}
     <div class="row" style="justify-content:space-between;font-size:12px" ><span class="disp">LV ${lv}</span><span class="mute disp">${cur} / ${need} XP</span></div>
     <div class="bar" style="margin-top:6px"><i id="sd-bar" style="width:0%"></i></div>
     <div class="row" style="justify-content:center;gap:18px;margin-top:16px;font-size:13px"><span>${icon('coin')} +${sess.m} コイン</span><span>${icon('flame')} 連続 ${after.streak}日</span><span>今日 ${fmtHM(after.today)}</span></div>
@@ -3130,15 +3162,79 @@ function showLevelUp(from, to){
     <div class="acts" style="justify-content:center">${st1 > st0 || unlocked.length ? '<a class="btn" href="#room" data-act="modal-close">部屋を見る</a>' : ''}<button class="btn primary" data-act="modal-close" autofocus>やったね</button></div></div>`);
 }
 
+/* ================= 終了の合図：止めるまで鳴り続けるアラーム（ほかのアプリの音楽も止まりやすい「音声ファイル」で鳴らす） ================= */
+const RING = {el: null, url: null, vib: null, stopAt: 0};
+function ringURL(){
+  if (RING.url) return RING.url;
+  const sr = 22050, n = Math.floor(sr * 1.6), buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf), w = (o, t) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) { const t = i / sr, k = Math.floor(t / .16), on = k < 6 && (t % .16) < .11, f = k % 2 ? 1568 : 2093, e = on ? Math.min(1, (t % .16) * 200, (.11 - (t % .16)) * 200) : 0;
+    const x = e * (.62 * Math.sin(2 * Math.PI * f * t) + .22 * Math.sin(6 * Math.PI * f * t)); v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, x)) * 30000, true); }
+  RING.url = URL.createObjectURL(new Blob([buf], {type: 'audio/wav'})); return RING.url;
+}
+// 「開始」を押したときに一度だけ無音で再生しておく（スマホは、こうしておかないとあとで自動で鳴らせない）
+function primeRing(){ try { if (!RING.el) { RING.el = new Audio(); RING.el.preload = 'auto'; } const a = RING.el; if (!a.src) a.src = ringURL(); a.loop = true; a.muted = true; const p = a.play(); if (p && p.then) p.then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; }); } catch {} }
+function startRing(title, body){
+  const st = S();
+  if (st.prefs.ring === 'chime') { AudioEng.chime(); notify('⏰ ' + title, body, 'timer'); return; }
+  stopRing(true);
+  try { if (!RING.el) RING.el = new Audio(); const a = RING.el; if (!a.src) a.src = ringURL(); a.loop = true; a.muted = false; a.volume = 1; a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(() => AudioEng.alarm()); } catch { AudioEng.alarm(); }
+  try { if ('mediaSession' in navigator) { navigator.mediaSession.metadata = new MediaMetadata({title: '⏰ ' + title, artist: 'STUDY HARD', artwork: [{src: 'icon-512.png', sizes: '512x512', type: 'image/png'}]}); navigator.mediaSession.setActionHandler('pause', () => stopRing()); navigator.mediaSession.setActionHandler('stop', () => stopRing()); } } catch {}
+  const vib = () => { try { navigator.vibrate && navigator.vibrate([500, 200, 500, 200, 500]); } catch {} }; vib(); RING.vib = setInterval(vib, 2200);
+  RING.stopAt = Date.now() + 90000; RING.auto = setTimeout(() => stopRing(), 90000);
+  let o = document.getElementById('ring-overlay'); if (!o) { o = document.createElement('div'); o.id = 'ring-overlay'; document.body.appendChild(o); }
+  o.setAttribute('role', 'alertdialog'); o.setAttribute('aria-label', title);
+  o.innerHTML = `<div class="ringbell">⏰</div><h2>${esc(title)}</h2><p>${esc(body)}</p><button class="btn primary big" data-act="ring-stop" autofocus>止める</button><span class="note">止めるまで最大1分半鳴り続けます</span>`;
+  notify('⏰ ' + title, body, 'timer', false, {requireInteraction: true, vibrate: [500, 200, 500, 200, 500]});
+}
+function stopRing(quiet){
+  try { if (RING.el) { RING.el.pause(); RING.el.currentTime = 0; } } catch {}
+  clearInterval(RING.vib); RING.vib = null; clearTimeout(RING.auto); RING.auto = null; try { navigator.vibrate && navigator.vibrate(0); } catch {}
+  try { if ('mediaSession' in navigator) { navigator.mediaSession.metadata = null; navigator.mediaSession.playbackState = 'none'; } } catch {}
+  const o = document.getElementById('ring-overlay'); if (o) o.remove();
+}
+/* ================= 集中ロック：勉強中にほかのアプリへ行った時間は記録しない（猶予の分だけは許可） ================= */
+function lockOn(){ const st = S(); return !!(st && st.prefs.lock); }
+function handleAwayReturn(){
+  if (!T.awayAt) return; const now = Date.now(), away = now - T.awayAt; T.awayAt = null;
+  if (!(T.state === 'run' && T.phase === 'study')) { saveTimer(); return; }
+  const grace = (S().prefs.lockGrace ?? 1) * 60000; T.leaves = (T.leaves || 0) + 1;
+  if (away > grace) { const excess = away - grace, el = elapsed(); T.acc = Math.max(0, el - excess); T.since = now; T.awayMs = (T.awayMs || 0) + excess;
+    toast(`ほかのアプリを${fmtHM(Math.round(away / 60000)) || '1分'}見ていました。許可時間（${S().prefs.lockGrace ?? 1}分）をこえた${Math.round(excess / 60000) || 1}分は記録から外しました（よそ見 ${T.leaves}回目）`, 'timer', 7000); }
+  else if (away > 4000) toast(`おかえり！ 許可時間内だったので、記録はそのまま続いています（よそ見 ${T.leaves}回目）`, 'timer', 4000);
+  saveTimer(); updateTimerUI();
+}
+document.addEventListener('visibilitychange', () => {
+  if (!S() || !lockOn()) return;
+  if (document.hidden) { if (T.state === 'run' && T.phase === 'study' && !T.awayAt) { T.awayAt = Date.now(); saveTimer(); } }
+  else handleAwayReturn();
+});
+async function lockStart(){
+  try { const de = document.documentElement; if (de.requestFullscreen && !document.fullscreenElement) await de.requestFullscreen({navigationUI: 'hide'}); } catch {}
+  openMini(true);
+}
+function lockGuide(){
+  showModal(`<div class="ph"><div><span class="eyebrow">FOCUS LOCK</span><h3>スマホを「このアプリだけ」にする方法</h3></div><button class="btn sm ghost" data-act="modal-close" aria-label="閉じる">${icon('x')}</button></div>
+    <p class="note" style="margin:0 0 10px">Webサイトからは、ほかのアプリを止めることができません。でも、スマホについている機能を使うと「このアプリ以外さわれない」ようにできます。（機種によって名前や場所が少しちがいます）</p>
+    <h4 style="margin:12px 0 4px">iPhone：アクセスガイド（いちばんおすすめ）</h4>
+    <ol class="guide"><li>設定 → アクセシビリティ → <b>アクセスガイド</b> をオンにして、パスコードを決める</li><li>このアプリ（ホーム画面に追加したアプリか Safari）を開く</li><li>サイドボタン（ホームボタンのある機種はホームボタン）を<b>3回</b>押して「開始」</li><li>終わるときは、もう一度3回押してパスコードを入力</li></ol>
+    <p class="note" style="margin:4px 0 0">ほかに、設定 → スクリーンタイム →「休止時間」と「常に許可」で、勉強中も使ってよいアプリ（辞書など）だけ選んでおく方法もあります。</p>
+    <h4 style="margin:14px 0 4px">Android：アプリ固定（画面の固定）</h4>
+    <ol class="guide"><li>設定 → セキュリティ（セキュリティとプライバシー）→ その他の設定 → <b>アプリ固定</b> をオン</li><li>このアプリを開いてから「最近使ったアプリ」の画面を出す</li><li>アプリのアイコンをタップして「固定」</li><li>やめるときは、戻る＋最近使ったアプリ（またはホーム）を長押し</li></ol>
+    <p class="note" style="margin:4px 0 0">「Digital Wellbeing」の<b>集中モード</b>で、勉強中に使わせないアプリを選ぶこともできます。</p>
+    <h4 style="margin:14px 0 4px">このアプリの「集中ロック」</h4>
+    <p class="note" style="margin:0">オンにすると、勉強中は全画面のロック表示になります。ほかのアプリを開いていた時間は、決めた「許可時間」をこえた分だけ記録から外れます（辞書アプリをちょっと見る、などは許可時間内ならOK）。</p>
+    <div class="acts"><button class="btn primary" data-act="modal-close">わかった</button></div>`, {cls: 'wide'});
+}
 /* ================= パソコン・スマホの通知（アプリを開いている間。別のタブや別のアプリを見ているときに届く） ================= */
 let swReg = null;
 try { if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').then(r => { swReg = r; }).catch(() => {}); } catch {}
 const notifSupported = () => 'Notification' in window;
-function notify(title, body, tag, force){
+function notify(title, body, tag, force, extra){
   try {
     const st = S(); if (!notifSupported() || Notification.permission !== 'granted' || !st || !st.prefs.notify) return;
     if (!force && !document.hidden) return;   // 画面を見ているときはアプリの中のお知らせだけ
-    const opt = {body: String(body || '').slice(0, 140), tag: 'sh-' + (tag || 'info'), icon: 'icon-192.png', badge: 'icon-192.png', renotify: true};
+    const opt = {body: String(body || '').slice(0, 140), tag: 'sh-' + (tag || 'info'), icon: 'icon-192.png', badge: 'icon-192.png', renotify: true, ...(extra || {})};
     if (swReg && swReg.showNotification) swReg.showNotification(title, opt); else new Notification(title, opt);
   } catch {}
 }
@@ -3190,9 +3286,10 @@ function miniAct(a){
   else if (a === 'close') closeMini();
   paintMini();
 }
-async function openMini(){
+async function openMini(lock){
+  MINI.locked = !!lock;
   // パソコン（Chrome / Edge）：いつも手前に出る小さな窓
-  if ('documentPictureInPicture' in window && !/Android|iPhone|iPad/.test(navigator.userAgent)) {
+  if (!lock && 'documentPictureInPicture' in window && !/Android|iPhone|iPad/.test(navigator.userAgent)) {
     try {
       if (MINI.win && !MINI.win.closed) { MINI.win.focus(); return; }
       const w = await documentPictureInPicture.requestWindow({width: 320, height: 250});
@@ -3210,10 +3307,18 @@ async function openMini(){
       #mini-overlay .mi{font-size:13px;color:var(--mute)}#mini-overlay .ms{font-size:15px}#mini-overlay .mb{width:min(420px,86%);height:8px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden}#mini-overlay .mb i{display:block;height:100%;background:linear-gradient(90deg,#22e4ff,#a46bff)}
       #mini-overlay .mr{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;justify-content:center}#mini-overlay .mr button{border:1px solid var(--line-2);background:rgba(255,255,255,.08);color:#fff;border-radius:14px;padding:12px 18px;font-size:15px;font-family:inherit}#mini-overlay .mr button.p{background:linear-gradient(100deg,#22e4ff,#a46bff);color:#04050b;border:0;font-weight:700}
       #mini-overlay .mt2{font-size:13px;color:var(--mute);margin-top:6px}#mini-overlay .mx{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;border:1px solid var(--line-2);background:rgba(0,0,0,.4);color:#fff;border-radius:12px;padding:8px 12px;font-family:inherit}
+      #mini-overlay .mul,#mini-overlay .locknote{display:none}#mini-overlay.locked .mul{display:block}#mini-overlay.locked [data-mact="close"]{display:none}
+      #mini-overlay.locked .locknote{display:block;font-size:13px;color:#ffd66b;letter-spacing:.1em}#mini-overlay .mul.holding{background:rgba(255,194,77,.35);transition:background 1.5s}
+      #mini-overlay.locked [data-mact="finish"]{display:none}
       #mini-overlay .mclock{position:absolute;top:calc(18px + env(safe-area-inset-top));left:18px;font-family:var(--f-disp);font-size:18px;color:var(--mute)}</style>
-      <span class="mclock" data-m="clock"></span><button class="mx" data-mact="close">✕ とじる</button>${miniBody()}<p class="note" style="position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));left:0;right:0;margin:0">スマホを立てて置いておくと、時計がわりのウィジェットになります（画面はつきっぱなし）</p>`;
+      <span class="mclock" data-m="clock"></span><button class="mx" data-mact="close">✕ とじる</button><button class="mx mul" data-unlock="1">🔒 長押しでロック解除</button><div class="locknote" data-m="lock">🔒 集中ロック中</div>${miniBody()}<p class="note" style="position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));left:0;right:0;margin:0">スマホを立てて置いておくと、時計がわりのウィジェットになります（画面はつきっぱなし）</p>`;
     o.addEventListener('click', e => { const b = e.target.closest('[data-mact]'); if (b) miniAct(b.dataset.mact); });
+    let hold = null; const ub = o.querySelector('[data-unlock]');
+    const down = e => { e.preventDefault(); ub.classList.add('holding'); hold = setTimeout(() => { ub.classList.remove('holding'); closeMini(); try { if (document.fullscreenElement) document.exitFullscreen(); } catch {} toast('ロックを解除しました。タイマーは動いたままです。', 'timer'); }, 1500); };
+    const up = () => { clearTimeout(hold); ub.classList.remove('holding'); };
+    ub.addEventListener('pointerdown', down); ub.addEventListener('pointerup', up); ub.addEventListener('pointerleave', up); ub.addEventListener('pointercancel', up);
     document.body.appendChild(o); }
+  o.classList.toggle('locked', MINI.locked);
   MINI.overlay = true; paintMini(); if (!tickId) startTick();
   try { MINI.wake = await navigator.wakeLock?.request('screen'); } catch {}
 }
@@ -3280,6 +3385,7 @@ VIEWS.home = () => {
   ${showReview ? `<a class="banner" href="#review" style="text-decoration:none;color:inherit">${icon('moon')}<span style="flex:1">夜の振り返りの時間です。今日がんばったことを記録しよう。</span>${icon('chevR')}</a>` : ''}
   ${showY ? `<button class="banner" data-act="rv-yesterday" style="width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer">${icon('pen')}<span style="flex:1">昨日（${fmtMD(yk)}）の振り返りがまだです。今からでも書けます。</span>${icon('chevR')}</button>` : ''}
   ${evStatusHTML()}
+  ${planHomeHTML()}
   ${(() => { UI.homeLive = T.state !== 'idle'; return ''; })()}
   <section class="panel hero"><div class="home-hero">
     <div class="rings ${T.state !== 'idle' ? 'two' : ''}">${T.state !== 'idle' ? (() => { const D = timerDisplay(), sj = subjOf(T.subj); return `<a class="ringwrap live ${T.state === 'pause' ? 'paused' : ''}" href="#timer" id="h-ring" aria-label="計測中のタイマーを開く">${ringSVG(D.pct, 176, 12, 'hl', ['#3ee6a0', '#22e4ff'])}<div class="rc"><span class="disp" id="h-ttime">${D.time}</span><small id="h-tlabel">${T.phase === 'break' ? '休憩中' : T.state === 'pause' ? '一時停止中' : '計測中'} · ${esc(sj.name)}</small><small class="rinfo" id="h-tinfo">${esc(D.info.replace(/（.*?）/, ''))}</small></div></a>`; })() : ''}<div class="ringwrap">${ringSVG(pct, 176, 12, 'hr')}<div class="rc"><span class="disp">${th}<small style="font-size:16px;margin:0 2px">h</small>${pad2(tm)}<small style="font-size:16px;margin-left:2px">m</small></span><small>今日の勉強時間</small></div></div></div>
@@ -3351,6 +3457,12 @@ VIEWS.timer = () => {
           <p class="note" style="margin:8px 0 0">決めた時刻になったらアラームが鳴って自動で終了・記録します。一時停止した時間は記録に入りません（鳴る時刻は変わりません）。</p>` : '<p class="note" style="margin:12px 0 0">終了ボタンを押すまで計測します（最長12時間）。</p>'}
         <div style="margin-top:14px"><span class="note">終了後の休憩（カウントダウン・アラーム完了時に自動で開始）</span>
           <div class="seg" style="margin-top:6px">${[0, 5, 10, 15].map(b => `<button data-act="t-brk" data-v="${b}" class="${T.brk === b ? 'on' : ''}">${b ? b + '分' : 'なし'}</button>`).join('')}</div></div>
+        <div style="margin-top:14px"><span class="note">終わったときの合図</span>
+          <div class="seg" style="margin-top:6px">${[['loop', '止めるまで鳴らす'], ['chime', 'チャイムだけ']].map(([k, n]) => `<button data-act="t-ring" data-v="${k}" class="${(S().prefs.ring || 'loop') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+          <p class="note" style="margin:6px 0 0">「止めるまで鳴らす」は、全画面の「止める」ボタンを押すまで鳴り続けます。音楽アプリなどの音は、そのあいだ止まることが多いです。</p></div>
+        <div style="margin-top:14px"><div class="row" style="justify-content:space-between;gap:8px"><span class="note" style="margin:0">🔒 集中ロック</span><button class="btn sm ${S().prefs.lock ? 'primary' : ''}" data-act="t-lock" aria-pressed="${!!S().prefs.lock}">${S().prefs.lock ? 'オン' : 'オフ'}</button></div>
+          ${S().prefs.lock ? `<div class="row wrap" style="gap:8px;margin-top:6px;align-items:center"><span class="note" style="margin:0">ほかのアプリの許可時間</span><div class="seg">${[0, 1, 3, 5].map(g => `<button data-act="t-grace" data-v="${g}" class="${(S().prefs.lockGrace ?? 1) === g ? 'on' : ''}">${g ? g + '分' : 'なし'}</button>`).join('')}</div></div>` : ''}
+          <p class="note" style="margin:6px 0 0">オンにすると、勉強中は全画面のロック表示になり、ほかのアプリを開いていた時間（許可時間をこえた分）は記録から外れます。 <button class="linkbtn" data-act="lock-guide">スマホをこのアプリだけにする方法</button></p></div>
       </section>
       <section class="panel"><div class="ph"><h3>科目</h3><a class="btn sm ghost" href="#prefs">科目を編集</a></div>
         <div class="chips">${subs.map(s => `<button class="chip ${T.subj === s.id ? 'on' : ''}" style="--c:${s.color}" data-act="t-subj" data-v="${s.id}" ${idle ? '' : 'disabled'}><i></i>${esc(s.name)}</button>`).join('')}</div></section>
@@ -3461,7 +3573,7 @@ VIEWS.room = () => {
       <div class="seg" style="margin-bottom:12px">${[['all','すべて'],['room','部屋の専用'],['floor','家具'],['light','照明'],['small','机の上の小物'],['wall','壁'],['rug','床']].map(([k, n]) => `<button data-act="shop-cat" data-v="${k}" class="${(UI.shopCat || 'all') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
       ${(() => { const n = F_ORDER.filter(t => x.level >= F[t].lv && roomUnlocked(t) && x.coins >= costOf(t)).length; return `<p class="note" style="margin:-4px 0 10px">${n ? `<b style="color:var(--good)">今買えるもの ${n}個</b>を上に並べています。` : 'いまのコインで買えるものはありません。勉強してコインを貯めよう！'}${S().ev && S().ev.sale && S().ev.sale.until > Date.now() ? ' 🏷 <b>タイムセール中（20%OFF）</b>' : ''}</p>`; })()}
       <div class="shop">${F_ORDER.filter(t => { const c = UI.shopCat || 'all', d = F[t]; return c === 'all' || (c === 'room' ? d.room : c === 'light' ? (d.glow || t === 'garland') : c === 'wall' ? d.wall : c === 'small' ? d.small : c === 'rug' ? d.rug : !d.wall && !d.small && !d.rug); }).map(t => [t, shopRank(t, x, ent)]).sort((a, b) => a[1] - b[1]).map(([t]) => t).map(t => { const d = F[t], rlock = !roomUnlocked(t), lock = x.level < d.lv || rlock, own = st.owned[t] || 0;
-      return `<div class="item ${lock ? 'locked' : ''}"><div class="thumb">${lock ? icon('lock') : thumbSVG(t)}</div><b>${esc(d.n)}</b><div class="meta"><span>${rlock ? `${esc(ROOM_KINDS[d.room].n)}を建てると解放` : lock ? `LV${d.lv}で解放` : own ? `所持 ${own}` : d.room ? `${esc(ROOM_KINDS[d.room].n)}の家具` : '未所持'}</span><span class="disp">${!d.cost ? '無料' : costOf(t) < d.cost ? `<s class="mute">${d.cost}</s> <b style="color:var(--warn)">${costOf(t)}c</b>` : d.cost + 'c'}</span></div>
+      return `<div class="item ${lock ? 'locked' : ''}"><div class="thumb">${lock ? icon('lock') : thumbSVG(t)}</div><b>${esc(d.n)}</b><div class="meta"><span>${rlock ? (d.champ ? '👑 ランキング1位で解放' : `${esc(ROOM_KINDS[d.room].n)}を建てると解放`) : lock ? `LV${d.lv}で解放` : own ? `所持 ${own}` : d.room ? `${esc(ROOM_KINDS[d.room].n)}の家具` : '未所持'}</span><span class="disp">${!d.cost ? '無料' : costOf(t) < d.cost ? `<s class="mute">${d.cost}</s> <b style="color:var(--warn)">${costOf(t)}c</b>` : d.cost + 'c'}</span></div>
         <button class="btn sm ${lock ? '' : 'primary'}" data-act="rm-buy" data-v="${t}" ${lock || x.coins < costOf(t) ? 'disabled' : ''}>${lock ? 'ロック中' : x.coins < costOf(t) ? 'コイン不足' : own ? 'もう1つ買う' : '購入する'}</button></div>`; }).join('')}</div>`;
   if (UI.roomTab === 'wear') panel = wearPanel();
   if (UI.roomTab === 'deco') panel = `<h3 style="margin:0 0 8px;font-size:14px">壁紙</h3><div class="themes">${Object.entries(WALLS).map(([k, w]) => `<button class="theme ${room.wall === k ? 'on' : ''}" data-act="rm-wall" data-v="${k}" ${x.level < w.lv ? 'disabled' : ''}><i style="--c:${k === 'aurora' ? 'linear-gradient(135deg,#1d2a6b,#3b1f6e,#0f3a4a)' : k === 'sakura' ? 'radial-gradient(circle at 30% 40%,#ffb7d0 0 6%,transparent 7%),radial-gradient(circle at 70% 60%,#ff8fb8 0 5%,transparent 6%),#3a2033' : k === 'space' ? 'radial-gradient(circle at 70% 40%,#a46bff 0 12%,transparent 13%),radial-gradient(circle at 20% 30%,#fff 0 2%,transparent 3%),#05061a' : k === 'gold' ? 'repeating-linear-gradient(90deg,#2a2412 0 10px,#d6b25e55 10px 11px)' : k === 'garden' ? 'linear-gradient(#7cc4ff 0 45%,#24553a 45%)' : w.c}"></i>${esc(w.n)}${x.level < w.lv ? ` · LV${w.lv}` : ''}</button>`).join('')}</div>
@@ -3533,7 +3645,7 @@ function wearPanel(){
     </div></div>
     <div class="seg" style="margin:14px 0 12px">${WEAR_SLOTS.map(k => `<button data-act="wr-slot" data-v="${k}" class="${slot === k ? 'on' : ''}">${WEAR[k].n}</button>`).join('')}</div>
     ${cur.colors && cur.colors.length > 1 ? `<div class="row wrap" style="gap:10px;margin-bottom:12px"><span class="note" style="margin:0">「${esc(cur.n)}」の色</span><div class="swatches">${cur.colors.map((c, i) => `<button class="sw sm ${((L.wc || {})[slot] || 0) % cur.colors.length === i ? 'on' : ''}" style="--c:${c}" data-act="wr-color" data-v="${i}" aria-label="色${i + 1}"></button>`).join('')}</div></div>` : ''}
-    <div class="shop">${Object.entries(WEAR[slot].items).map(([k, it]) => { const lock = x.level < it.lv, own = owns(slot, k), on = L.wear[slot] === k;
+    <div class="shop">${Object.entries(WEAR[slot].items).map(([k, it]) => { const lock = x.level < it.lv || (it.champ && !champOK()), own = owns(slot, k), on = L.wear[slot] === k;
       return `<div class="item ${lock ? 'locked' : ''} ${on ? 'equipped' : ''}"><div class="thumb">${lock ? icon('lock') : personThumb({...L, wear: {...L.wear, [slot]: k}}, tStage)}</div><b>${esc(it.n)}</b><div class="meta"><span>${lock ? `LV${it.lv}で解放` : on ? '着ている' : own ? '持っている' : '未所持'}</span><span class="disp">${it.cost ? it.cost + 'c' : '無料'}</span></div>
       ${on ? `<button class="btn sm" disabled>${icon('check')}着ている</button>` : lock ? `<button class="btn sm" disabled>ロック中</button>` : own ? `<button class="btn sm primary" data-act="wr-equip" data-v="${k}">着る</button>` : `<button class="btn sm primary" data-act="wr-buy" data-v="${k}" ${x.coins < it.cost ? 'disabled' : ''}>${x.coins < it.cost ? 'コイン不足' : '買って着る'}</button>`}</div>`; }).join('')}</div>
     <p class="note" style="margin:10px 0 0">買った服は家族みんなで着られます。${stage === 0 ? '赤ちゃんは服の色だけ見た目に出ます。' : ''}</p>`;
@@ -3566,6 +3678,21 @@ function houseView(roomSel){
     ${albumHTML()}</section>`;
 }
 
+/* ---------- ランキング1位のごほうび ----------
+   今日の1位：夜8時以降に、3人以上のランキングで1時間以上勉強して1位なら +100コイン（1日1回）
+   今週の1位：日曜の夜8時以降に、3人以上のランキングで5時間以上勉強して1位なら +300コイン（週1回） */
+function rank1Check(rows){
+  const st = S(); if (!st || MODE !== 'cloud' || !rows.length || rows[0].uid !== UID) return;
+  const n = rows.filter(r => r.v > 0).length, now = new Date(), h = now.getHours(), r1 = st.r1 = st.r1 || {n: 0, days: [], weeks: []};
+  let got = 0, why = '';
+  if (UI.rankPeriod === 'day' && h >= 20 && n >= 3 && rows[0].v >= 60 && !r1.days.includes(dkey())) { r1.days.push(dkey()); r1.days = r1.days.slice(-60); got = 100; why = '今日の1位'; }
+  else if (UI.rankPeriod === 'week' && now.getDay() === 0 && h >= 20 && n >= 3 && rows[0].v >= 300 && !r1.weeks.includes(weekStart(dkey()))) { r1.weeks.push(weekStart(dkey())); r1.weeks = r1.weeks.slice(-30); got = 300; why = '今週の1位'; }
+  if (!got) return;
+  const first = !r1.n; r1.n++; addCoins(got); checkBadges(false); queueWrite('state');
+  queueOverlay(() => showModal(`<div class="celebrate">${burst()}<div class="eyebrow">CHAMPION</div><div style="font-size:54px;line-height:1.1;margin-top:6px">👑</div><h3 style="margin:6px 0">${why}、おめでとう！</h3>
+    <p class="mute" style="margin:0 0 10px;font-size:14px">${first ? '1位の特典が解放されました：ランキングのいちばん上に「ひとこと」をのせられます。家具ショップの「王者の玉座・優勝カップ・チャンピオンフラッグ」と、着せ替えの「チャンピオンの冠」も買えるようになりました！' : `これで${r1.n}回目の1位！ ランキングのいちばん上に「ひとこと」をのせられます。`}</p>
+    <div class="bigxp" style="font-size:30px">+${got} コイン</div><div class="acts" style="justify-content:center"><button class="btn primary" data-act="modal-close" autofocus>やった！</button></div></div>`));
+}
 VIEWS.rank = () => {
   const st = S(), x = stats(), today = dkey(), wk = weekStart(today), mo = monthOf(today);
   if (MODE !== 'cloud') return `<div class="pagehead"><h1>ランキング</h1></div><section class="panel"><div class="empty">${icon('users')}<br>ランキングと友達機能は、ログインして使えます。<br>今はこの端末だけに記録しています（config.js の設定を確認してください）。</div></section>`;
@@ -3576,7 +3703,8 @@ VIEWS.rank = () => {
   const gs = st.groups || [];
   if (UI.rankScope === 'group') { if (!gs.some(g => g.c === UI.rankGroup)) UI.rankGroup = gs[0] ? gs[0].c : null; pool = UI.rankGroup ? pool.filter(d => inGroup(d, UI.rankGroup)) : []; }
   const rows = pool.map(d => ({...d, v: val(d)})).sort((a, b) => b.v - a.v || (b.lv || 0) - (a.lv || 0));
-  const meIn = rows.some(r => r.uid === UID);
+  const meIn = rows.some(r => r.uid === UID), top = rows[0] && rows[0].v > 0 ? rows[0] : null, iTop = !!(top && top.uid === UID);
+  setTimeout(() => { try { rank1Check(rows); } catch {} }, 0);
   const avColor = id => ['#22e4ff','#a46bff','#3d7bff','#3ee6a0','#ffc24d','#ff6fb0','#ff9350'][hashStr(id) % 7];
   const PER = {day: ['今日', '今日の勉強時間'], week: ['今週', '今週の勉強時間（月曜から）'], month: ['今月', `${+mo.slice(5)}月の勉強時間`], total: ['累計', 'これまでの合計']};
   const sub = d => UI.rankPeriod === 'day' ? [['累計', d.tot || 0]] : UI.rankPeriod === 'total' ? [['今日', dayMin(d)]] : [['今日', dayMin(d)], ['累計', d.tot || 0]];
@@ -3587,9 +3715,12 @@ VIEWS.rank = () => {
       <p class="note" style="margin:0">${PER[UI.rankPeriod][1]}が多い順${rows.some(isLive) ? ` · <span style="color:#3ee6a0">● 勉強中 ${rows.filter(isLive).length}人</span>` : ''}</p></div>
       ${st.privacy.vis === 'none' ? '<p class="banner" style="margin:0 0 10px">ランキングを非公開にしています。ほかの人の画面にあなたは表示されません（下の設定で変更できます）。</p>' : st.privacy.vis === 'friends' ? '<p class="note" style="margin:0 0 10px">あなたの記録は「互いにフレンド」の人にだけ見えています。</p>' : ''}
       ${UI.rankScope === 'group' && gs.length ? `<div class="chips" style="margin:-2px 0 12px">${gs.map(g => `<button class="chip ${UI.rankGroup === g.c ? 'on' : ''}" style="--c:#a46bff" data-act="rank-g" data-v="${esc(g.c)}"><i></i>${esc(groupName(g.c))}</button>`).join('')}</div>` : ''}
+      ${top && !(UI.rankScope === 'group' && !gs.length) ? `<div class="champbox">${avHTML(top, 40, 'crown')}<div style="min-width:0;flex:1"><span class="eyebrow">👑 ${({day: '今日', week: '今週', month: '今月', total: '累計'})[UI.rankPeriod]}の1位 · ${esc(top.nick || 'ななしの受験生')}${iTop ? '（あなた）' : ''}</span>
+        <div class="champmsg">${top.m1 ? `「${esc(String(top.m1).slice(0, 40))}」` : iTop ? '1位のあなたは、みんなに向けて「ひとこと」を書けます！' : '1位の人は、ここにひとことを書けます'}</div>
+        ${iTop ? `<form class="row" data-form="m1" style="gap:6px;margin-top:6px"><input id="m1-in" type="text" maxlength="40" value="${esc(st.m1 || '')}" placeholder="例：今日も5時間がんばった！みんなファイト！" aria-label="1位のひとこと"><button class="btn sm primary" type="submit">のせる</button></form>` : ''}</div></div>` : ''}
       ${UI.rankScope === 'group' && !gs.length ? `<div class="empty">まだグループに入っていません。<br><a class="btn primary" href="#groups" style="margin-top:12px">${icon('plus')}グループを作る・参加する</a></div>` :
         rows.length ? `<div>${rows.map((r, i) => `<div class="rk ${i < 3 && r.v > 0 ? 'top' + (i + 1) : ''} ${r.uid === UID ? 'me' : ''}"><span class="n">${i + 1}</span>${avHTML(r, 36, isLive(r) ? 'live' : '')}
-          <div class="rk-m"><b>${esc(r.nick || 'ななしの受験生')}${r.uid === UID ? '（あなた）' : ''}</b><span class="note">${liveTag(r)}LV${r.lv || 1} · ${streakText(r)}${r.room && r.uid !== UID ? ` <button class="rk-room" data-act="see-room" data-v="${esc(r.uid)}" aria-label="${esc(r.nick || '')}の部屋を見る">${icon('eye')}部屋</button>` : ''}</span></div>
+          <div class="rk-m"><b>${i === 0 && r.v > 0 ? '👑 ' : ''}${esc(r.nick || 'ななしの受験生')}${r.uid === UID ? '（あなた）' : ''}</b><span class="note">${liveTag(r)}LV${r.lv || 1} · ${streakText(r)}${r.room && r.uid !== UID ? ` <button class="rk-room" data-act="see-room" data-v="${esc(r.uid)}" aria-label="${esc(r.nick || '')}の部屋を見る">${icon('eye')}部屋</button>` : ''}</span></div>
           <div class="rk-t"><span class="on"><small>${PER[UI.rankPeriod][0]}</small>${fmtHM(r.v)}</span>${sub(r).map(([n, v]) => `<span><small>${n}</small>${fmtHM(v)}</span>`).join('')}</div></div>`).join('')}</div>`
         : `<div class="empty">${UI.rankScope === 'friends' ? 'まだフレンドやフォロー中の人がいません。招待リンクを送るか、フレンドコードでフォロー申請しよう。' : 'まだ参加者がいません。'}</div>`}
 
@@ -3680,14 +3811,23 @@ const HELP = [
     ['休憩', 'カウントダウン・アラームが終わったあと、5〜15分の休憩を自動で始められます。休憩は記録されません。', 'timer'],
     ['環境音・BGM', '雨音・たき火・Lo-fiなどを重ねて流せます。自分の音声ファイルも追加できます。', 'timer'],
     ['1分未満は記録されない', '1分より短いセッションは記録に残りません。', ''],
+    ['終わったときの合図', '「止めるまで鳴らす」にすると、時間になったら全画面で「時間です！」と出て、「止める」を押すまでアラームが鳴り続けます（最大1分半）。音楽アプリの音は、そのあいだ止まることが多いです。アプリを開いているときに鳴ります。', 'timer'],
+    ['集中ロック', 'オンにすると勉強中は全画面のロック表示になり（解除は長押し）、ほかのアプリを開いていた時間は「許可時間」をこえた分だけ記録から外れます。スマホを本当にこのアプリだけにするには、iPhoneの「アクセスガイド」やAndroidの「アプリ固定」を使います（タイマー画面の説明を見てね）。', 'timer'],
     ['ミニ表示（ウィジェット）', 'パソコン（Chrome・Edge）では、ほかのアプリの上にずっと出ている小さなタイマー窓になります。スマホでは全画面の大きな時計になり、立てて置いておけます。', 'timer']]],
   ['ホーム', 'home', [
     ['今日の勉強時間の円', '今日の合計と、目標に対する達成率です。', 'home'],
     ['計測中の円', 'タイマーを動かしていると、今日の円のとなりにもう1つ円が出て、いま計っている時間がわかります。タップするとタイマーへ。', 'home'],
     ['連続勉強日数', `1日${STREAK_MIN}分以上勉強した日が続くと増えます。今日まだ勉強していなくても、昨日までの記録は今日の終わりまで消えません。`, 'home'],
     ['今日のミッション', '毎日4つ出ます。達成するとコインがもらえます。「夜の振り返り」は18時以降に書くと達成です。', 'home']]],
+  ['合格プラン', 'plan', [
+    ['第一志望と試験日', '志望校の中から第一志望をえらび、試験日と目標の得点率を決めます。本番まであと何日・あと何時間勉強できるかがわかります。', 'plan'],
+    ['配点', '共通テストと二次・個別試験の配点を科目ごとに入れます。よくある形のテンプレートもありますが、正しい数字は大学の募集要項で確認してね。', 'plan'],
+    ['今日のおすすめ配分', '配点が大きい科目と、模試で点が取れていない科目ほど時間を多めに、1日の目標時間を科目ごとに分けて出します。最近7日の勉強が足りない科目も教えてくれます。', 'plan'],
+    ['模試の記録', '模試の点数・判定・偏差値を記録すると、得点率のグラフになります。', 'plan'],
+    ['合格までにやること', '時期ごとのチェックリストです。自分で追加・削除もできます。', 'plan']]],
   ['目標・振り返り', 'review', [
     ['1日の目標時間', '設定で変えると、今日の目標もすぐ変わります。夜の振り返りで「明日の目標」を決めると、次の日はそちらが使われます。', 'prefs'],
+    ['下書きの自動保存', '振り返りは書いている途中でも数秒ごとに下書きとして保存されます。アプリを閉じても、次に開くと続きから書けます（ログインしていれば別の端末でも）。', 'review'],
     ['夜の振り返り', 'できたこと・反省・明日やることを書きます。「今日／昨日」を切りかえて、昨日の分もあとから書けます（夜中の4時までなら昨日のミッションも達成）。', 'review'],
     ['やることリスト', '振り返りで決めた「明日やること」は、次の日のホームにチェックリストとして出ます。', 'review'],
     ['記録・分析', '日・週・月ごとのグラフと、科目ごとの割合が見られます。', 'stats']]],
@@ -3708,6 +3848,7 @@ const HELP = [
     ['行事', 'お正月・七夕・ハロウィン・クリスマスなどの日や、入試の「あと100日・30日・7日・1日」にも特別なイベントがあります。', 'exams']]],
   ['ランキング・フォロー・グループ', 'rank', [
     ['ランキング', '今日・今週・今月・累計で並べかえられます。「友達／グループ／全員」で範囲を切りかえます。', 'rank'],
+    ['ランキング1位の特典', '1位の人には👑がつき、ランキングのいちばん上に「ひとこと」をのせられます。夜8時以降に今日の1位（3人以上・1時間以上）なら+100コイン、日曜の夜に今週の1位（3人以上・5時間以上）なら+300コイン。はじめて1位をとると、王者の玉座・優勝カップ・チャンピオンフラッグ・チャンピオンの冠が買えるようになります。', 'rank'],
     ['公開範囲', '「全員」「互いにフレンドのみ」「非公開」から選べます。非公開でもチャットやフォローは使えます。', 'rank'],
     ['フォローとフレンド', 'フレンドコードでフォロー申請 → 相手が承認するとフォローできます。承認した人には「フォローバックしますか？」と出て、お互いにフォローすると「フレンド」になります。', 'rank'],
     ['招待リンク', '招待リンクから登録した人のフォローは自動で承認されます（フォローバックするかは自分で選べます）。', 'rank'],
@@ -3747,6 +3888,112 @@ VIEWS.help = () => {
   ${faq.length ? `<section class="panel helpsec" id="help-faq"><div class="ph"><h2>${icon('help')} よくある質問</h2></div>${faq.map(([q, a]) => `<details class="rv helpitem" ${qy ? 'open' : ''}><summary><b>Q. ${esc(q)}</b></summary><p style="margin:8px 0 0;font-size:14px;line-height:1.7">A. ${esc(a)}</p></details>`).join('')}</section>` : ''}
   ${!secs.length && !faq.length ? '<section class="panel"><div class="empty">見つかりませんでした。ちがう言葉でさがしてみてください。</div></section>' : ''}`;
 };
+/* ================= 合格プラン：志望校を決めて、配点・模試・逆算で「何をどれだけやるか」をはっきりさせる ================= */
+const PLAN_TPL = {
+  kokubun: ['国公立・文系の例', {en: [200, 150], ja: [200, 150], ma: [200, 100], jh: [100, 0], wh: [100, 0], bi: [100, 0], it: [100, 0]}],
+  kokuri: ['国公立・理系の例', {en: [200, 150], ja: [200, 0], ma: [200, 200], ph: [100, 100], ch: [100, 100], ge: [100, 0], it: [100, 0]}],
+  shibun: ['私立・文系3教科の例', {en: [0, 150], ja: [0, 100], jh: [0, 100]}],
+  shiri: ['私立・理系3教科の例', {en: [0, 100], ma: [0, 150], ch: [0, 150]}]
+};
+const PLAN_CHECK = [
+  ['基礎（〜夏）', ['英単語帳を1周する', '英文法の問題集を1周する', '数学の教科書・基本例題を全部解けるようにする', '古文単語・古典文法を覚える', '理科・社会の教科書を1回通して読む']],
+  ['実戦（秋）', ['共通テスト形式の問題を時間を計って解く', '志望校の過去問を1年分解いて、出題の傾向を知る', '苦手科目の「まちがいノート」を作る', '模試の復習をその週のうちに終える']],
+  ['仕上げ（冬）', ['共通テストの過去問・予想問題を本番と同じ時間で解く', '志望校の過去問を5年分解く', '併願校を決める', '出願書類・受験料の準備をする']],
+  ['直前', ['まちがいノートで総復習する', '本番と同じ時間に起きる生活リズムにする', '受験票・会場・交通手段を確認する', '睡眠と食事で体調をととのえる']]
+];
+function PL(){ const st = S(); if (!st.plan || typeof st.plan !== 'object') st.plan = {}; const p = st.plan;
+  p.info = p.info || {}; p.mocks = Array.isArray(p.mocks) ? p.mocks : []; p.dream = p.dream || '';
+  if (!Array.isArray(p.check)) p.check = PLAN_CHECK.flatMap(([ph, items], pi) => items.map(t => ({id: uid6(), t, done: false, ph: pi})));
+  if (!st.targets.some(t => t.id === p.main)) p.main = st.targets[0] ? st.targets[0].id : null;
+  return p; }
+const planInfo = id => { const p = PL(); if (!p.info[id]) p.info[id] = {exam: '', date: '', goalK: 75, goalN: 65, pts: {}}; return p.info[id]; };
+function planDate(inf){ if (inf.date) return inf.date; const ex = S().exams.find(e => e.id === inf.exam); return ex ? ex.date : ''; }
+const mockRate = (m, sid) => { const v = m.sc && m.sc[sid]; return v && v[1] > 0 ? clamp(v[0] / v[1], 0, 1) : null; };
+const mockTotal = m => { let g = 0, mx = 0; for (const [a, b] of Object.values(m.sc || {})) if (b > 0) { g += a; mx += b; } return mx ? g / mx : null; };
+function planSubjects(inf){ return S().subjects.filter(sj => { const v = inf.pts[sj.id]; return v && (v[0] > 0 || v[1] > 0); }); }
+function latestRate(sid){ const ms = PL().mocks.slice().sort((a, b) => b.date.localeCompare(a.date)); for (const m of ms) { const r = mockRate(m, sid); if (r != null) return r; } return null; }
+// 今日のおすすめ配分：配点が大きいほど、模試の点が低いほど、時間を多めに
+function planAlloc(inf, goal){
+  const subs = planSubjects(inf); if (!subs.length) return [];
+  const w = subs.map(sj => { const [k, n] = inf.pts[sj.id], r = latestRate(sj.id); return {sj, pts: k + n, rate: r, w: (k + n) * (1.25 - (r == null ? .5 : r))}; });
+  const tot = w.reduce((a, x) => a + x.w, 0) || 1;
+  const since = addDays(dkey(), -6), done = {}; for (const ss of stats().sessions) if (ss.d >= since) done[ss.s] = (done[ss.s] || 0) + ss.m;
+  const all7 = Object.values(done).reduce((a, b) => a + b, 0) || 0;
+  return w.map(x => ({...x, min: Math.max(5, Math.round(goal * x.w / tot / 5) * 5), share: x.w / tot, did7: done[x.sj.id] || 0, didShare: all7 ? (done[x.sj.id] || 0) / all7 : 0})).sort((a, b) => b.min - a.min);
+}
+function mockChart(ms, goal){
+  const W = 340, H = 150, L = 30, B = 22, T0 = 12, R = 8, n = ms.length, xp = i => L + (W - L - R) * (n === 1 ? .5 : i / (n - 1)), yp = v => T0 + (H - T0 - B) * (1 - v / 100);
+  let g = ''; for (const v of [0, 25, 50, 75, 100]) g += `<line x1="${L}" x2="${W - R}" y1="${yp(v)}" y2="${yp(v)}" stroke="rgba(255,255,255,.07)"/><text x="${L - 6}" y="${yp(v) + 4}" text-anchor="end" font-size="10" fill="var(--mute)">${v}</text>`;
+  if (goal) g += `<line x1="${L}" x2="${W - R}" y1="${yp(goal)}" y2="${yp(goal)}" stroke="#ffc24d" stroke-dasharray="5 4"/><text x="${W - R}" y="${yp(goal) - 4}" text-anchor="end" font-size="10" fill="#ffc24d">目標 ${goal}%</text>`;
+  const pts = ms.map((m, i) => [xp(i), yp(Math.round(mockTotal(m) * 100))]);
+  g += `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="url(#mkg)" stroke-width="3" stroke-linejoin="round"/>` + pts.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="4" fill="#22e4ff"/><text x="${x}" y="${y - 8}" text-anchor="middle" font-size="10" fill="#e8eeff">${Math.round(mockTotal(ms[i]) * 100)}</text><text x="${x}" y="${H - 6}" text-anchor="middle" font-size="9.5" fill="var(--mute)">${fmtMD(ms[i].date)}</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" class="achsvg" role="img" aria-label="模試の得点率の推移"><defs><linearGradient id="mkg" x1="0" x2="1"><stop offset="0" stop-color="#22e4ff"/><stop offset="1" stop-color="#a46bff"/></linearGradient></defs>${g}</svg>`;
+}
+VIEWS.plan = () => {
+  const st = S(), p = PL(), today = dkey();
+  if (!st.targets.length) return `<div class="pagehead"><div><span class="eyebrow">ROAD TO 合格</span><h1>合格プラン</h1></div></div><section class="panel"><div class="empty">まず志望校を登録しよう。<br><a class="btn primary" href="#exams" style="margin-top:12px">${icon('plus')}志望大学を登録する</a></div></section>`;
+  const t = st.targets.find(x => x.id === p.main) || st.targets[0], inf = planInfo(t.id), date = planDate(inf), left = date ? daysBetween(today, date) : null;
+  const subs = planSubjects(inf), goal = goalFor(today), alloc = planAlloc(inf, goal);
+  const ms = p.mocks.slice().sort((a, b) => a.date.localeCompare(b.date)), last = ms[ms.length - 1], lastRate = last ? mockTotal(last) : null;
+  const sumK = subs.reduce((a, sj) => a + inf.pts[sj.id][0], 0), sumN = subs.reduce((a, sj) => a + inf.pts[sj.id][1], 0);
+  const doneN = p.check.filter(c => c.done).length;
+  const judgeC = j => ({A: '#3ee6a0', B: '#22e4ff', C: '#ffc24d', D: '#ff9350', E: '#ff5c7a'})[j] || 'var(--mute)';
+  return `<div class="pagehead"><div><span class="eyebrow">ROAD TO 合格</span><h1>合格プラン</h1></div><a class="btn sm ghost" href="#exams">${icon('pen')}志望校を編集</a></div>
+  <section class="panel"><div class="note" style="margin:0 0 6px">第一志望をえらぶ</div><div class="chips">${st.targets.map(x => `<button class="chip ${x.id === t.id ? 'on' : ''}" style="--c:#ffc24d" data-act="pl-main" data-v="${x.id}"><i></i>${esc(x.univ)}${x.fac ? ' ' + esc(x.fac) : ''}</button>`).join('')}</div></section>
+  <section class="panel hero plancard"><div class="row wrap" style="gap:18px;align-items:center">
+    <div style="flex:1;min-width:200px"><span class="eyebrow">🎯 第一志望</span><h2 style="margin:4px 0">${esc(t.univ)} <small style="font-size:15px;color:var(--mute)">${esc(t.fac || '')}</small></h2>
+      <div class="row wrap" style="gap:6px">${left != null ? `<span class="pill ${left <= 30 ? 'warn' : 'cy'}">本番まで ${left < 0 ? '終了' : left + '日'}</span>` : '<span class="pill">試験日を選んでね</span>'}${lastRate != null ? `<span class="pill">最新模試 ${Math.round(lastRate * 100)}%</span>` : ''}${last && last.judge ? `<span class="pill" style="color:${judgeC(last.judge)};border-color:${judgeC(last.judge)}">判定 ${last.judge}</span>` : ''}</div></div>
+    <div class="kv" style="text-align:right"><span class="k">目標との差（得点率）</span><span class="v" style="font-size:26px;color:${lastRate == null ? 'var(--mute)' : lastRate * 100 >= inf.goalK ? '#3ee6a0' : '#ffc24d'}">${lastRate == null ? '—' : (lastRate * 100 >= inf.goalK ? '+' : '') + Math.round(lastRate * 100 - inf.goalK) + '<small>pt</small>'}</span><span class="note">目標 ${inf.goalK}%${sumN ? ` / 二次 ${inf.goalN}%` : ''}</span></div></div>
+    ${left != null && left > 0 ? `<p class="note" style="margin:10px 0 0">1日の目標 ${fmtHM(goal)} を続けると、本番までにあと <b style="color:var(--ink)">約${Math.round(goal * left / 60).toLocaleString()}時間</b> 勉強できます。</p>` : ''}
+    <form class="row wrap" data-form="pl-info" style="gap:8px;margin-top:12px;align-items:flex-end">
+      <label class="fld" style="flex:1;min-width:150px">試験日<select id="pl-exam"><option value="">（日付を直接入れる）</option>${st.exams.map(e => `<option value="${e.id}" ${inf.exam === e.id ? 'selected' : ''}>${esc(e.name)}（${fmtMD(e.date)}）</option>`).join('')}</select></label>
+      <label class="fld" style="width:150px">日付<input id="pl-date" type="date" value="${esc(inf.exam ? '' : inf.date || '')}"></label>
+      <label class="fld" style="width:120px">共通テスト目標%<input id="pl-gk" type="number" min="0" max="100" inputmode="numeric" value="${inf.goalK}"></label>
+      <label class="fld" style="width:110px">二次目標%<input id="pl-gn" type="number" min="0" max="100" inputmode="numeric" value="${inf.goalN}"></label>
+      <button class="btn primary" type="submit">${icon('check')}保存</button></form></section>
+
+  <div class="grid2">
+  <section class="panel"><div class="ph"><div><span class="eyebrow">TODAY</span><h2>今日のおすすめ配分</h2></div><span class="pill">${fmtHM(goal)}</span></div>
+    ${alloc.length ? `<div class="stack" style="gap:10px">${alloc.map(a => `<div><div class="row" style="justify-content:space-between;font-size:13px"><span><span class="dot" style="--c:${a.sj.color};display:inline-block;margin-right:6px"></span><b>${esc(a.sj.name)}</b> <span class="note">配点${a.pts}${a.rate != null ? ` · 模試${Math.round(a.rate * 100)}%` : ''}</span></span><b class="disp">${fmtHM(a.min)}</b></div>
+      <div class="bar" style="margin-top:4px"><i style="width:${(a.share * 100).toFixed(1)}%;background:${a.sj.color}"></i></div>
+      <div class="note" style="margin-top:2px">最近7日：${fmtHM(a.did7)}${a.didShare + .08 < a.share ? ' <b style="color:#ffc24d">← もっと時間をかけよう</b>' : ''}</div></div>`).join('')}</div>
+      <p class="note" style="margin:10px 0 0">配点が大きい科目と、模試で点が取れていない科目ほど、時間を多めにしています。</p>
+      <a class="btn sm primary" href="#timer" style="margin-top:10px">${icon('play')}${esc(alloc[0].sj.name)}から始める</a>`
+      : '<div class="empty">下の「配点」を入れると、科目ごとのおすすめ時間が出ます。</div>'}</section>
+
+  <section class="panel"><div class="ph"><div><span class="eyebrow">POINTS</span><h2>配点</h2></div><span class="note">共通 ${sumK} / 二次 ${sumN}</span></div>
+    <div class="chips" style="margin-bottom:10px">${Object.entries(PLAN_TPL).map(([k, [n]]) => `<button class="chip" style="--c:#a46bff" data-act="pl-tpl" data-v="${k}"><i></i>${n}</button>`).join('')}</div>
+    <form data-form="pl-pts"><div class="pttable"><div class="ptrow head"><span>科目</span><span>共通テスト</span><span>二次・個別</span></div>
+      ${st.subjects.filter(sj => !sj.hidden && sj.id !== 'ot').map(sj => { const v = inf.pts[sj.id] || [0, 0]; return `<div class="ptrow"><span><span class="dot" style="--c:${sj.color};display:inline-block;margin-right:6px"></span>${esc(sj.name)}</span><input type="number" min="0" max="1000" inputmode="numeric" data-pk="${sj.id}" value="${v[0] || ''}" placeholder="0" aria-label="${esc(sj.name)} 共通テストの配点"><input type="number" min="0" max="1000" inputmode="numeric" data-pn="${sj.id}" value="${v[1] || ''}" placeholder="0" aria-label="${esc(sj.name)} 二次の配点"></div>`; }).join('')}</div>
+      <button class="btn sm primary" type="submit" style="margin-top:10px">${icon('check')}配点を保存</button></form>
+    <p class="note" style="margin:8px 0 0">テンプレートはあくまで例です。正しい配点は、${esc(t.univ)}の募集要項（学部ごと）で確認して入れてね。</p></section>
+  </div>
+
+  <section class="panel"><div class="ph"><div><span class="eyebrow">MOCK EXAMS</span><h2>模試の記録</h2></div><button class="btn sm ${UI.mockAdd ? '' : 'primary'}" data-act="pl-mockadd">${UI.mockAdd ? 'とじる' : icon('plus') + '記録する'}</button></div>
+    ${UI.mockAdd ? `<form class="stack mockform" data-form="pl-mock" style="gap:10px;margin-bottom:14px"><div class="row wrap" style="gap:8px"><label class="fld" style="width:150px">日付<input id="mk-date" type="date" value="${today}"></label><label class="fld" style="flex:1;min-width:150px">模試の名前<input id="mk-name" type="text" maxlength="30" placeholder="例：共通テスト模試"></label>
+      <label class="fld" style="width:110px">${esc(t.univ).slice(0, 8)}の判定<select id="mk-judge"><option value="">—</option>${['A','B','C','D','E'].map(j => `<option>${j}</option>`).join('')}</select></label><label class="fld" style="width:100px">偏差値<input id="mk-dev" type="number" step="0.1" inputmode="decimal" placeholder="任意"></label></div>
+      <div class="pttable"><div class="ptrow head"><span>科目</span><span>とった点</span><span>満点</span></div>${(subs.length ? subs : st.subjects.filter(sj => !sj.hidden && sj.id !== 'ot').slice(0, 5)).map(sj => `<div class="ptrow"><span>${esc(sj.name)}</span><input type="number" min="0" inputmode="numeric" data-mg="${sj.id}" aria-label="${esc(sj.name)}の点"><input type="number" min="1" inputmode="numeric" data-mm="${sj.id}" value="${(inf.pts[sj.id] && inf.pts[sj.id][0]) || 100}" aria-label="${esc(sj.name)}の満点"></div>`).join('')}</div>
+      <button class="btn primary" type="submit">${icon('check')}模試を記録</button></form>` : ''}
+    ${ms.length ? `${ms.length >= 2 ? mockChart(ms, inf.goalK) : ''}<div class="list">${ms.slice().reverse().map(m => { const r = mockTotal(m); return `<div class="li"><div class="t"><b>${esc(m.name || '模試')}${m.judge ? ` <span class="pill" style="color:${judgeC(m.judge)};border-color:${judgeC(m.judge)}">${m.judge}判定</span>` : ''}</b><span>${fmtDate(m.date)} · ${r != null ? Math.round(r * 100) + '%' : '—'}${m.dev ? ` · 偏差値 ${m.dev}` : ''} · ${Object.entries(m.sc || {}).map(([sid, [a, b]]) => `${esc(subjOf(sid).name)} ${a}/${b}`).join('、')}</span></div><button class="btn sm ghost" data-act="pl-mockdel" data-v="${m.id}" aria-label="削除">${icon('trash')}</button></div>`; }).join('')}</div>`
+      : '<div class="empty">模試を受けたら記録しよう。得点率のグラフと、科目ごとのおすすめ時間に反映されます。</div>'}</section>
+
+  <div class="grid2">
+  <section class="panel"><div class="ph"><div><span class="eyebrow">CHECKLIST</span><h2>合格までにやること</h2></div><span class="pill ${doneN === p.check.length ? 'good' : ''}">${doneN}/${p.check.length}</span></div>
+    <div class="bar" style="margin:0 0 12px"><i style="width:${p.check.length ? (doneN / p.check.length * 100).toFixed(1) : 0}%"></i></div>
+    ${PLAN_CHECK.map(([ph], pi) => { const items = p.check.filter(c => c.ph === pi); return items.length ? `<h3 style="margin:10px 0 4px;font-size:14px">${esc(ph)}</h3>${items.map(c => `<label class="chk"><input type="checkbox" data-act="pl-chk" data-v="${c.id}" ${c.done ? 'checked' : ''}><span class="${c.done ? 'done' : ''}">${esc(c.t)}</span><button type="button" class="btn sm ghost" data-act="pl-chkdel" data-v="${c.id}" aria-label="削除">${icon('x')}</button></label>`).join('')}` : ''; }).join('')}
+    <form class="row" data-form="pl-chkadd" style="gap:6px;margin-top:10px"><select id="pl-ph" aria-label="時期">${PLAN_CHECK.map(([ph], i) => `<option value="${i}">${esc(ph)}</option>`).join('')}</select><input id="pl-chkt" type="text" maxlength="50" placeholder="やることを追加" style="flex:1;min-width:0"><button class="btn sm primary" type="submit">${icon('plus')}</button></form></section>
+  <section class="panel"><div class="ph"><div><span class="eyebrow">DREAM</span><h2>合格したらやりたいこと</h2></div></div>
+    <textarea id="pl-dream" rows="6" maxlength="400" placeholder="例：友達と旅行に行く／サークルに入る／一人暮らしの部屋をかざる">${esc(p.dream)}</textarea>
+    <p class="note" style="margin:6px 0 0">つらいときに見返そう。ホームにもときどき表示されます。</p></section>
+  </div>`;
+};
+// ホームの小さなカード
+function planHomeHTML(){
+  const st = S(); if (!st.plan || !st.targets.length) return ''; const p = PL(), t = st.targets.find(x => x.id === p.main); if (!t) return '';
+  const inf = planInfo(t.id), date = planDate(inf), left = date ? daysBetween(dkey(), date) : null, al = planAlloc(inf, goalFor(dkey())).slice(0, 3);
+  return `<a class="panel planhome" href="#plan"><div class="row wrap" style="gap:10px;align-items:center"><span style="font-size:24px">🎯</span><div style="flex:1;min-width:0"><b>${esc(t.univ)}${left != null && left >= 0 ? ` まであと${left}日` : ''}</b>
+    <div class="note">${al.length ? '今日のおすすめ：' + al.map(a => `${esc(a.sj.name)} ${fmtHM(a.min)}`).join('・') : '配点を入れると、今日のおすすめ配分が出ます'}${p.dream && hashStr(dkey()) % 3 === 0 ? `<br>💭 ${esc(p.dream.split('\n')[0].slice(0, 40))}` : ''}</div></div>${icon('chevR')}</div></a>`;
+}
 VIEWS.exams = () => {
   const st = S(), today = dkey();
   const list = st.exams.slice().sort((a, b) => a.date.localeCompare(b.date));
@@ -3765,7 +4012,8 @@ VIEWS.exams = () => {
     <section class="panel"><div class="ph"><h2>志望大学・学部</h2></div>
       <div class="list">${st.targets.map((t, i) => `<div class="li"><span class="disp dim" style="width:20px">${i + 1}</span><div class="t"><b>${esc(t.univ)}</b><span>${t.fac ? esc(t.fac) : '学部未設定'}</span></div><button class="btn sm ghost" data-act="tg-del" data-v="${t.id}" aria-label="削除">${icon('trash')}</button></div>`).join('') || '<div class="empty">志望校を登録すると、目標がはっきりします。</div>'}</div>
       <form class="row wrap" data-form="tg-add" style="margin-top:12px;gap:8px"><input id="tg-univ" type="text" placeholder="大学名" maxlength="30" style="flex:1;min-width:130px" aria-label="大学名"><input id="tg-fac" type="text" placeholder="学部・学科" maxlength="30" style="flex:1;min-width:130px" aria-label="学部"><button class="btn primary" type="submit">${icon('plus')}追加</button></form>
-      <p class="note" style="margin:10px 0 0">志望校は他の人には公開されません。</p></section>
+      <p class="note" style="margin:10px 0 0">志望校は他の人には公開されません。</p>
+      <a class="btn primary" href="#plan" style="margin-top:10px">🎯 合格プランを作る</a></section>
   </div>`;
 };
 function liveCountdown(date){
@@ -3779,12 +4027,27 @@ function dayInfo(k){ const x = stats(); return {total: x.byDay[k] || 0, goal: go
 function rvDraft(){
   const st = S(), k = rvDay(), rv = data.months[monthOf(k)]?.reviews?.[k] || {};
   if (UI.review && UI.review.day === k) return UI.review;
-  const info = dayInfo(k), pct = info.goal ? info.total / info.goal : 0;
+  // 書きかけの下書きがあれば、それを続きから（保存した振り返りより新しいときだけ）
+  const dft = (st.rvDrafts || {})[k];
+  if (dft && dft.d && (dft.at || 0) > (rv.edited || rv.at || 0)) { UI.review = JSON.parse(JSON.stringify(dft.d)); UI.review.day = k; UI.rvSaved = JSON.stringify(dft.d); UI.rvDraftAt = dft.at; UI.rvRestored = k; return UI.review; }
+  const info = dayInfo(k), pct = info.goal ? info.total / info.goal : 0; UI.rvSaved = null;
   UI.review = {day: k, ach: rv.ach != null ? rv.ach : Math.min(100, Math.round(pct * 10) * 10), focus: rv.focus || 0, mood: rv.mood != null ? rv.mood : -1,
     did: rv.did || '', bad: rv.bad || '', improve: rv.improve || '', tomorrow: rv.tomorrow || '', tg: rv.tg || st.dailyGoal,
     todo: Array.isArray(rv.todo) && rv.todo.length ? rv.todo.map(t => ({t: t.t, done: !!t.done})) : [{t: '', done: false}]};
   return UI.review;
 }
+// 下書きの自動保存（数秒ごと・画面を離れるとき）。ログインしていれば別の端末でも続きが書けます
+function saveRvDraft(){
+  const d = UI.review, st = S(); if (!d || !st || route() !== 'review') return; syncRvDraft();
+  const j = JSON.stringify(d); if (UI.rvSaved == null) { UI.rvSaved = j; return; } if (j === UI.rvSaved) return; UI.rvSaved = j;
+  st.rvDrafts = st.rvDrafts || {}; st.rvDrafts[d.day] = {d: JSON.parse(j), at: Date.now()};
+  for (const k of Object.keys(st.rvDrafts).sort().slice(0, -5)) delete st.rvDrafts[k];
+  UI.rvDraftAt = Date.now(); queueWrite('state', 2500); const el = $('#rv-dstat'); if (el) el.textContent = `下書きを自動保存しました（${hmOf(UI.rvDraftAt)}）`;
+}
+setInterval(() => { try { saveRvDraft(); } catch {} }, 3000);
+document.addEventListener('visibilitychange', () => { if (document.hidden) try { saveRvDraft(); } catch {} });
+window.addEventListener('hashchange', () => stashRvDraft(), true);
+function stashRvDraft(){ try { const d = UI.review, st = S(); if (!d || UI.rvSaved == null) return; syncRvDraft(); const j = JSON.stringify(d); if (j === UI.rvSaved) return; st.rvDrafts = st.rvDrafts || {}; st.rvDrafts[d.day] = {d: JSON.parse(j), at: Date.now()}; queueWrite('state', 1000); } catch {} }
 function syncRvDraft(){
   const d = UI.review; if (!d) return; const v = id => { const el = $('#' + id); return el ? el.value : null; };
   for (const [k, id] of [['did','rv-did'],['bad','rv-bad'],['improve','rv-imp'],['tomorrow','rv-tom']]) { const x = v(id); if (x !== null) d[k] = x; }
@@ -3869,6 +4132,7 @@ VIEWS.review = () => {
       <div class="stack" style="gap:8px">${d.todo.map((t, i) => `<div class="row" style="gap:8px"><input id="rv-todo-${i}" type="text" maxlength="60" value="${esc(t.t)}" placeholder="例：英単語 p.40〜60" aria-label="やること${i + 1}"><button type="button" class="btn sm ghost" data-act="rv-todo-del" data-v="${i}" aria-label="削除">${icon('x')}</button></div>`).join('')}</div>
       ${d.todo.length < 8 ? `<button type="button" class="btn sm" data-act="rv-todo-add" style="margin-top:8px">${icon('plus')}追加</button>` : ''}
       <p class="note" style="margin:6px 0 0">ここに書いたことは、次の日のホーム画面にチェックリストとして出ます。</p></div>
+    <p class="note" id="rv-dstat" style="margin:0">${UI.rvRestored === k ? `書きかけの下書きを読みこみました（${hmOf(UI.rvDraftAt)} 保存）。` : '書いている内容は下書きとして自動で保存されます。'}${UI.rvRestored === k ? ' <button type="button" class="linkbtn" data-act="rv-dft-del">下書きを捨てる</button>' : ''}</p>
     <div class="row wrap" style="gap:10px"><button class="btn primary big" type="submit" style="flex:1">${icon('check')}${saved ? '変更を保存' : '振り返りを保存'}</button>${saved ? `<button type="button" class="btn danger" data-act="rv-del" data-v="${k}">${icon('trash')}この日の振り返りを削除</button>` : ''}</div>
   </form>
   <div class="grid2">
@@ -4199,7 +4463,7 @@ const ACT = {
   more(){
     if ($('#sheet')) { $('#sheet').remove(); return; }
     const el = document.createElement('div');
-    el.innerHTML = `<div class="scrim" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-label="メニュー"><div class="sheet-grid">${(() => { const nc = notifCounts(); return ['rank','groups','chat','exams','review','badges','prefs','help'].map(k => `<a href="#${k}" data-act="sheet-close">${icon(ROUTES[k][1])}${ROUTES[k][0]}${k === 'chat' ? nbadge(nc.chat, '未読のチャット') : k === 'rank' ? nbadge(nc.rank, 'フォロー申請') : ''}</a>`).join(''); })()}</div></div>`;
+    el.innerHTML = `<div class="scrim" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-label="メニュー"><div class="sheet-grid">${(() => { const nc = notifCounts(); return ['rank','groups','chat','plan','exams','review','badges','prefs','help'].map(k => `<a href="#${k}" data-act="sheet-close">${icon(ROUTES[k][1])}${ROUTES[k][0]}${k === 'chat' ? nbadge(nc.chat, '未読のチャット') : k === 'rank' ? nbadge(nc.rank, 'フォロー申請') : ''}</a>`).join(''); })()}</div></div>`;
     el.id = 'sheet'; document.body.appendChild(el);
   },
   'av-save'(){ saveAvatar(); },
@@ -4207,6 +4471,12 @@ const ACT = {
   'spin-turn'(b){ UI.spinA = (UI.spinA || 0) + (+b.dataset.v) * Math.PI / 4; spinPaint(); },
   'spin-auto'(b){ UI.spinAuto = !UI.spinAuto; b.classList.toggle('primary', UI.spinAuto); b.classList.toggle('ghost', !UI.spinAuto); b.textContent = UI.spinAuto ? '止める' : '回す'; spinStart(); },
   'spin-pose'(b){ UI.spinPose = b.dataset.v; b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); spinPaint(); spinStart(); },
+  'pl-main'(b){ PL().main = b.dataset.v; queueWrite('state'); render(); },
+  'pl-tpl'(b){ const [n, pts] = PLAN_TPL[b.dataset.v], p = PL(), inf = planInfo(p.main); confirmBox(`「${n}」を入れますか？`, '今の配点は上書きされます。あとで大学の募集要項を見て、正しい数字に直してね。', '入れる', () => { inf.pts = {}; for (const [k, v] of Object.entries(pts)) if (S().subjects.some(sj => sj.id === k)) inf.pts[k] = v.slice(); queueWrite('state'); render(); }); },
+  'pl-mockadd'(){ UI.mockAdd = !UI.mockAdd; render(); },
+  'pl-mockdel'(b){ confirmBox('この模試の記録を消しますか？', '', '消す', () => { const p = PL(); p.mocks = p.mocks.filter(m => m.id !== b.dataset.v); queueWrite('state'); render(); }, true); },
+  'pl-chk'(b){ const c = PL().check.find(x => x.id === b.dataset.v); if (c) { c.done = b.checked; queueWrite('state'); if (c.done) toast(`「${c.t}」クリア！`, 'check', 2500); setTimeout(render, 250); } },
+  'pl-chkdel'(b){ const p = PL(); p.check = p.check.filter(x => x.id !== b.dataset.v); queueWrite('state'); render(); },
   'help-jump'(b){ setTimeout(() => { const el = document.getElementById('help-' + b.dataset.v); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 30); },
   'sheet-close'(){ $('#sheet')?.remove(); },
   'modal-close'(){ closeModal(); },
@@ -4216,6 +4486,11 @@ const ACT = {
   't-mode'(b){ T.mode = b.dataset.v; if (T.mode === 'al' && !alarmAtFor(T.alarm)) T.alarm = defAlarmHM(60); saveTimer(); render(); },
   't-alpre'(b){ T.alarm = defAlarmHM(+b.dataset.v); saveTimer(); render(); },
   't-preset'(b){ T.target = +b.dataset.v; saveTimer(); render(); },
+  't-ring'(b){ S().prefs.ring = b.dataset.v; queueWrite('state'); render(); if (b.dataset.v === 'loop') { startRing('お試し', 'こんなふうに鳴ります。「止める」で止まります。'); } },
+  't-lock'(){ const st = S(); st.prefs.lock = !st.prefs.lock; if (st.prefs.lockGrace == null) st.prefs.lockGrace = 1; queueWrite('state'); render(); toast(st.prefs.lock ? '集中ロックをオンにしました。次に「開始」を押すとロックがかかります。' : '集中ロックをオフにしました。', 'timer', 4000); if (st.prefs.lock && T.state === 'run' && T.phase === 'study') lockStart(); },
+  't-grace'(b){ S().prefs.lockGrace = +b.dataset.v; queueWrite('state'); render(); },
+  'lock-guide'(){ lockGuide(); },
+  'ring-stop'(){ stopRing(); },
   't-brk'(b){ T.brk = +b.dataset.v; saveTimer(); render(); },
   't-subj'(b){ T.subj = b.dataset.v; saveTimer(); render(); },
   snd(b){ AudioEng.toggle(b.dataset.snd); },
@@ -4235,13 +4510,14 @@ const ACT = {
     showModal(`<h3>${who === 'buddy' ? 'ルームメイト' : who === 'partner' ? 'パートナー' : '子ども'}の名前</h3><form class="stack" data-form="buddy-name" style="gap:12px"><input id="bn-name" type="text" maxlength="12" value="${esc(whoName(who))}" aria-label="名前" autofocus><div class="acts"><button class="btn ghost" type="button" data-act="modal-close">やめる</button><button class="btn primary" type="submit">決定</button></div></form>`); },
   'rv-tab'(b){ syncRvDraft(); UI.rvTab = b.dataset.v; render(); },
   'rv-month'(b){ UI.rvMonth = addMonths(UI.rvMonth || monthOf(dkey()), +b.dataset.v); render(); },
-  'rv-edit'(b){ UI.rvDate = b.dataset.v === dkey() ? null : b.dataset.v; UI.review = null; UI.rvTab = 'write'; render(); window.scrollTo(0, 0); },
-  'rv-today'(){ UI.rvDate = null; UI.review = null; render(); },
+  'rv-edit'(b){ UI.rvDate = b.dataset.v === dkey() ? null : b.dataset.v; stashRvDraft(); UI.review = null; UI.rvTab = 'write'; render(); window.scrollTo(0, 0); },
+  'rv-today'(){ UI.rvDate = null; stashRvDraft(); UI.review = null; render(); },
   'mini-open'(){ openMini(); },
   'notif-toggle'(){ notifToggle(); },
   'notif-test'(){ notify('🔔 テスト通知', 'こんなふうにお知らせが届きます。', 'test', true); if (!(S().prefs.notify && notifSupported() && Notification.permission === 'granted')) toast('先に通知をオンにしてください。', 'x'); },
-  'rv-yesterday'(){ UI.rvDate = addDays(dkey(), -1); UI.review = null; UI.rvTab = 'write'; location.hash = '#review'; },
-  'rv-day'(b){ UI.rvDate = b.dataset.v === '-1' ? addDays(dkey(), -1) : null; UI.review = null; UI.rvTab = 'write'; render(); },
+  'rv-yesterday'(){ UI.rvDate = addDays(dkey(), -1); stashRvDraft(); UI.review = null; UI.rvTab = 'write'; location.hash = '#review'; },
+  'rv-dft-del'(){ const st = S(), k = rvDay(); if (st.rvDrafts) delete st.rvDrafts[k]; UI.review = null; UI.rvRestored = null; UI.rvSaved = null; queueWrite('state'); render(); toast('下書きを捨てました。', 'x'); },
+  'rv-day'(b){ UI.rvDate = b.dataset.v === '-1' ? addDays(dkey(), -1) : null; stashRvDraft(); UI.review = null; UI.rvTab = 'write'; render(); },
   'rv-del'(b){ const day = b.dataset.v, mk = monthOf(day), isY = day === addDays(dkey(), -1);
     confirmBox(`${fmtMD(day)}の振り返りを削除しますか？`, `書いた内容・達成度・やることリストが消え、元に戻せません。${isY ? '今日のホームに出ている「今日やること」も消えます。' : ''}`, '削除する', () => {
       const m = data.months[mk]; if (m && m.reviews[day]) { delete m.reviews[day]; queueWrite('m-' + mk, 0); }
@@ -4345,7 +4621,7 @@ const ACT = {
   'wr-color'(b){ const L = lookOf(UI.wearWho || 'buddy') || S().buddy.look; L.wc = L.wc || {}; L.wc[UI.wearSlot || 'top'] = +b.dataset.v; queueWrite('state'); publishPub(); render(); },
   'wr-equip'(b){ const slot = UI.wearSlot || 'top', k = b.dataset.v, st = S(), it = WEAR[slot].items[k]; if (!it) return;
     if (it.cost && !st.buddy.closet[slot + ':' + k]) return; const L = lookOf(UI.wearWho || 'buddy') || st.buddy.look; L.wear[slot] = k; queueWrite('state'); publishPub(); render(); },
-  'wr-buy'(b){ const slot = UI.wearSlot || 'top', k = b.dataset.v, it = WEAR[slot].items[k], x = stats(); if (!it || x.level < it.lv || x.coins < it.cost) return;
+  'wr-buy'(b){ const slot = UI.wearSlot || 'top', k = b.dataset.v, it = WEAR[slot].items[k], x = stats(); if (!it || x.level < it.lv || x.coins < it.cost || (it.champ && !champOK())) return;
     confirmBox(`${it.n}を買いますか？`, `${it.cost}コインを使います（残り ${x.coins - it.cost}コイン）。買った服は家族みんなで着られます。`, '買って着る', () => {
       const st = S(); st.spent = (st.spent || 0) + it.cost; st.buddy.closet[slot + ':' + k] = dkey(); const L = lookOf(UI.wearWho || 'buddy') || st.buddy.look; L.wear[slot] = k;
       queueWrite('state', 0); publishPub(); render(); toast(`${it.n}を手に入れた！`, 'shirt', 3000); }); },
@@ -4682,6 +4958,14 @@ document.addEventListener('submit', e => {
       else { st.nickname = nn; st.nickChangedM = monthOf(dkey()); toast(`名前を「${nn || 'ななしの受験生'}」に変更しました。次の変更は ${nextMonthLabel()} からできます。`, 'check', 5000); }
     } const ng = clamp(+val('pf-goal') || 180, 10, 1200); if (ng !== st.dailyGoal || ng !== goalFor(dkey())) st.goalDay = {d: dkey(), m: ng}; st.dailyGoal = ng; dataV++; if (val('pf-rt')) st.prefs.reviewTime = val('pf-rt'); queueWrite('state'); publishPub(); toast('設定を保存しました。', 'check'); pendingRender = false; render(); }
   if (k === 'subj-add') { const n = val('sj-name'); if (!n) return; const used = st.subjects.length; st.subjects.push({id: 'c' + uid6(), name: n.slice(0, 12), color: EXTRA_COLORS[used % EXTRA_COLORS.length], hidden: false}); queueWrite('state'); pendingRender = false; render(); toast(`「${n}」を追加しました。`, 'plus'); }
+  if (k === 'pl-info') { const p = PL(), inf = planInfo(p.main); inf.exam = val('pl-exam'); inf.date = inf.exam ? '' : val('pl-date'); inf.goalK = clamp(+val('pl-gk') || 0, 0, 100); inf.goalN = clamp(+val('pl-gn') || 0, 0, 100); queueWrite('state'); toast('保存しました。', 'check'); pendingRender = false; render(); return; }
+  if (k === 'pl-pts') { const p = PL(), inf = planInfo(p.main); inf.pts = {}; f.querySelectorAll('[data-pk]').forEach(i => { const sid = i.dataset.pk, n = f.querySelector(`[data-pn="${sid}"]`); const a = Math.max(0, Math.round(+i.value || 0)), b = Math.max(0, Math.round(+(n && n.value) || 0)); if (a || b) inf.pts[sid] = [a, b]; }); queueWrite('state'); toast('配点を保存しました。おすすめ配分に反映されます。', 'check'); pendingRender = false; render(); return; }
+  if (k === 'pl-mock') { const p = PL(), sc = {}; f.querySelectorAll('[data-mg]').forEach(i => { const sid = i.dataset.mg, mx = +(f.querySelector(`[data-mm="${sid}"]`) || {}).value; if (i.value !== '' && mx > 0) sc[sid] = [clamp(+i.value, 0, mx), mx]; });
+    if (!Object.keys(sc).length) { toast('1科目以上、点数を入れてください。', 'x'); return; }
+    p.mocks.push({id: uid6(), date: val('mk-date') || dkey(), name: val('mk-name').slice(0, 30), judge: val('mk-judge'), dev: val('mk-dev') ? Math.round(+val('mk-dev') * 10) / 10 : null, sc}); p.mocks = p.mocks.slice(-60);
+    UI.mockAdd = false; queueWrite('state'); toast('模試を記録しました！ おすすめ配分が更新されます。', 'check'); pendingRender = false; render(); return; }
+  if (k === 'pl-chkadd') { const t = val('pl-chkt'); if (!t) return; PL().check.push({id: uid6(), t: t.slice(0, 50), done: false, ph: +val('pl-ph') || 0}); queueWrite('state'); pendingRender = false; render(); return; }
+  if (k === 'm1') { st.m1 = val('m1-in').slice(0, 40); queueWrite('state'); publishPub(200); toast(st.m1 ? '1位のひとことをのせました！ みんなのランキングに表示されます。' : 'ひとことを消しました。', 'trophy', 4000); pendingRender = false; render(); return; }
   if (k === 'add-friend') { addFriend(val('fr-code')); return; }
   if (k === 'grp-create') { const n = val('gc-name').slice(0, 20); if (!n) { toast('グループ名を入れてください。', 'x'); return; }
     if (st.groups.length >= 10) { toast('参加できるグループは10個までです。', 'x'); return; }
@@ -4701,6 +4985,7 @@ document.addEventListener('submit', e => {
       tg: clamp(+dr.tg || 0, 0, 1200), ach: clamp(+dr.ach || 0, 0, 100), focus: dr.focus || 0, mood: dr.mood,
       todo: dr.todo.filter(t => t.t.trim()).slice(0, 8).map(t => ({t: t.t.trim().slice(0, 60), done: !!(oldTodo.find(o => o.t === t.t.trim()) || {}).done})),
       at: old.at || Date.now(), ...(old.at ? {edited: Date.now()} : {})};
+    if (st.rvDrafts) delete st.rvDrafts[day]; UI.rvSaved = null; UI.rvRestored = null;
     UI.review = null; queueWrite('m-' + mk, 0); checkMissions(false); checkBadges(false); pendingRender = false;
     // 日付が変わってすぐ（4時まで）に昨日の分を書いたら、昨日の「夜の振り返り」ミッションも達成
     if (day === addDays(dkey(), -1) && new Date().getHours() < 4 && missionsFor(day).includes('review')) { const dn = st.missions[day] || []; if (!dn.includes('review')) { dn.push('review'); st.missions[day] = dn; addCoins(MISSIONS.review.r); setTimeout(() => toast(`昨日のミッション「${MISSIONS.review.t}」達成 +${MISSIONS.review.r}コイン`, 'check', 5000), 1200); } }
@@ -4714,6 +4999,7 @@ document.addEventListener('keydown', e => { if (e.target && e.target.id === 'cha
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'chat-in') CHAT.draft = t.value;
+  if (t.id === 'pl-dream') { PL().dream = t.value.slice(0, 400); queueWrite('state', 2000); }
   if (t.id === 'help-q') { UI.helpQ = t.value; clearTimeout(UI.helpT); UI.helpT = setTimeout(() => { render(); const i = $('#help-q'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 250); }
   if (t.id === 'snd-vol') { S().prefs.vol = +t.value; AudioEng.setVol(+t.value); queueWrite('state', 1500); }
   if (t.dataset && t.dataset.ch) { const st = S(); st.prefs.mix = Object.assign({}, st.prefs.mix, {[t.dataset.ch]: +t.value}); AudioEng.setChVol(t.dataset.ch, +t.value); queueWrite('state', 2000); }
