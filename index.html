@@ -331,6 +331,12 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .subrow select{max-width:110px}.subnums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin-top:8px}
 .subnums label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--mute)}.subnums input{padding:7px 8px;min-width:0}
 @media (min-width:700px){.subnums{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.phbox{font:inherit;color:inherit;text-align:left;cursor:pointer;display:block;width:100%;transition:border-color .2s,box-shadow .2s,transform .1s}.phbox:active{transform:scale(.98)}
+.phtap{font-size:10.5px;color:var(--mute);border:1px dashed var(--line-2);border-radius:99px;padding:1px 7px}
+.subtools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.subtools .btn{justify-content:center}
+.tplbox{margin-bottom:12px}.tplbox .note{display:block;margin:0 0 6px}.tplgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tplbtn{font:inherit;font-size:12.5px;color:var(--ink);background:rgba(164,107,255,.1);border:1px solid rgba(164,107,255,.4);border-radius:10px;padding:8px 6px;cursor:pointer;text-align:center;line-height:1.3}
+.tplbtn:hover{background:rgba(164,107,255,.2)}
 .phgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.phbox{padding:12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);min-width:0}.phbox.cur{border-color:rgba(34,228,255,.55);box-shadow:0 0 18px -8px rgba(34,228,255,.7)}
 .phleft{font-size:14px;margin-top:4px}.phleft b{font-size:28px;margin:0 2px}.phrow{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:var(--mute);margin-top:6px;flex-wrap:wrap}.phdiff{font-size:13px;font-weight:700;margin-top:4px}
 .stcards{display:flex;flex-direction:column;gap:8px}.stcard{padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.025)}.stcard.total{background:linear-gradient(120deg,rgba(34,228,255,.08),rgba(164,107,255,.08))}
@@ -4102,11 +4108,12 @@ VIEWS.plan = () => {
   return `<div class="pagehead"><div><span class="eyebrow">ROAD TO 合格</span><h1>合格プラン</h1></div><a class="btn sm ghost" href="#exams">${icon('pen')}志望校を編集</a></div>
   <section class="panel"><div class="note" style="margin:0 0 6px">第一志望をえらぶ</div><div class="chips">${st.targets.map(x => `<button class="chip ${x.id === t.id ? 'on' : ''}" style="--c:#ffc24d" data-act="pl-main" data-v="${x.id}"><i></i>${esc(x.univ)}${x.fac ? ' ' + esc(x.fac) : ''}</button>`).join('')}</div></section>
   <section class="panel hero plancard"><span class="eyebrow">🎯 第一志望</span><h2 style="margin:4px 0 10px">${esc(t.univ)} <small style="font-size:15px;color:var(--mute)">${esc(t.fac || '')}</small></h2>
-    <div class="phgrid">${[['k', PK], ['n', PN]].map(([k, X]) => `<div class="phbox ${ph === k ? 'cur' : ''}"><div class="row wrap" style="justify-content:space-between;gap:4px 6px"><b style="white-space:nowrap">${PH[k]}</b>${ph === k ? '<span class="pill cy" style="font-size:10.5px">いまの対策</span>' : ''}</div>
+    <div class="phgrid">${[['k', PK], ['n', PN]].map(([k, X]) => `<button type="button" class="phbox ${ph === k ? 'cur' : ''}" data-act="ph-pick" data-v="${k}" aria-pressed="${ph === k}" aria-label="${PH[k]}の対策にする"><div class="row wrap" style="justify-content:space-between;gap:4px 6px"><b style="white-space:nowrap">${PH[k]}</b>${ph === k ? `<span class="pill cy" style="font-size:10.5px">いまの対策${(inf.phase || 'auto') === 'auto' ? '（自動）' : ''}</span>` : '<span class="phtap">タップで切りかえ</span>'}</div>
       <div class="phleft">${X.left == null ? '<span class="note">日付を選んでね</span>' : X.left < 0 ? '終了' : `あと<b class="disp">${X.left}</b>日`}</div>
       <div class="note">${X.date ? fmtDate(X.date) : ''}</div>
       <div class="phrow"><span>目標 ${Math.round(X.g * 100)}%</span><span>${X.rate != null ? `最新 ${Math.round(X.rate * 100)}%` : '模試なし'}</span></div>
-      ${X.rate != null ? `<div class="phdiff" style="color:${X.rate >= X.g ? '#3ee6a0' : '#ffc24d'}">${X.rate >= X.g ? '+' : ''}${Math.round((X.rate - X.g) * 100)}pt${X.last.judge ? ` · <span style="color:${judgeC(X.last.judge)}">${X.last.judge}判定</span>` : ''}${X.last.dev ? ` · 偏差値${X.last.dev}` : ''}</div>` : ''}</div>`).join('')}</div>
+      ${X.rate != null ? `<div class="phdiff" style="color:${X.rate >= X.g ? '#3ee6a0' : '#ffc24d'}">${X.rate >= X.g ? '+' : ''}${Math.round((X.rate - X.g) * 100)}pt${X.last.judge ? ` · <span style="color:${judgeC(X.last.judge)}">${X.last.judge}判定</span>` : ''}${X.last.dev ? ` · 偏差値${X.last.dev}` : ''}</div>` : ''}</button>`).join('')}</div>
+    <p class="note phnote" style="margin:8px 0 0">${(inf.phase || 'auto') === 'auto' ? `マスを押すと、おすすめ配分を${PH[ph === 'k' ? 'n' : 'k']}向けに切りかえられます（いまは自動：共通テストの日までは共通テスト、そのあとは二次試験）。` : `${PH[ph]}向けに固定しています。 <button type="button" class="linkbtn" data-act="ph-pick" data-v="auto">自動にもどす</button>`}</p>
     ${left != null && left > 0 ? `<p class="note" style="margin:10px 0 0">1日の目標 ${fmtHM(goal)} を続けると、${PH[ph]}までにあと <b style="color:var(--ink)">約${Math.round(goal * left / 60).toLocaleString()}時間</b> 勉強できます。</p>` : ''}
     <form class="stack" data-form="pl-info" style="gap:8px;margin-top:12px">
       ${[['k', inf.examK], ['n', inf.examN]].map(([k, ex]) => `<div class="row wrap" style="gap:8px;align-items:flex-end"><label class="fld" style="flex:1;min-width:150px">${PH[k]}の日<select id="pl-exam-${k}" data-ph="${k}"><option value="">（日付を直接入れる）</option>${st.exams.map(e => `<option value="${e.id}" data-date="${e.date}" ${ex === e.id ? 'selected' : ''}>${esc(e.name)}（${fmtMD(e.date)}）</option>`).join('')}</select></label>
@@ -4119,7 +4126,7 @@ VIEWS.plan = () => {
 
   <div class="grid2">
   <section class="panel"><div class="ph"><div><span class="eyebrow">TODAY</span><h2>今日のおすすめ配分</h2></div><button class="btn sm ${UI.allocEdit ? 'primary' : ''}" data-act="alloc-edit">${UI.allocEdit ? icon('check') + 'できた' : icon('pen') + '調整する'}</button></div>
-    <div class="row wrap" style="gap:6px;margin-bottom:8px;align-items:center"><span class="note" style="margin:0">対策</span><div class="seg">${[['auto', `自動（${PH[curPhase({...inf, phase: 'auto'})]}）`], ['k', '共通テスト'], ['n', '二次試験']].map(([k, n]) => `<button data-act="alloc-phase" data-v="${k}" class="${(inf.phase || 'auto') === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+    <p class="note" style="margin:-4px 0 8px">いまは <b style="color:var(--cyan)">${PH[ph]}</b> 向け（上の大きなマスで切りかえ）</p>
     <div class="seg" style="margin-bottom:10px">${[['gap', '目標との差'], ['weak', '苦手を重視'], ['pts', '配点どおり']].map(([k, n]) => `<button data-act="alloc-mode" data-v="${k}" class="${inf.mode === k ? 'on' : ''}">${n}</button>`).join('')}</div>
     ${alloc.length ? `<div class="stack" style="gap:12px">${alloc.map(a => `<div class="allocrow"><div class="row" style="justify-content:space-between;font-size:13px;gap:6px"><span style="min-width:0"><span class="dot" style="--c:${a.sub.color};display:inline-block;margin-right:6px"></span><b>${esc(a.sub.name)}</b>${a.fixed ? ' <span class="pill" style="font-size:10px;padding:1px 6px">固定</span>' : ''}</span><b class="disp">${fmtHM(a.min)}</b></div>
       <div class="bar" style="margin-top:4px"><i style="width:${(clamp(a.share, 0, 1) * 100).toFixed(1)}%;background:${a.sub.color}"></i></div>
@@ -4130,8 +4137,9 @@ VIEWS.plan = () => {
       <button class="btn sm primary" data-act="alloc-go" data-v="${esc(alloc[0].sub.tsid)}" style="margin-top:10px">${icon('play')}${esc(alloc[0].sub.name)}から始める</button>`
       : '<div class="empty">右の「科目・配点・目標点」を入れると、科目ごとのおすすめ時間が出ます。</div>'}</section>
 
-  <section class="panel"><div class="ph"><div><span class="eyebrow">SUBJECTS</span><h2>科目・配点・目標点</h2></div>${UI.subsDraft ? '' : `<div class="row" style="gap:6px">${subs.length || inf.goalDev != null || inf.goalK !== 75 || inf.goalN !== 65 ? `<button class="btn sm ghost" data-act="sub-reset">${icon('rotate')}リセット</button>` : ''}<button class="btn sm" data-act="sub-edit">${icon('pen')}編集</button></div>`}</div>
-    <div class="chips" style="margin-bottom:10px">${Object.entries(PLAN_TPL).map(([k, [n]]) => `<button class="chip" style="--c:#a46bff" data-act="pl-tpl" data-v="${k}"><i></i>${n}</button>`).join('')}</div>
+  <section class="panel"><div class="ph" style="margin-bottom:10px"><div><span class="eyebrow">SUBJECTS</span><h2>科目・配点・目標点</h2></div></div>
+    ${UI.subsDraft ? '' : `<div class="subtools"><button class="btn sm primary" data-act="sub-edit">${icon('pen')}編集する</button><button class="btn sm ghost" data-act="sub-reset" ${subs.length || inf.goalDev != null || inf.goalK !== 75 || inf.goalN !== 65 ? '' : 'disabled'}>${icon('rotate')}リセット</button></div>`}
+    <div class="tplbox"><span class="note">テンプレート（例）から入れる</span><div class="tplgrid">${Object.entries(PLAN_TPL).map(([k, [n]]) => `<button class="tplbtn" data-act="pl-tpl" data-v="${k}">${esc(n.replace('の例', ''))}</button>`).join('')}</div></div>
     ${UI.subsDraft ? subsEditor() : subs.length ? `<div class="stcards">${subs.map(x => { const LK = latestOf(x, 'k'), LN = latestOf(x, 'n'), col = (k, L) => { const pts = phPts(x, k), g = phGoal(x, k), mine = L && L.kind === k ? L : null;
         return `<div class="stc ${pts ? '' : 'off'}"><small>${PH[k]}</small><b>${pts ? pts + '<i>点</i>' : '—'}</b><span>${g ? `目標 ${g}` : pts ? '目標 未設定' : 'なし'}</span>${mine ? `<span class="lt">最新 ${mine.g}/${mine.m}${mine.dev ? `<br>偏差値 ${mine.dev}` : ''}</span>` : ''}</div>`; };
       return `<div class="stcard"><div class="sthead"><span class="dot" style="--c:${x.color}"></span><b>${esc(x.name)}</b><span class="note" style="margin-left:auto">⏱ ${esc(subjOf(x.tsid).name)}</span></div><div class="stcols">${col('k', LK)}${col('n', LN)}</div></div>`; }).join('')}
@@ -4674,6 +4682,7 @@ const ACT = {
     inf.subs = D.filter(x => (x.name || '').trim()).map(x => ({...x, name: x.name.trim().slice(0, 16), k: numOr(x.k), n: numOr(x.n), gk: numOr(x.gk), gn: numOr(x.gn)}));
     UI.subsDraft = null; queueWrite('state'); render(); toast('科目・配点・目標点を保存しました。おすすめ配分に反映されます。', 'check'); },
   'alloc-edit'(){ UI.allocEdit = !UI.allocEdit; render(); },
+  'ph-pick'(b){ const inf = planInfo(PL().main), v = b.dataset.v; inf.phase = v === 'auto' ? 'auto' : v; queueWrite('state'); render(); if (v !== 'auto') toast(`おすすめ配分を${PH[v]}向けにしました。`, 'check', 2500); },
   'alloc-phase'(b){ planInfo(PL().main).phase = b.dataset.v; queueWrite('state'); render(); },
   'mk-dkind'(b){ if (!UI.mockDraft) return; UI.mockDraft.kind = b.dataset.v; const inf = planInfo(PL().main), k = b.dataset.v;
     if (!UI.mockDraft.id && UI.mockDraft.rows.every(r => r.g === '' || r.g == null)) UI.mockDraft.rows = inf.subs.filter(x => x.name && phPts(x, k) > 0).map(x => ({sid: x.id, n: x.name, g: '', m: phPts(x, k), dev: ''})).concat(inf.subs.some(x => x.name && phPts(x, k) > 0) ? [] : [{sid: '', n: '', g: '', m: 100, dev: ''}]);
