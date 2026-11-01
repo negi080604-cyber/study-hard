@@ -261,6 +261,13 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
 .lightctl em{font-style:normal;font-size:11px;color:var(--mute);padding:0 8px 0 4px;white-space:nowrap}
 .lightctl.lit em{color:#ffd66b}
 @media (max-width:400px){.lightctl em{display:none}.lightctl button{padding:5px 7px}}
+.livetag{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:99px;background:rgba(62,230,160,.12);border:1px solid rgba(62,230,160,.45);color:#3ee6a0;font-size:11px;font-weight:600;white-space:nowrap;vertical-align:middle}
+.livetag i,.livechip i{width:7px;height:7px;border-radius:50%;background:#3ee6a0;box-shadow:0 0 6px #3ee6a0;animation:livep 1.6s ease-in-out infinite}
+.livechip small{margin-left:4px;color:var(--mute);font-size:11px}
+.rk .av.live{box-shadow:0 0 0 2px #3ee6a0,0 0 10px rgba(62,230,160,.6)}
+@keyframes livep{0%,100%{opacity:1}50%{opacity:.35}}
+.focusnote{display:flex;gap:10px;align-items:flex-start;margin:8px 0;padding:10px 12px;border-radius:12px;background:rgba(62,230,160,.08);border:1px solid rgba(62,230,160,.4);font-size:13px}.focusnote .ic{color:#3ee6a0;flex:none;margin-top:2px}.focusnote b{display:block;margin-bottom:2px}.focusnote span{color:var(--mute)}.focusnote.soft{background:rgba(255,255,255,.03);border-color:var(--line)}
+.focusbar{display:flex;gap:8px;align-items:center;justify-content:center;margin:10px auto 0;padding:6px 12px;border-radius:99px;background:rgba(62,230,160,.1);border:1px solid rgba(62,230,160,.4);color:#3ee6a0;font-size:12.5px;width:fit-content;max-width:100%}.focusbar .ic{width:15px;height:15px}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:var(--c)}
 .sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--cyan)}
@@ -1320,7 +1327,8 @@ const STAT_KEYS = ['lv', 'tot', 'dk', 'dMin', 'wk', 'wMin', 'mo', 'mMin', 'strea
 function buildSocial(){
   const st = S(); if (!st) return null;
   const inv = {}; for (const [c, k] of Object.entries(st.friendVia || {})) if (st.friends.includes(c) && !isMutualCode(c)) inv[c] = hashStr(k + ':' + st.code).toString(36);
-  return {code: st.code, nick: (st.nickname || '').slice(0, 20), vis: st.privacy.vis, groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200), ...(Object.keys(inv).length ? {inv} : {})};
+  const live = liveNow();
+  return {code: st.code, nick: (st.nickname || '').slice(0, 20), vis: st.privacy.vis, ...(live ? {live} : {}), groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200), ...(Object.keys(inv).length ? {inv} : {})};
 }
 function buildPub(){
   const so = buildSocial(); if (!so) return null; const sx = buildStats();
@@ -1499,12 +1507,15 @@ function renderHeader(){
   $('#hc-coin').innerHTML = icon('coin') + `<span>${Math.max(0, x.coins).toLocaleString()}</span>`;
   $('#hc-lv').innerHTML = `<span style="color:var(--cyan)">LV</span><span>${x.level}</span>`;
 }
-function notifCounts(){
+const selfStudying = () => typeof T !== 'undefined' && T.state === 'run' && T.phase === 'study';
+function rawNotifCounts(){
   if (MODE !== 'cloud' || !S()) return {chat: 0, rank: 0};
   const rm = readMap(); let chat = 0;
   for (const room of chatRooms()) { const p = CHAT.previews[room.id]; if (p && p.user_id !== UID && CHAT.room !== room.id && new Date(p.created_at).getTime() > (rm[room.id] || 0)) chat++; }
   return {chat, rank: incomingReqs().length};
 }
+// while you study, every notification waits until you finish
+function notifCounts(){ return selfStudying() ? {chat: 0, rank: 0} : rawNotifCounts(); }
 const nbadge = (n, lbl) => n ? `<i class="nbadge" aria-label="${lbl}${n}件">${n > 9 ? '9+' : n}</i>` : '';
 function renderNav(){
   const r = route(), nc = notifCounts(), nfor = k => k === 'chat' ? nbadge(nc.chat, '未読のチャット') : k === 'rank' ? nbadge(nc.rank, 'フレンド申請') : '';
@@ -1985,7 +1996,21 @@ function mixerHTML(){
 /* ================= TIMER ================= */
 let T = LS.get('sh-timer') || {mode: 'cd', target: 25, subj: 'en', state: 'idle', acc: 0, since: null, phase: 'study', brk: 5, startAt: null, cheer: ''};
 let tickId = null, wakeLock = null;
-const saveTimer = () => LS.set('sh-timer', T);
+const saveTimer = () => { LS.set('sh-timer', T); try { if (MODE === 'cloud' && S()) publishPub(300); } catch {} };
+// "studying now" status: start time + a heartbeat (refreshed every 2 min while the timer runs)
+const LIVE_HB = 120000, LIVE_TTL = 6 * 60000;
+function liveNow(){ return T.state === 'run' && T.phase === 'study' ? {st: T.startAt || T.since || Date.now(), hb: Math.floor(Date.now() / LIVE_HB) * LIVE_HB} : null; }
+const isLive = d => !!(d && d.live && d.live.hb && Date.now() - d.live.hb < LIVE_TTL);
+const liveMin = d => Math.max(0, Math.floor((Date.now() - d.live.st) / 60000));
+const liveTag = d => isLive(d) ? `<span class="livetag"><i></i>勉強中${liveMin(d) >= 1 ? ' ' + fmtHM(liveMin(d)) : ''}</span>` : '';
+function liveFriends(){ const seen = new Set(); return pubDocs.filter(d => d.uid !== UID && isLive(d) && (isMutualDoc(d) || (S().groups || []).some(g => inGroup(d, g.c))) && !seen.has(d.uid) && seen.add(d.uid)); }
+function liveStrip(){
+  const L = liveFriends(); if (MODE !== 'cloud') return '';
+  if (!L.length) return '';
+  return `<section class="panel livestrip"><div class="ph" style="margin-bottom:8px"><div><span class="eyebrow">STUDYING NOW</span><h3>いま勉強中の仲間 <span class="pill good">${L.length}人</span></h3></div></div>
+    <div class="chips">${L.slice(0, 12).map(d => `<span class="chip on livechip" style="--c:#3ee6a0"><i></i>${esc(d.nick || 'ななしの受験生')}<small>${fmtHM(liveMin(d))}</small></span>`).join('')}</div>
+    ${T.state === 'run' && T.phase === 'study' ? '<p class="note" style="margin:8px 0 0">あなたも勉強中。一緒にがんばろう！</p>' : '<p class="note" style="margin:8px 0 0">みんな集中してる。あなたも始めよう！</p>'}</section>`;
+}
 const elapsed = () => T.acc + (T.since ? Date.now() - T.since : 0);
 function restoreTimer(){ if (T.state === 'run' || T.state === 'pause') { startTick(); if (T.state === 'run') requestWake(); } }
 function startTick(){ if (!tickId) tickId = setInterval(tick, 250); }
@@ -2023,7 +2048,11 @@ function timerStart(){
 }
 function timerPause(){ if (T.state !== 'run') return; T.acc = elapsed(); T.since = null; T.state = 'pause'; saveTimer(); releaseWake(); render(); }
 function timerResume(){ if (T.state !== 'pause') return; T.since = Date.now(); T.state = 'run'; saveTimer(); requestWake(); render(); }
-function timerReset(){ Object.assign(T, {state: 'idle', acc: 0, since: null, phase: 'study', startAt: null}); saveTimer(); stopTick(); releaseWake(); render(); }
+function timerReset(){ Object.assign(T, {state: 'idle', acc: 0, since: null, phase: 'study', startAt: null}); saveTimer(); stopTick(); releaseWake(); render(); afterFocusNotice(); }
+function afterFocusNotice(){
+  setTimeout(async () => { try { await loadPreviews(true); } catch {} const n = rawNotifCounts(); renderNav(); checkRequests();
+    if (n.chat || n.rank) queueOverlay(() => toast(`勉強中に届いたお知らせ：${[n.chat ? `未読のチャット ${n.chat}件` : '', n.rank ? `フレンド申請 ${n.rank}件` : ''].filter(Boolean).join('・')}`, 'chat', 6000)); }, 1500);
+}
 function finishStudy(auto){
   if (T.phase !== 'study') { endBreak(); return; }
   const cap = T.mode === 'cd' ? T.target * 60000 : MAX_SESSION_MS;
@@ -2036,7 +2065,7 @@ function finishStudy(auto){
   const startDate = new Date(startAt);
   addSession({id: uid6(), d: dkey(startDate), t: startAt, s: subj, m: min, k: mode});
   if (auto && T.brk > 0) { Object.assign(T, {state: 'run', phase: 'break', acc: 0, since: Date.now()}); saveTimer(); startTick(); }
-  render();
+  render(); afterFocusNotice();
 }
 function endBreak(){ Object.assign(T, {state: 'idle', phase: 'study', acc: 0, since: null}); saveTimer(); stopTick(); AudioEng.chime(); toast('休憩おわり。準備ができたら次のセッションへ。', 'timer'); render(); }
 function addSession(sess){
@@ -2094,6 +2123,7 @@ VIEWS.home = () => {
       <div class="row wrap" style="gap:8px;margin-top:6px"><span class="pill ${pct >= 1 ? 'good' : 'cy'}">目標達成率 ${Math.floor(pct * 100)}%</span><span class="pill">目標 ${fmtHM(goal)}</span></div></div>
       <div class="row wrap" style="gap:10px"><a class="btn primary big" href="#timer">${icon('play')}勉強を始める</a><a class="btn big" href="#room" style="font-size:15px">${icon('room')}自分の部屋へ</a></div>
     </div></div></section>
+  ${liveStrip()}
 
   <div class="grid3">
     <section class="panel lvcard"><div class="row" style="align-items:flex-end;gap:10px"><span class="lvnum">${lv}</span><div class="kv"><span class="k">LEVEL</span><b style="font-size:14px">${esc(titleFor(lv))}</b></div></div>
@@ -2129,11 +2159,13 @@ VIEWS.timer = () => {
   const sj = subjOf(T.subj), subs = st.subjects.filter(s => !s.hidden);
   const presets = [25, 50, 90];
   return `<div class="pagehead"><h1>勉強タイマー</h1><span class="note">実際に経過した時間だけが記録されます</span></div>
+  ${liveStrip()}
   <div class="grid2">
     <section class="panel hero ${run ? 'running' : ''}"><div class="tface">
       <div class="tring" id="t-ring">${ringSVG(0, 300, 14, 'tr')}<div class="rc"><span class="tphase ${isBrk ? 'brk' : ''}">${isBrk ? 'BREAK · 休憩' : T.mode === 'cd' ? 'FOCUS · カウントダウン' : 'FOCUS · ストップウォッチ'}</span><span class="ttime" id="t-time">00:00</span><span class="tsubj"><span class="dot" style="--c:${sj.color};display:inline-block;margin-right:6px;vertical-align:middle"></span>${esc(sj.name)}</span></div></div>
       <div class="cheer">${!idle && !isBrk ? esc(T.cheer || '') : isBrk ? 'しっかり休もう。目を閉じる、ストレッチ、水を飲む。' : '科目と時間を選んでスタート。'}</div>
       <div class="note disp" id="t-xp"></div>
+      ${run && !isBrk && MODE === 'cloud' ? `<div class="focusbar">${icon('moon')}集中モード中：通知はおやすみ。仲間には「勉強中」と表示され、個人チャットは届きません</div>` : ''}
       <div class="tctl">
         ${idle ? `<button class="btn primary big" data-act="t-start">${icon('play')}開始</button>` : ''}
         ${run ? `<button class="btn big" data-act="t-pause">${icon('pause')}${isBrk ? '休憩を一時停止' : '一時停止'}</button>` : ''}
@@ -2344,12 +2376,12 @@ VIEWS.rank = () => {
   <div class="grid2">
     <section class="panel"><div class="rank-ctl"><div class="seg wide">${[['friends','友達'],['group','グループ'],['all','全員']].map(([k, n]) => `<button data-act="rank-s" data-v="${k}" class="${UI.rankScope === k ? 'on' : ''}">${n}</button>`).join('')}</div>
       <div class="rank-per" role="group" aria-label="時間の種類"><span class="note">時間</span><div class="seg wide">${Object.entries(PER).map(([k, [n]]) => `<button data-act="rank-p" data-v="${k}" class="${UI.rankPeriod === k ? 'on' : ''}" aria-pressed="${UI.rankPeriod === k}">${n}</button>`).join('')}</div></div>
-      <p class="note" style="margin:0">${PER[UI.rankPeriod][1]}が多い順</p></div>
+      <p class="note" style="margin:0">${PER[UI.rankPeriod][1]}が多い順${rows.some(isLive) ? ` · <span style="color:#3ee6a0">● 勉強中 ${rows.filter(isLive).length}人</span>` : ''}</p></div>
       ${st.privacy.vis === 'none' ? '<p class="banner" style="margin:0 0 10px">ランキングを非公開にしています。ほかの人の画面にあなたは表示されません（下の設定で変更できます）。</p>' : st.privacy.vis === 'friends' ? '<p class="note" style="margin:0 0 10px">あなたの記録は「互いにフレンド」の人にだけ見えています。</p>' : ''}
       ${UI.rankScope === 'group' && gs.length ? `<div class="chips" style="margin:-2px 0 12px">${gs.map(g => `<button class="chip ${UI.rankGroup === g.c ? 'on' : ''}" style="--c:#a46bff" data-act="rank-g" data-v="${esc(g.c)}"><i></i>${esc(groupName(g.c))}</button>`).join('')}</div>` : ''}
       ${UI.rankScope === 'group' && !gs.length ? `<div class="empty">まだグループに入っていません。<br><a class="btn primary" href="#groups" style="margin-top:12px">${icon('plus')}グループを作る・参加する</a></div>` :
-        rows.length ? `<div>${rows.map((r, i) => `<div class="rk ${i < 3 && r.v > 0 ? 'top' + (i + 1) : ''} ${r.uid === UID ? 'me' : ''}"><span class="n">${i + 1}</span><span class="av" style="--c:${avColor(r.uid)}">${esc((r.nick || '?').slice(0, 1))}</span>
-          <div class="rk-m"><b>${esc(r.nick || 'ななしの受験生')}${r.uid === UID ? '（あなた）' : ''}</b><span class="note">LV${r.lv || 1} · 連続${r.streak || 0}日${r.room && r.uid !== UID ? ` <button class="rk-room" data-act="see-room" data-v="${esc(r.uid)}" aria-label="${esc(r.nick || '')}の部屋を見る">${icon('eye')}部屋</button>` : ''}</span></div>
+        rows.length ? `<div>${rows.map((r, i) => `<div class="rk ${i < 3 && r.v > 0 ? 'top' + (i + 1) : ''} ${r.uid === UID ? 'me' : ''}"><span class="n">${i + 1}</span><span class="av ${isLive(r) ? 'live' : ''}" style="--c:${avColor(r.uid)}">${esc((r.nick || '?').slice(0, 1))}</span>
+          <div class="rk-m"><b>${esc(r.nick || 'ななしの受験生')}${r.uid === UID ? '（あなた）' : ''}</b><span class="note">${liveTag(r)}LV${r.lv || 1} · 連続${r.streak || 0}日${r.room && r.uid !== UID ? ` <button class="rk-room" data-act="see-room" data-v="${esc(r.uid)}" aria-label="${esc(r.nick || '')}の部屋を見る">${icon('eye')}部屋</button>` : ''}</span></div>
           <div class="rk-t"><span class="on"><small>${PER[UI.rankPeriod][0]}</small>${fmtHM(r.v)}</span>${sub(r).map(([n, v]) => `<span><small>${n}</small>${fmtHM(v)}</span>`).join('')}</div></div>`).join('')}</div>`
         : `<div class="empty">${UI.rankScope === 'friends' ? 'まだフレンドがいません。招待リンクを送るか、フレンドコードで申請しよう。' : 'まだ参加者がいません。'}</div>`}
 
@@ -2407,7 +2439,7 @@ VIEWS.groups = () => {
     const total = mem.reduce((a, d) => a + Math.max(0, d.v), 0);
     return `<section class="panel"><div class="ph"><div style="min-width:0"><span class="eyebrow">GROUP · ${esc(g.c)}</span><h2 style="overflow:hidden;text-overflow:ellipsis">${esc(name)}</h2></div>${g.own ? '<span class="pill cy">作成者</span>' : ''}</div>
       <div class="row wrap" style="gap:16px;margin-bottom:10px"><div class="kv"><span class="k">メンバー</span><span class="v" style="font-size:18px">${mem.length}<small>人</small></span></div><div class="kv"><span class="k">今週のみんなの合計</span><span class="v" style="font-size:18px">${fmtHM(total)}</span></div></div>
-      ${mem.length ? `<div>${mem.slice(0, UI.grpAll === g.c ? 200 : 5).map((d, i) => `<div class="rk ${i < 3 && d.v > 0 ? 'top' + (i + 1) : ''} ${d.uid === UID ? 'me' : ''}" style="padding:7px 4px"><span class="n">${i + 1}</span><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(d.nick || 'ななしの受験生')}${d.uid === UID ? '（あなた）' : ''}</b></div><span class="disp">${d.hasStats ? fmtHM(d.v) : '<span class="note">非公開</span>'}</span>${memberFriendBtn(d)}</div>`).join('')}</div>` : ''}
+      ${mem.length ? `<div>${mem.slice(0, UI.grpAll === g.c ? 200 : 5).map((d, i) => `<div class="rk ${i < 3 && d.v > 0 ? 'top' + (i + 1) : ''} ${d.uid === UID ? 'me' : ''}" style="padding:7px 4px"><span class="n">${i + 1}</span><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(d.nick || 'ななしの受験生')}${d.uid === UID ? '（あなた）' : ''}</b>${liveTag(d)}</div><span class="disp">${d.hasStats ? fmtHM(d.v) : '<span class="note">非公開</span>'}</span>${memberFriendBtn(d)}</div>`).join('')}</div>` : ''}
       ${mem.length > 5 ? `<button class="linkbtn" style="margin-top:6px;font-size:13px" data-act="grp-all" data-v="${UI.grpAll === g.c ? '' : esc(g.c)}">${UI.grpAll === g.c ? '閉じる' : `メンバー全員を見る（ほか ${mem.length - 5}人）`}</button>` : ''}
       ${UI.grpRename === g.c ? `<form class="row" data-form="grp-rename" data-v="${esc(g.c)}" style="margin-top:12px"><input id="gr-name" type="text" maxlength="20" value="${esc(name)}" aria-label="グループ名"><button class="btn primary" type="submit">保存</button><button class="btn ghost" type="button" data-act="grp-rename" data-v="">やめる</button></form>` : ''}
       <div class="row wrap" style="gap:8px;margin-top:14px"><button class="btn sm primary" data-act="grp-invite" data-v="${esc(g.c)}">${icon('users')}招待リンクを送る</button><button class="btn sm" data-act="chat-open" data-v="g:${esc(g.c)}">${icon('chat')}チャット</button><button class="btn sm" data-act="grp-rank" data-v="${esc(g.c)}">${icon('trophy')}ランキング</button>
@@ -2577,6 +2609,7 @@ function checkRequests(){
   }
   for (const [c] of Object.entries(st.friendVia || {})) if (isMutualCode(c)) { delete st.friendVia[c]; changed = true; }
   if (changed) { queueWrite('state'); publishPub(200); }
+  if (selfStudying()) return;
   const seen = LS.get('sh-req-seen') || [], fresh = incomingReqs().filter(d => !seen.includes(d.code));
   if (fresh.length) { LS.set('sh-req-seen', [...seen, ...fresh.map(d => d.code)].slice(-300)); toast(fresh.length === 1 ? `${fresh[0].nick || 'ななしの受験生'}さんからフレンド申請が来ています。ランキング画面で承認できます。` : `フレンド申請が${fresh.length}件来ています。ランキング画面で承認できます。`, 'users', 6000); }
 }
@@ -2594,7 +2627,7 @@ function friendListHTML(){
   const chatBtn = d => `<button class="btn sm ghost" data-act="chat-open" data-v="${esc(dmRoom(d.uid))}" aria-label="${name(d)}さんとチャット">${icon('chat')}</button>`;
   let h = '';
   if (reqs.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フレンド申請 <span class="pill cy">${reqs.length}</span></h3><div class="list">${reqs.map(d => `<div class="li"><div class="t"><b>${name(d)}</b><span>あなたとフレンドになりたいそうです</span></div><button class="btn sm primary" data-act="fr-accept" data-v="${esc(d.code)}">承認</button><button class="btn sm ghost" data-act="fr-decline" data-v="${esc(d.code)}">拒否</button></div>`).join('')}</div>`;
-  if (mutual.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フレンド</h3><div class="list">${mutual.map(d => `<div class="li"><div class="t"><b>${name(d)}</b><span>${d.hasStats ? `LV${d.lv || 1} · 今日 ${fmtHM(d.dk === dkey() ? d.dMin || 0 : 0)}` : d.vis === 'none' ? 'ランキング非公開' : STATS_OK === false ? '記録を読めません（friends.sql 未実行）' : '記録を読み込み中…（相手がアプリを開くと届きます）'}</span></div>${chatBtn(d)}<button class="btn sm ghost" data-act="fr-del" data-v="${esc(d.code)}" data-n="${name(d)}" aria-label="フレンドをやめる">${icon('x')}</button></div>`).join('')}</div>`;
+  if (mutual.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フレンド</h3><div class="list">${mutual.map(d => `<div class="li"><div class="t"><b>${name(d)} ${liveTag(d)}</b><span>${d.hasStats ? `LV${d.lv || 1} · 今日 ${fmtHM(d.dk === dkey() ? d.dMin || 0 : 0)}` : d.vis === 'none' ? 'ランキング非公開' : STATS_OK === false ? '記録を読めません（friends.sql 未実行）' : '記録を読み込み中…（相手がアプリを開くと届きます）'}</span></div>${chatBtn(d)}<button class="btn sm ghost" data-act="fr-del" data-v="${esc(d.code)}" data-n="${name(d)}" aria-label="フレンドをやめる">${icon('x')}</button></div>`).join('')}</div>`;
   if (out.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">申請中</h3><div class="list">${out.map(([c, d]) => `<div class="li"><span class="disp" style="letter-spacing:.15em">${esc(c)}</span><div class="t"><b>${d ? name(d) : '—'}</b><span>${d ? '相手の承認を待っています' : 'まだ見つかりません'}</span></div><button class="btn sm ghost" data-act="fr-cancel" data-v="${esc(c)}">取り消す</button></div>`).join('')}</div>`;
   if (st.declined.length) h += `<p class="note" style="margin:10px 0 0">拒否した申請 ${st.declined.length}件 · <button class="linkbtn" data-act="fr-undecline">もう一度表示する</button></p>`;
   return h;
@@ -2661,10 +2694,12 @@ async function openChat(id){
   }, 6000);
 }
 function closeChat(){ if (CHAT.chan) { try { SB.removeChannel(CHAT.chan); } catch {} CHAT.chan = null; } clearInterval(CHAT.poll); CHAT.poll = null; CHAT.room = null; }
+const dmPartner = room => room && room.startsWith('d:') ? pubDocs.find(d => d.uid !== UID && dmRoom(d.uid) === room) : null;
 async function sendChat(f){
   const inp = f.querySelector('#chat-in'), body = (inp.value || '').trim();
   if (!body || CHAT.sending || !CHAT.room) return;
   if (body.length > 500) { toast('500文字までです。', 'x'); return; }
+  const other = dmPartner(CHAT.room); if (other && isLive(other)) { CHAT.draft = body; toast(`${other.nick || 'ななしの受験生'}さんは勉強中です。終わったら送れるよ（書いた文はそのまま残ります）。`, 'timer', 5000); render(); return; }
   CHAT.sending = true; const room = CHAT.room;
   const {data: row, error} = await SB.from('messages').insert({room, nick: (S().nickname || '').slice(0, 20), body}).select('id,room,user_id,nick,body,created_at').single();
   CHAT.sending = false;
@@ -2677,16 +2712,19 @@ VIEWS.chat = () => {
   if (CHAT.room) {
     const r = chatRooms().find(x => x.id === CHAT.room) || {name: 'チャット', sub: '', kind: CHAT.room[0]};
     return `<div class="chatwrap">
-      <div class="chathead"><button class="btn sm ghost" data-act="chat-back" aria-label="一覧に戻る">${icon('chevL')}</button><div style="min-width:0;flex:1"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.name)}</b><span class="note">${esc(r.sub)}</span></div></div>
+      <div class="chathead"><button class="btn sm ghost" data-act="chat-back" aria-label="一覧に戻る">${icon('chevL')}</button><div style="min-width:0;flex:1"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.name)} ${liveTag(dmPartner(CHAT.room))}</b><span class="note">${esc(r.sub)}</span></div></div>
       ${setup}
       <div class="chatlog" id="chat-log" aria-live="polite"><div class="empty">読み込み中…</div></div>
-      <form class="chatbar" data-form="chat-send"><input id="chat-in" type="text" maxlength="500" autocomplete="off" enterkeyhint="send" placeholder="メッセージを入力" value="${esc(CHAT.draft)}" aria-label="メッセージ"><button class="btn primary" type="submit" aria-label="送信">${icon('send')}</button></form>
+      ${(() => { const o = dmPartner(CHAT.room), busy = o && isLive(o), lives = r.kind === 'g' ? groupMembers(CHAT.room.slice(2)).filter(d => d.uid !== UID && isLive(d)) : [];
+        return (busy ? `<div class="focusnote">${icon('timer')}<div><b>${esc(o.nick || 'ななしの受験生')}さんは勉強中です（${fmtHM(liveMin(o))}）</b><span>集中をじゃましないよう、終わるまで送れません。書いておいた文は消えないので、終わったら送信してね。</span></div></div>` : '')
+          + (lives.length ? `<div class="focusnote soft">${icon('timer')}<div><span>${lives.map(d => esc(d.nick || 'ななしの受験生')).join('、')}さんが勉強中です。勉強中の人には通知が届かず、終わってから表示されます。</span></div></div>` : '')
+          + `<form class="chatbar" data-form="chat-send"><input id="chat-in" type="text" maxlength="500" autocomplete="off" enterkeyhint="send" placeholder="${busy ? '勉強が終わるまで送れません' : 'メッセージを入力'}" value="${esc(CHAT.draft)}" aria-label="メッセージ"><button class="btn primary" type="submit" aria-label="送信" ${busy ? 'disabled' : ''}>${icon('send')}</button></form>`; })()}
       <p class="note" style="margin:6px 2px 0">${r.kind === 'g' ? 'このグループのメンバー全員が読めます。' : 'あなたと相手の2人だけが読めます。'}悪口・個人情報（住所・電話番号など）は書かないでね。自分のメッセージはゴミ箱で消せます。</p></div>`;
   }
   const rooms = chatRooms(), rm = readMap();
   return `<div class="pagehead"><h1>チャット</h1><span class="note">グループとフレンドで話せます</span></div>${setup}
   <section class="panel">${rooms.length ? `<div class="list">${rooms.map(r => { const p = CHAT.previews[r.id], unread = p && p.user_id !== UID && new Date(p.created_at).getTime() > (rm[r.id] || 0);
-    return `<button class="li chatitem" data-act="chat-open" data-v="${esc(r.id)}"><span class="av" style="--c:${r.kind === 'g' ? '#a46bff' : '#22e4ff'}">${icon(r.kind === 'g' ? 'users' : 'chat')}</span><div class="t"><b>${esc(r.name)}</b><span>${p ? `${esc(p.user_id === UID ? 'あなた' : msgName(p))}：${esc(p.body.slice(0, 40))}` : esc(r.sub)}</span></div>${p ? `<span class="note" style="flex:none">${hhmm(p.created_at)}</span>` : ''}${unread ? '<span class="udot" aria-label="未読あり"></span>' : ''}</button>`; }).join('')}</div>`
+    return `<button class="li chatitem" data-act="chat-open" data-v="${esc(r.id)}"><span class="av" style="--c:${r.kind === 'g' ? '#a46bff' : '#22e4ff'}">${icon(r.kind === 'g' ? 'users' : 'chat')}</span><div class="t"><b>${esc(r.name)} ${r.kind === 'd' ? liveTag(pubDocs.find(d => dmRoom(d.uid) === r.id)) : ''}</b><span>${p ? `${esc(p.user_id === UID ? 'あなた' : msgName(p))}：${esc(p.body.slice(0, 40))}` : esc(r.sub)}</span></div>${p ? `<span class="note" style="flex:none">${hhmm(p.created_at)}</span>` : ''}${unread ? '<span class="udot" aria-label="未読あり"></span>' : ''}</button>`; }).join('')}</div>`
     : `<div class="empty">話せる相手がまだいません。<br>グループに入るか、フレンドを追加するとここに出ます。<div class="row wrap" style="justify-content:center;gap:8px;margin-top:12px"><a class="btn sm primary" href="#groups">${icon('users')}グループ</a><a class="btn sm" href="#rank">${icon('plus')}フレンドを追加</a></div></div>`}</section>
   <p class="note">チャットに参加するには「ランキングに参加する」をオンにしておく必要があります。個人チャットはフレンドどうしだけで使えます。</p>`;
 };
@@ -3305,6 +3343,7 @@ setInterval(() => { if (MODE === 'cloud' && S() && !document.hidden && ['rank', 
 // unread chats / friend requests → badges on the menu, even when you're on another page
 async function pollNotifs(){ if (MODE !== 'cloud' || !S() || document.hidden) return; try { await refreshPub(); await loadPreviews(true); } catch {} renderNav(); }
 setInterval(pollNotifs, 30000); setTimeout(pollNotifs, 4000);
+setInterval(() => { if (MODE === 'cloud' && S() && T.state === 'run' && T.phase === 'study') publishPub(0); }, 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(pollNotifs, 500); });
 window.addEventListener('pagehide', () => { if (MODE === 'cloud' && pending.size) flushAll(); });
 
