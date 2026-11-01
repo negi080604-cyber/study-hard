@@ -251,6 +251,7 @@ input[type=range]{width:100%;accent-color:var(--cyan)}
 .sw.sm{width:24px;height:24px}
 .item.equipped{box-shadow:inset 0 0 0 1.5px var(--cyan)}
 .lightbtn{background:rgba(5,8,18,.7);cursor:pointer;font:inherit;font-size:12.5px;padding:6px 11px;color:var(--mute)}.lightbtn.on{color:#ffe2ad;border-color:rgba(255,226,173,.5)}.lightbtn svg{width:14px;height:14px}
+.vis-opts{display:grid;gap:8px}.vis-opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--glass);color:var(--ink);font:inherit;cursor:pointer}.vis-opt span{font-size:12px;color:var(--mute)}.vis-opt.on{border-color:var(--cyan);background:rgba(34,228,255,.1);box-shadow:inset 0 0 0 1px var(--cyan)}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:var(--c)}
 .sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--cyan)}
@@ -1057,7 +1058,7 @@ function defaultState(owner){
     owned: {desk_basic:1, chair_basic:1, lamp_small:1},
     spent: 0, bonus: 0, badges: {}, missions: {}, roomLog: [{stage: 0, date: today}],
     seenLevel: 1, prefs: {reviewTime: '22:00', stopSound: true, vol: .5, sound: 'rain'},
-    privacy: {share: true, room: true}, friends: [], groups: [], group: '', buddy: {name: 'ミライ', added: false, look: defaultLook('boy'), closet: {}},
+    privacy: {share: true, room: true, vis: 'all'}, friends: [], groups: [], group: '', buddy: {name: 'ミライ', added: false, look: defaultLook('boy'), closet: {}},
     family: {partner: null, kids: [], log: [], lastRoll: '', pending: null, declinedUntil: ''}, house: {rooms: []}, created: Date.now()
   };
 }
@@ -1067,6 +1068,8 @@ function normState(s){
   const o = Object.assign({}, d, s);
   o.prefs = Object.assign({}, d.prefs, s.prefs || {});
   o.privacy = Object.assign({}, d.privacy, s.privacy || {});
+  if (!['all', 'friends', 'none'].includes(o.privacy.vis)) o.privacy.vis = s.privacy && s.privacy.share === false ? 'none' : 'all';
+  o.privacy.share = o.privacy.vis !== 'none';
   o.room = Object.assign({}, d.room, s.room || {});
   o.buddy = Object.assign({}, d.buddy, s.buddy || {});
   o.buddy.look = normLook(o.buddy.look, o.buddy.gender); if (!o.buddy.closet || typeof o.buddy.closet !== 'object') o.buddy.closet = {};
@@ -1121,10 +1124,7 @@ async function flush(name){
     let res = null;
     const now = new Date().toISOString();
     if (name === 'pub') {
-      const doc = buildPub();
-      res = doc ? await SB.from('public_profiles').upsert({user_id: UID, data: doc, updated_at: now})
-                : await SB.from('public_profiles').delete().eq('user_id', UID);
-      if (!res.error) myPubDoc = doc ? {uid: UID, ...clone(doc)} : null;
+      res = await writePub();
     } else {
       const body = docData(name);
       if (body) res = await SB.from('user_docs').upsert({user_id: UID, name, data: clone(body), updated_at: now});
@@ -1204,7 +1204,7 @@ function renderSetup(){
 }
 function showAuth(){ MODE = 'auth'; setSync('boot'); $('#synctxt').textContent = '未ログイン'; render(); }
 function signedOut(){
-  UID = null; EMAIL = ''; data.state = null; data.months = {}; pubDocs = []; myPubDoc = null; pending.clear();
+  UID = null; EMAIL = ''; data.state = null; data.months = {}; pubDocs = []; myPubDoc = null; lastPubSig = null; STATS_OK = null; pending.clear();
   LS.del('sh-cache'); UI.authTab = 'login'; UI.authMsg = null; showAuth();
 }
 async function startCloud(user){
@@ -1257,14 +1257,20 @@ async function refreshPub(force){
   if (MODE !== 'cloud' || !SB) return;
   if (!force && Date.now() - pubAt < 15000) return;
   pubAt = Date.now();
-  const {data: rows, error} = await SB.from('public_profiles').select('user_id,data').order('updated_at', {ascending: false}).limit(1000);
+  const [{data: rows, error}, sres] = await Promise.all([SB.from('public_profiles').select('user_id,data').order('updated_at', {ascending: false}).limit(1000),
+    STATS_OK === false ? Promise.resolve({data: [], error: null}) : SB.from('rank_stats').select('user_id,vis,data').order('updated_at', {ascending: false}).limit(1000)]);
   if (error || !rows) return;
-  pubDocs = rows.map(r => ({uid: r.user_id, ...clone(r.data)}));
-  myPubDoc = pubDocs.find(d => d.uid === UID) || null;
+  if (sres.error) { if (statsMissing(sres.error)) STATS_OK = false; } else if (STATS_OK === null) STATS_OK = true;
+  const smap = new Map((sres.data || []).map(r => [r.user_id, r.data]));
+  pubDocs = rows.map(r => { const d = {uid: r.user_id, ...clone(r.data)}, sx = smap.get(r.user_id);
+    if (sx) { Object.assign(d, clone(sx)); d.hasStats = true; }
+    else if (!d.vis && d.lv != null) d.hasStats = true;                          // older row written before this update (public)
+    else { for (const k of STAT_KEYS) delete d[k]; d.hasStats = false; }
+    return d; });
   // a friend link opened before signing in
   const pf = LS.get('sh-pending-friend');
   if (pf && S()) { LS.del('sh-pending-friend'); const st = S();
-    if (pf !== st.code && !st.friends.includes(pf) && pubDocs.find(d => d.code === pf)) { st.friends.push(pf); queueWrite('state'); const f = pubDocs.find(d => d.code === pf); toast(`${f.nick || 'ななしの受験生'}さんを友達に追加しました。`, 'users', 5000); } }
+    if (pf !== st.code && !st.friends.includes(pf) && pubDocs.find(d => d.code === pf)) { st.friends.push(pf); queueWrite('state'); publishPub(200); const f = pubDocs.find(d => d.code === pf); toast(`${f.nick || 'ななしの受験生'}さんを友達に追加しました。`, 'users', 5000); } }
   const pg = LS.get('sh-pending-group');
   if (pg && S()) { LS.del('sh-pending-group'); joinGroup(pg, true); }
   dataV++; scheduleRender(); publishPub();
@@ -1284,13 +1290,23 @@ function afterDataReady(){
 }
 
 /* ---------- public ranking doc ---------- */
+let STATS_OK = null;   // null: unknown, true: rank_stats table exists, false: not set up yet (old single-table mode)
+const STAT_KEYS = ['lv', 'tot', 'wk', 'wMin', 'mo', 'mMin', 'streak', 'room'];
+function buildSocial(){
+  const st = S(); if (!st) return null;
+  return {code: st.code, nick: (st.nickname || '').slice(0, 20), vis: st.privacy.vis, groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200)};
+}
 function buildPub(){
-  const st = S(); if (!st || !st.privacy.share) return null;
+  const so = buildSocial(); if (!so) return null; const sx = buildStats();
+  return sx ? {...so, ...sx, hasStats: true} : {...so, hasStats: false};
+}
+function buildStats(){
+  const st = S(); if (!st || st.privacy.vis === 'none') return null;
   const x = stats(), today = dkey();
   return {
-    code: st.code, nick: (st.nickname || '').slice(0, 20), lv: x.level, tot: x.total,
+    lv: x.level, tot: x.total,
     wk: weekStart(today), wMin: x.weekMin, mo: monthOf(today), mMin: x.monthMin, streak: x.streak,
-    groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200), room: st.privacy.room ? {wall: st.room.wall, floor: st.room.floor, light: st.room.light || 'auto', items: st.room.items, size: STAGES[stageFor(x.level)].size, stage: stageFor(x.level), people: pubPeople(st.room), rooms: st.house.rooms.length + 1} : null
+    room: st.privacy.room ? {wall: st.room.wall, floor: st.room.floor, light: st.room.light || 'auto', items: st.room.items, size: STAGES[stageFor(x.level)].size, stage: stageFor(x.level), people: pubPeople(st.room), rooms: st.house.rooms.length + 1} : null
   };
 }
 function pubPeople(room){
@@ -1298,12 +1314,26 @@ function pubPeople(room){
   for (const it of room.items) { if (!F[it.t] || !F[it.t].person) continue; const info = personInfo(it); out[it.t === 'kid' ? 'kid_' + it.kid : it.t] = {name: info.name, look: info.look, stage: info.stage}; }
   return out;
 }
+let lastPubSig = null;
 function publishPub(delay = 1500){
   if (MODE !== 'cloud') return;
-  const doc = buildPub();
-  if (!doc && !myPubDoc) return;
-  if (doc && myPubDoc) { const {uid, upd, ...cur} = myPubDoc; if (stableStr(cur) === stableStr(doc)) return; }
+  const doc = buildPub(); if (!doc) return;
+  if (lastPubSig === stableStr(doc)) return;
   queueWrite('pub', delay);
+}
+const statsMissing = e => e && (/42P01|PGRST205/.test(e.code || '') || /rank_stats|schema cache|does not exist/i.test(e.message || ''));
+async function writePub(){
+  const so = buildSocial(), sx = buildStats(), now = new Date().toISOString(), sig = stableStr(buildPub());
+  if (STATS_OK !== false) {
+    let r = await SB.from('public_profiles').upsert({user_id: UID, data: so, updated_at: now}); if (r.error) return r;
+    r = sx ? await SB.from('rank_stats').upsert({user_id: UID, vis: so.vis === 'friends' ? 'friends' : 'all', data: sx, updated_at: now}) : await SB.from('rank_stats').delete().eq('user_id', UID);
+    if (!r.error) { STATS_OK = true; lastPubSig = sig; return r; }
+    if (!statsMissing(r.error)) return r;
+    STATS_OK = false;
+  }
+  // rank_stats not set up yet: only "全員に公開" can carry numbers in the shared table
+  const r = await SB.from('public_profiles').upsert({user_id: UID, data: so.vis === 'all' && sx ? {...so, ...sx} : so, updated_at: now});
+  if (!r.error) lastPubSig = sig; return r;
 }
 
 /* ================= derived stats ================= */
@@ -2264,7 +2294,7 @@ VIEWS.rank = () => {
   const st = S(), x = stats(), today = dkey(), wk = weekStart(today), mo = monthOf(today);
   if (MODE !== 'cloud') return `<div class="pagehead"><h1>ランキング</h1></div><section class="panel"><div class="empty">${icon('users')}<br>ランキングと友達機能は、ログインして使えます。<br>今はこの端末だけに記録しています（config.js の設定を確認してください）。</div></section>`;
   const val = d => UI.rankPeriod === 'week' ? (d.wk === wk ? d.wMin || 0 : 0) : UI.rankPeriod === 'month' ? (d.mo === mo ? d.mMin || 0 : 0) : (d.tot || 0);
-  let pool = pubDocs.filter(d => d.code && d.uid !== UID); const mine = buildPub(); if (mine) pool.push({uid: UID, ...mine});
+  let pool = pubDocs.filter(d => d.code && d.uid !== UID && d.hasStats); const mine = buildPub(); if (mine && mine.hasStats) pool.push({uid: UID, ...mine});
   if (UI.rankScope === 'friends') pool = pool.filter(d => d.uid === UID || st.friends.includes(d.code) || (Array.isArray(d.fr) && d.fr.includes(st.code)));
   const gs = st.groups || [];
   if (UI.rankScope === 'group') { if (!gs.some(g => g.c === UI.rankGroup)) UI.rankGroup = gs[0] ? gs[0].c : null; pool = UI.rankGroup ? pool.filter(d => inGroup(d, UI.rankGroup)) : []; }
@@ -2274,29 +2304,30 @@ VIEWS.rank = () => {
   return `<div class="pagehead"><h1>ランキング</h1><div class="seg">${[['week','週間'],['month','月間'],['total','累計']].map(([k, n]) => `<button data-act="rank-p" data-v="${k}" class="${UI.rankPeriod === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
   <div class="grid2">
     <section class="panel"><div class="ph"><div class="seg">${[['friends','友達'],['group','グループ'],['all','全員']].map(([k, n]) => `<button data-act="rank-s" data-v="${k}" class="${UI.rankScope === k ? 'on' : ''}">${n}</button>`).join('')}</div><span class="note">${UI.rankPeriod === 'week' ? '月曜はじまり' : UI.rankPeriod === 'month' ? `${+mo.slice(5)}月` : '全期間'}</span></div>
-      ${!st.privacy.share ? '<p class="banner" style="margin:0 0 10px">ランキング参加がオフです。自分は表示されません（下の設定で変更できます）。</p>' : ''}
+      ${st.privacy.vis === 'none' ? '<p class="banner" style="margin:0 0 10px">ランキングを非公開にしています。ほかの人の画面にあなたは表示されません（下の設定で変更できます）。</p>' : st.privacy.vis === 'friends' ? '<p class="note" style="margin:0 0 10px">あなたの記録は「互いにフレンド」の人にだけ見えています。</p>' : ''}
       ${UI.rankScope === 'group' && gs.length ? `<div class="chips" style="margin:-2px 0 12px">${gs.map(g => `<button class="chip ${UI.rankGroup === g.c ? 'on' : ''}" style="--c:#a46bff" data-act="rank-g" data-v="${esc(g.c)}"><i></i>${esc(groupName(g.c))}</button>`).join('')}</div>` : ''}
       ${UI.rankScope === 'group' && !gs.length ? `<div class="empty">まだグループに入っていません。<br><a class="btn primary" href="#groups" style="margin-top:12px">${icon('plus')}グループを作る・参加する</a></div>` :
         rows.length ? `<div>${rows.map((r, i) => `<div class="rk ${i < 3 && r.v > 0 ? 'top' + (i + 1) : ''} ${r.uid === UID ? 'me' : ''}"><span class="n">${i + 1}</span><span class="av" style="--c:${avColor(r.uid)}">${esc((r.nick || '?').slice(0, 1))}</span>
           <div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.nick || 'ななしの受験生')}${r.uid === UID ? '（あなた）' : ''}</b><span class="note">LV${r.lv || 1} · ${esc(titleFor(r.lv || 1))} · 連続${r.streak || 0}日</span></div>
           <span class="disp" style="font-size:16px">${fmtHM(r.v)}</span>${r.room && r.uid !== UID ? `<button class="btn sm ghost" data-act="see-room" data-v="${esc(r.uid)}" aria-label="部屋を見る">${icon('eye')}</button>` : ''}</div>`).join('')}</div>`
         : `<div class="empty">${UI.rankScope === 'friends' ? 'まだ友達がいません。右の「友達を追加」から、友達のコードを登録しよう。' : 'まだ参加者がいません。'}</div>`}
-      ${st.privacy.share && !meIn && UI.rankScope !== 'group' ? '<p class="note">あなたのデータを反映中です…</p>' : ''}
+
     </section>
     <div class="stack">
       <section class="panel hero"><div class="ph"><div><span class="eyebrow">INVITE</span><h3>友達を招待する</h3></div></div>
         <p class="note" style="margin:0 0 12px">招待リンクから登録した友達とは、自動でお互いのランキングに表示されます。</p>
         <div class="row wrap" style="gap:8px"><button class="btn primary" data-act="invite">${icon('users')}招待リンクを送る</button><button class="btn" data-act="invite-copy">${icon('copy')}リンクをコピー</button></div></section>
       <section class="panel"><div class="ph"><h3>あなたのフレンドコード</h3></div><div class="row"><span class="code" id="mycode">${esc(st.code)}</span><span class="sp"></span><button class="btn sm" data-act="copy-code">${icon('copy')}コピー</button></div>
-        <p class="note" style="margin:8px 0 0">どちらか一方がコードを登録すれば、お互いの「友達」ランキングに表示されます。</p></section>
+        <p class="note" style="margin:8px 0 0">このコードを友達に教えて、追加してもらおう。お互いに追加すると「互いにフレンド」になります。</p></section>
       <section class="panel"><div class="ph"><h3>友達を追加</h3></div><form class="row" data-form="add-friend"><input id="fr-code" type="text" maxlength="6" placeholder="例：K7QX2M" autocomplete="off" style="text-transform:uppercase"><button class="btn primary" type="submit">${icon('plus')}追加</button></form>
-        ${st.friends.length ? `<div class="list" style="margin-top:10px">${st.friends.map(c => { const d = pubDocs.find(p => p.code === c); return `<div class="li"><span class="disp" style="letter-spacing:.15em">${esc(c)}</span><div class="t"><b>${d ? esc(d.nick || 'ななしの受験生') : '見つかりません'}</b><span>${d ? `LV${d.lv}` : 'ランキング参加をオフにしている可能性があります'}</span></div>${d ? `<button class="btn sm ghost" data-act="chat-open" data-v="${esc(dmRoom(d.uid))}" aria-label="チャット">${icon('chat')}</button>` : ''}<button class="btn sm ghost" data-act="fr-del" data-v="${esc(c)}" aria-label="友達を削除">${icon('x')}</button></div>`; }).join('')}</div>` : ''}</section>
+        ${friendListHTML()}</section>
       <section class="panel"><div class="ph"><h3>グループ</h3><a class="btn sm" href="#groups">${gs.length ? '管理する' : '作る・参加する'}</a></div>
         ${gs.length ? `<div class="chips">${gs.map(g => `<span class="chip on" style="--c:#a46bff"><i></i>${esc(groupName(g.c))}</span>`).join('')}</div>` : '<p class="note" style="margin:0">クラスや塾の仲間でグループを作ると、そのメンバーだけのランキングで競えます。</p>'}</section>
-      <section class="panel"><div class="ph"><h3>公開する情報</h3></div>
-        <div class="row" style="margin-bottom:12px"><span style="flex:1;font-size:14px">ランキングに参加する<br><span class="note">ニックネーム・レベル・勉強時間・連続日数</span></span><button class="tog ${st.privacy.share ? 'on' : ''}" data-act="priv" data-k="share" aria-pressed="${st.privacy.share}" aria-label="ランキングに参加する"></button></div>
-        <div class="row"><span style="flex:1;font-size:14px">勉強部屋を公開する</span><button class="tog ${st.privacy.room ? 'on' : ''}" data-act="priv" data-k="room" aria-pressed="${st.privacy.room}" aria-label="勉強部屋を公開する" ${st.privacy.share ? '' : 'disabled'}></button></div>
-        <p class="note" style="margin:10px 0 0">科目の内訳・振り返りの文章・志望校は公開されません。</p></section>
+      <section class="panel"><div class="ph"><h3>ランキングの公開範囲</h3></div>
+        <div class="vis-opts">${[['all', '全員に公開', 'ランキングの「全員」にも表示されます'], ['friends', '互いにフレンドのみ', 'お互いにコードを登録した人にだけ表示'], ['none', '非公開', 'だれのランキングにも表示されません']].map(([k, n, d]) => `<button class="vis-opt ${st.privacy.vis === k ? 'on' : ''}" data-act="vis" data-v="${k}" aria-pressed="${st.privacy.vis === k}"><b>${n}</b><span>${d}</span></button>`).join('')}</div>
+        <div class="row" style="margin-top:12px"><span style="flex:1;font-size:14px">勉強部屋も見せる<br><span class="note">上の範囲の人に、部屋の見た目を見せます</span></span><button class="tog ${st.privacy.room && st.privacy.vis !== 'none' ? 'on' : ''}" data-act="priv" data-k="room" aria-pressed="${st.privacy.room}" aria-label="勉強部屋も見せる" ${st.privacy.vis === 'none' ? 'disabled' : ''}></button></div>
+        <p class="note" style="margin:10px 0 0">どの設定でも、フレンド追加・グループ・チャットは使えます（そのためにニックネームとフレンドコードだけは使われます）。科目の内訳・振り返りの文章・志望校は公開されません。</p>
+        ${STATS_OK === false && st.privacy.vis === 'friends' ? '<p class="banner" style="margin:10px 0 0">「互いにフレンドのみ」を使うには、Supabase で friends.sql を実行してください。実行するまでは、あなたの記録はだれにも表示されません。</p>' : ''}</section>
     </div>
   </div>`;
 };
@@ -2323,7 +2354,7 @@ function joinGroup(code, fromLink){
   if (st.groups.some(g => g.c === code)) { toast('このグループにはもう参加しています。', 'users'); UI.rankScope = 'group'; UI.rankGroup = code; return false; }
   if (st.groups.length >= 10) { toast('参加できるグループは10個までです。', 'x'); return false; }
   const n = groupName(code);
-  if (!n) { toast(fromLink ? '招待されたグループが見つかりませんでした。作った人がランキング参加をオンにしているか確認してください。' : 'そのコードのグループが見つかりません。コードをもう一度確認してください。', 'x', 6000); return false; }
+  if (!n) { toast(fromLink ? '招待されたグループが見つかりませんでした。リンクをもう一度確認してください。' : 'そのコードのグループが見つかりません。コードをもう一度確認してください。', 'x', 6000); return false; }
   st.groups.push({c: code, n}); UI.rankScope = 'group'; UI.rankGroup = code;
   queueWrite('state'); publishPub(200); toast(`グループ「${n}」に参加しました。`, 'users', 4500); return true;
 }
@@ -2331,11 +2362,11 @@ VIEWS.groups = () => {
   const st = S(), gs = st.groups || [], wk = weekStart(dkey());
   if (MODE !== 'cloud') return `<div class="pagehead"><h1>グループ</h1></div><section class="panel"><div class="empty">${icon('users')}<br>グループはログインして使えます。</div></section>`;
   const card = g => {
-    const name = groupName(g.c) || g.n, mem = groupMembers(g.c).map(d => ({...d, v: d.wk === wk ? d.wMin || 0 : 0})).sort((a, b) => b.v - a.v);
-    const total = mem.reduce((a, d) => a + d.v, 0);
+    const name = groupName(g.c) || g.n, mem = groupMembers(g.c).map(d => ({...d, v: d.hasStats && d.wk === wk ? d.wMin || 0 : -1})).sort((a, b) => b.v - a.v);
+    const total = mem.reduce((a, d) => a + Math.max(0, d.v), 0);
     return `<section class="panel"><div class="ph"><div style="min-width:0"><span class="eyebrow">GROUP · ${esc(g.c)}</span><h2 style="overflow:hidden;text-overflow:ellipsis">${esc(name)}</h2></div>${g.own ? '<span class="pill cy">作成者</span>' : ''}</div>
       <div class="row wrap" style="gap:16px;margin-bottom:10px"><div class="kv"><span class="k">メンバー</span><span class="v" style="font-size:18px">${mem.length}<small>人</small></span></div><div class="kv"><span class="k">今週のみんなの合計</span><span class="v" style="font-size:18px">${fmtHM(total)}</span></div></div>
-      ${mem.length ? `<div>${mem.slice(0, 5).map((d, i) => `<div class="rk ${i < 3 && d.v > 0 ? 'top' + (i + 1) : ''} ${d.uid === UID ? 'me' : ''}" style="padding:7px 4px"><span class="n">${i + 1}</span><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(d.nick || 'ななしの受験生')}${d.uid === UID ? '（あなた）' : ''}</b></div><span class="disp">${fmtHM(d.v)}</span></div>`).join('')}</div>` : ''}
+      ${mem.length ? `<div>${mem.slice(0, 5).map((d, i) => `<div class="rk ${i < 3 && d.v > 0 ? 'top' + (i + 1) : ''} ${d.uid === UID ? 'me' : ''}" style="padding:7px 4px"><span class="n">${i + 1}</span><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(d.nick || 'ななしの受験生')}${d.uid === UID ? '（あなた）' : ''}</b></div><span class="disp">${d.hasStats ? fmtHM(d.v) : '<span class="note">非公開</span>'}</span></div>`).join('')}</div>` : ''}
       ${mem.length > 5 ? `<p class="note" style="margin:6px 0 0">ほか ${mem.length - 5}人</p>` : ''}
       ${UI.grpRename === g.c ? `<form class="row" data-form="grp-rename" data-v="${esc(g.c)}" style="margin-top:12px"><input id="gr-name" type="text" maxlength="20" value="${esc(name)}" aria-label="グループ名"><button class="btn primary" type="submit">保存</button><button class="btn ghost" type="button" data-act="grp-rename" data-v="">やめる</button></form>` : ''}
       <div class="row wrap" style="gap:8px;margin-top:14px"><button class="btn sm primary" data-act="grp-invite" data-v="${esc(g.c)}">${icon('users')}招待リンクを送る</button><button class="btn sm" data-act="chat-open" data-v="g:${esc(g.c)}">${icon('chat')}チャット</button><button class="btn sm" data-act="grp-rank" data-v="${esc(g.c)}">${icon('trophy')}ランキング</button>
@@ -2484,6 +2515,27 @@ VIEWS.review = () => {
   </div>`;
 };
 
+function addFriend(raw, retried){
+  const st = S(), c = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (c.length !== 6) { toast('6文字のコードを入力してください。', 'x'); return; }
+  if (c === st.code) { toast('それはあなた自身のコードです。', 'x'); return; }
+  if (st.friends.includes(c)) { toast('すでに登録済みです。', 'users'); return; }
+  const fd = pubDocs.find(p => p.code === c);
+  if (!fd) { if (!retried) refreshPub(true).then(() => addFriend(c, true)); else toast('そのコードの人が見つかりません。コードを確認するか、相手が一度ログインしてから試してください。', 'x', 5000); return; }
+  st.friends.push(c); queueWrite('state'); publishPub(200); pendingRender = false; render();
+  toast(Array.isArray(fd.fr) && fd.fr.includes(st.code) ? `${fd.nick || 'ななしの受験生'}さんと互いにフレンドになりました。` : `${fd.nick || 'ななしの受験生'}さんを追加しました。相手もあなたを追加すると「互いにフレンド」になります。`, 'users', 5000);
+}
+function friendListHTML(){
+  const st = S(), mine = st.code;
+  const row = (c, d, req) => { const mutual = d && Array.isArray(d.fr) && d.fr.includes(mine) && st.friends.includes(c);
+    const status = !d ? 'まだ見つかりません（コードを確認してね）' : req ? 'あなたをフレンドに追加しました' : d.hasStats ? `LV${d.lv || 1}${mutual ? ' · 互いにフレンド' : ''}` : d.vis === 'none' ? `ランキング非公開${mutual ? ' · 互いにフレンド' : ''}` : mutual ? '互いにフレンド' : '相手もあなたを追加すると、記録が見られます';
+    return `<div class="li"><span class="disp" style="letter-spacing:.15em">${esc(c)}</span><div class="t"><b>${d ? esc(d.nick || 'ななしの受験生') : '—'}</b><span>${esc(status)}</span></div>
+      ${d ? `<button class="btn sm ghost" data-act="chat-open" data-v="${esc(dmRoom(d.uid))}" aria-label="チャット">${icon('chat')}</button>` : ''}
+      ${req ? `<button class="btn sm primary" data-act="fr-accept" data-v="${esc(c)}">${icon('plus')}追加</button>` : `<button class="btn sm ghost" data-act="fr-del" data-v="${esc(c)}" aria-label="友達を削除">${icon('x')}</button>`}</div>`; };
+  const reqs = pubDocs.filter(d => d.uid !== UID && d.code && Array.isArray(d.fr) && d.fr.includes(mine) && !st.friends.includes(d.code));
+  return (reqs.length ? `<h3 style="margin:14px 0 4px;font-size:14px">あなたを追加した人 <span class="pill cy">${reqs.length}</span></h3><div class="list">${reqs.map(d => row(d.code, d, true)).join('')}</div>` : '')
+    + (st.friends.length ? `<h3 style="margin:14px 0 4px;font-size:14px">フレンド</h3><div class="list">${st.friends.map(c => row(c, pubDocs.find(p => p.code === c), false)).join('')}</div>` : '');
+}
 /* ---------- chat (groups + friends) ---------- */
 const CHAT = {room: null, msgs: [], chan: null, poll: null, ready: null, previews: {}, prevAt: 0, sending: false, draft: ''};
 const dmRoom = uid => 'd:' + [UID, uid].sort().join(':');
@@ -2492,7 +2544,7 @@ function chatRooms(){
   for (const g of (st.groups || [])) rooms.push({id: 'g:' + g.c, name: groupName(g.c) || g.n, sub: `グループ · ${groupMembers(g.c).length}人`, kind: 'g'});
   const seen = new Set();
   for (const d of pubDocs) { if (d.uid === UID || seen.has(d.uid)) continue;
-    if (st.friends.includes(d.code) || (Array.isArray(d.fr) && d.fr.includes(st.code))) { seen.add(d.uid); rooms.push({id: dmRoom(d.uid), name: d.nick || 'ななしの受験生', sub: `フレンド · LV${d.lv || 1}`, kind: 'd'}); } }
+    if (st.friends.includes(d.code) || (Array.isArray(d.fr) && d.fr.includes(st.code))) { seen.add(d.uid); rooms.push({id: dmRoom(d.uid), name: d.nick || 'ななしの受験生', sub: d.hasStats ? `フレンド · LV${d.lv || 1}` : 'フレンド', kind: 'd'}); } }
   return rooms;
 }
 const chatMissing = e => e && (/42P01|PGRST205|PGRST202/.test(e.code || '') || /messages|schema cache|does not exist/i.test(e.message || ''));
@@ -2766,8 +2818,11 @@ const ACT = {
       queueWrite('state'); publishPub(200); render(); toast(`「${name}」から抜けました。`, 'x'); }, true); },
   'copy-code'(){ const c = S().code; const done = () => toast('フレンドコードをコピーしました。', 'copy');
     try { navigator.clipboard.writeText(c).then(done, () => selectCode()); } catch { selectCode(); } },
-  'fr-del'(b){ S().friends = S().friends.filter(c => c !== b.dataset.v); queueWrite('state'); render(); },
-  priv(b){ const k = b.dataset.k; S().privacy[k] = !S().privacy[k]; queueWrite('state'); publishPub(); render(); },
+  'fr-del'(b){ S().friends = S().friends.filter(c => c !== b.dataset.v); queueWrite('state'); publishPub(200); render(); },
+  priv(b){ const k = b.dataset.k; S().privacy[k] = !S().privacy[k]; queueWrite('state'); publishPub(200); render(); },
+  vis(b){ const st = S(), v = b.dataset.v; if (st.privacy.vis === v) return; st.privacy.vis = v; st.privacy.share = v !== 'none'; queueWrite('state'); publishPub(200); render();
+    toast({all: 'ランキングを全員に公開します。', friends: '「互いにフレンド」の人にだけ記録を見せます。', none: 'ランキングを非公開にしました。チャットやフレンドはそのまま使えます。'}[v], 'lock', 4000); },
+  'fr-accept'(b){ const st = S(), c = b.dataset.v; if (!st.friends.includes(c)) st.friends.push(c); queueWrite('state'); publishPub(200); render(); const d = pubDocs.find(p => p.code === c); toast(`${d ? d.nick || 'ななしの受験生' : c}さんと互いにフレンドになりました。`, 'users', 4000); },
   'see-room'(b){ const d = pubDocs.find(p => p.uid === b.dataset.v); if (!d || !d.room) return;
     showModal(`<div class="ph"><div><span class="eyebrow">ROOM LEVEL ${(d.room.stage || 0) + 1}</span><h3>${esc(d.nick || 'ななしの受験生')}の部屋</h3></div><button class="btn sm ghost" data-act="modal-close" aria-label="閉じる">${icon('x')}</button></div><div class="roomstage">${roomSVG({...d.room, people: d.room.people || {}}, d.room.size || 5, {})}</div><p class="note">LV${d.lv} · ${esc(titleFor(d.lv))} · 累計 ${fmtHM(d.tot)}</p>`); },
   // exams
@@ -3041,12 +3096,7 @@ document.addEventListener('submit', e => {
   if (k === 'onboard') { st.nickname = val('ob-nick').slice(0, 20); st.dailyGoal = +val('ob-goal') || 180; st.onboarded = true; queueWrite('state', 0); publishPub(); closeModal(); render(); toast('ようこそ！まずは25分、タイマーを回してみよう。', 'bolt', 4500); }
   if (k === 'profile') { st.nickname = val('pf-nick').slice(0, 20); st.dailyGoal = clamp(+val('pf-goal') || 180, 10, 1200); if (val('pf-rt')) st.prefs.reviewTime = val('pf-rt'); queueWrite('state'); publishPub(); toast('設定を保存しました。', 'check'); pendingRender = false; render(); }
   if (k === 'subj-add') { const n = val('sj-name'); if (!n) return; const used = st.subjects.length; st.subjects.push({id: 'c' + uid6(), name: n.slice(0, 12), color: EXTRA_COLORS[used % EXTRA_COLORS.length], hidden: false}); queueWrite('state'); pendingRender = false; render(); toast(`「${n}」を追加しました。`, 'plus'); }
-  if (k === 'add-friend') { const c = val('fr-code').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (c.length !== 6) { toast('6文字のコードを入力してください。', 'x'); return; }
-    if (c === st.code) { toast('それはあなた自身のコードです。', 'x'); return; }
-    if (st.friends.includes(c)) { toast('すでに登録済みです。', 'users'); return; }
-    if (!pubDocs.find(p => p.code === c)) { toast('そのコードの人が見つかりません。相手がランキング参加をオンにしているか確認してください。', 'x', 5000); return; }
-    st.friends.push(c); queueWrite('state'); pendingRender = false; render(); toast('友達を追加しました。', 'users'); }
+  if (k === 'add-friend') { addFriend(val('fr-code')); return; }
   if (k === 'grp-create') { const n = val('gc-name').slice(0, 20); if (!n) { toast('グループ名を入れてください。', 'x'); return; }
     if (st.groups.length >= 10) { toast('参加できるグループは10個までです。', 'x'); return; }
     const used = new Set(pubDocs.flatMap(d => (d.groups || []).map(g => g.c))); let c = genCode(); while (used.has(c)) c = genCode();
