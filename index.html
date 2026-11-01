@@ -156,6 +156,13 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--cyan);bo
 .home-hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center}
 @media (max-width:560px){.home-hero{grid-template-columns:1fr;justify-items:center;text-align:center}.home-hero .row{justify-content:center}}
 .ringwrap{position:relative;width:176px;height:176px}
+.rings{display:flex;gap:14px;align-items:center;justify-content:center}
+.rings.two .ringwrap{width:min(176px,40vw);height:min(176px,40vw)}
+.rings.two .ringwrap .rc .disp{font-size:clamp(22px,7.4vw,34px)}
+.rings.two .ringwrap .rc small{margin-top:4px;font-size:11px;text-align:center;max-width:80%}
+.ringwrap.live{text-decoration:none;color:inherit}.ringwrap.live .rc .disp{color:#c9fff0}.ringwrap.live.paused{opacity:.7}
+.ringwrap .rinfo{margin-top:2px !important;font-size:10.5px !important}
+@media (min-width:561px){.home-hero:has(.rings.two){grid-template-columns:auto minmax(0,1fr)}}
 .ringwrap svg{width:100%;height:100%;transform:rotate(-90deg)}
 .ringwrap .rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .ringwrap .rc .disp{font-size:34px;font-weight:600;line-height:1}
@@ -256,6 +263,9 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .hcell{cursor:pointer}.hcell:hover polygon{filter:brightness(1.25)}
 .roomsel{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none}.roomsel::-webkit-scrollbar{display:none}.roomsel button{white-space:nowrap;flex:none}
 .wearhead{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.spinwrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex:none}
+.wearprev.spin{width:150px;height:190px;cursor:grab;touch-action:pan-y;user-select:none}
+.spinctl{display:flex;gap:4px}.spinpose button{padding:5px 9px;font-size:12px}
 .wearprev{width:120px;height:170px;flex:none;border-radius:14px;border:1px solid var(--line);background:radial-gradient(70% 60% at 50% 45%,rgba(61,123,255,.2),transparent 70%),#05070f;display:grid;place-items:center;padding:8px}
 .wearprev svg{width:100%;height:100%}
 .fam-av{width:40px;height:54px;flex:none;display:grid;place-items:center}.fam-av svg{width:100%;height:100%}
@@ -307,7 +317,17 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .rank-ctl{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.rank-per{display:flex;align-items:center;gap:8px}.rank-per .note{flex:none}.seg.wide{display:flex;flex-wrap:nowrap;width:100%}.seg.wide button{flex:1;padding:7px 4px;white-space:nowrap}
 .rk-t{display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex:none;font-family:var(--f-disp);font-size:12.5px;color:var(--mute);min-width:84px}.rk-t span{white-space:nowrap}.rk-t small{font-family:var(--f-body,inherit);font-size:10.5px;margin-right:6px;color:var(--mute)}.rk-t span.on{color:var(--ink);font-size:15px;font-weight:700}
 .rk.me{background:rgba(34,228,255,.07);border-radius:12px}
-.av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;color:#04050b;background:var(--c);flex:none}
+.av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;color:#04050b;background:var(--c);flex:none;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover;display:block}
+.av.live{box-shadow:0 0 0 2px #3ee6a0,0 0 10px rgba(62,230,160,.6)}
+.av.big{box-shadow:0 0 0 2px var(--line-2)}
+.hav{display:flex;text-decoration:none;flex:none}
+@media (max-width:440px){.brand>span{font-size:14px;letter-spacing:.08em}.topbar-in{gap:6px}#hc-sync #synctxt{display:none}#hc-sync{padding:0 9px}.hchip{padding:0 8px;gap:4px}}
+@media (max-width:400px){.brand>span{display:none}}
+@media (max-width:380px){.hav .av{width:26px !important;height:26px !important}}.hav .av{box-shadow:0 0 0 1.5px rgba(34,228,255,.5)}
+.aved{display:flex;justify-content:center}.aved canvas{width:min(280px,72vw);height:min(280px,72vw);border-radius:16px;touch-action:none;cursor:grab;background:#111}
+.msg2.other{flex-direction:row;align-items:flex-start;gap:6px}.msg2 .mav{width:30px;flex:none}.msg2 .mcol{display:flex;flex-direction:column;align-items:flex-start;min-width:0;max-width:calc(100% - 36px)}
+.msg2 .mcol .mrow{max-width:100%}
 .code{font-family:var(--f-disp);font-size:24px;letter-spacing:.2em;font-weight:700}
 
 /* ---------- badges ---------- */
@@ -323,6 +343,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .hometimer{border-color:rgba(34,228,255,.45)}.hometimer.running{box-shadow:0 0 0 1px rgba(34,228,255,.35),0 0 40px -14px rgba(34,228,255,.6)}
 .hometime{font-size:clamp(36px,11vw,52px);font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums;margin:4px 0}
 .modal.wide{width:min(760px,100%)}
+.helpitem summary{cursor:pointer;padding:6px 0}.helpsec h2 .ic{width:20px;height:20px;vertical-align:-3px;color:var(--cyan)}
 .giftshop{max-height:55vh;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
 .giftshop .item{padding:8px}.giftshop .btn,.nowrapbtns .btn{white-space:nowrap}.giftshop .thumb{height:64px}
 .giftcard{display:flex;gap:10px;align-items:center;padding:10px;border-radius:14px;background:linear-gradient(135deg,rgba(255,111,176,.16),rgba(164,107,255,.16));border:1px solid rgba(255,111,176,.4);max-width:280px}
@@ -360,7 +381,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .scrim{position:fixed;inset:0;z-index:54;background:rgba(0,0,0,.5)}
 .fadein{animation:fadeup .35s ease-out}
 @keyframes fadeup{from{opacity:.4;transform:translateY(6px)}}
-@media (max-width:480px){.rk{gap:8px}.rk .av{display:none}.rk .n{width:20px}.rk-t{min-width:0}.roomtop .hint{display:none}}
+@media (max-width:480px){.rk{gap:8px}.rk .av{width:28px !important;height:28px !important;font-size:12px !important}.rk .n{width:20px}.rk-t{min-width:0}.roomtop .hint{display:none}}
 .row>input,.row>select{min-width:0;flex:1 1 120px}.btn{max-width:100%;white-space:normal;text-align:center}
 @media (max-width:430px){#synctxt{display:none}.brand{font-size:15px;letter-spacing:.1em}.hchip{padding:0 8px}.topbar-in{gap:6px}}
 .authmode .dock,.authmode .rail,.authmode #hc-coin,.authmode #hc-lv{display:none}
@@ -395,6 +416,17 @@ details.rv dl{margin:8px 0 0;display:grid;grid-template-columns:auto 1fr;gap:4px
 details.rv dt{color:var(--mute)}
 details.rv dd{margin:0;white-space:pre-wrap;min-width:0}
 .chatwrap{display:flex;flex-direction:column;gap:10px;min-width:0}
+body.kbd .dock{display:none}
+@media (max-width:959px){
+  body.chatfs{overflow:hidden}
+  body.chatfs .dock,body.chatfs .topbar{display:none}
+  body.chatfs .chatwrap{position:fixed;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh);z-index:70;background:var(--bg,#04050b);padding:calc(env(safe-area-inset-top,0px) + 4px) max(10px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 8px) max(10px,env(safe-area-inset-left,0px));gap:6px}
+  body.kbd.chatfs .chatwrap{padding-bottom:8px}
+  body.chatfs .chatlog{flex:1;height:auto;min-height:0;border-radius:14px}
+  body.chatfs .chatwrap > p.note{display:none}
+  body.chatfs .chatwrap .focusnote{margin:0;padding:6px 10px;font-size:12px}
+  body.chatfs .chatbar input{font-size:16px}
+}
 .chathead{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--line)}
 .chatlog{display:flex;flex-direction:column;gap:2px;height:min(58vh,560px);overflow-y:auto;padding:10px 4px;border-radius:var(--r);background:rgba(0,0,0,.25);border:1px solid var(--line);overscroll-behavior:contain}
 .chatbar{display:flex;gap:8px;align-items:center}
@@ -434,6 +466,7 @@ details.rv dd{margin:0;white-space:pre-wrap;min-width:0}
       <span>STUDY <b>HARD</b></span>
     </a>
     <span class="top-sp"></span>
+    <a class="hav" id="hc-av" href="#prefs" aria-label="プロフィール"></a>
     <span class="hchip" id="hc-coin" title="コイン"></span>
     <span class="hchip" id="hc-lv" title="レベル"></span>
     <span class="hchip" id="hc-sync" title="同期状態"><i class="sync" id="syncdot"></i><span id="synctxt">接続中</span></span>
@@ -542,6 +575,8 @@ const IC = {
   image:'<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/>',
   gift:'<rect x="3" y="9" width="18" height="12" rx="1.5"/><path d="M3 13h18M12 9v12M12 9C10 5 6 5 6.5 7.5S10.5 9 12 9zM12 9c2-4 6-4 5.5-1.5S13.5 9 12 9z"/>',
   bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2.1-2.4 3.6M12 17.2v.1"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
   pip:'<rect x="3" y="5" width="18" height="14" rx="2.5"/><rect x="12" y="11" width="7" height="6" rx="1.2"/>',
   star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'
 };
@@ -708,6 +743,11 @@ const WEAR = {
   shoes:{n:'靴', items:{sneakers:{n:'スニーカー',lv:1,cost:0,colors:['#eef0f6','#2b3045','#c4304a']}, slippers:{n:'スリッパ',lv:1,cost:30,colors:['#ff6fb0','#3fb8ff','#eef0f6']}, loafers:{n:'ローファー',lv:3,cost:80,colors:['#3a2418','#1c2133']}, boots:{n:'ブーツ',lv:8,cost:150,colors:['#6b4a32','#1c2133']}, goldshoes:{n:'黄金の靴',lv:32,cost:2000}}},
   acc:{n:'アクセサリー', items:{none:{n:'なし',lv:1,cost:0}, glasses:{n:'メガネ',lv:2,cost:60}, backpack:{n:'リュック',lv:3,cost:100,colors:['#c4304a','#1c2133','#3ee6a0']}, scarf:{n:'マフラー',lv:5,cost:90,colors:['#c4304a','#ffc24d','#3fb8ff','#eef0f6']}, cape:{n:'マント',lv:20,cost:1200,colors:['#c4304a','#1c2133','#a46bff']}, wings:{n:'天使の羽',lv:30,cost:3500}}}
 };
+Object.assign(WEAR.head.items, {catears:{n:'ねこ耳',lv:3,cost:80,colors:['#2b3045','#eef0f6','#c79a5a','#ff9ec4']}, strawhat:{n:'麦わら帽子',lv:4,cost:100}, flower:{n:'花かんむり',lv:5,cost:120}, santa:{n:'サンタ帽',lv:6,cost:150}, gradcap:{n:'角帽（合格！）',lv:10,cost:300}, witch:{n:'魔女の帽子',lv:12,cost:400,colors:['#2b1f4a','#1c2133','#7a2f45']}});
+Object.assign(WEAR.top.items, {shirt:{n:'ワイシャツ',lv:2,cost:60,colors:['#f4f6fb','#bfe0ff','#ffd6e2']}, pajamas:{n:'パジャマ',lv:2,cost:70,colors:['#bfe0ff','#ffd6e2','#d4f5d0','#ffe9a8']}, gakuran:{n:'学ラン',lv:3,cost:150,colors:['#1c2133','#1d2a6b']}, apron:{n:'エプロン',lv:3,cost:80,colors:['#ff9ec4','#3fb8ff','#f4f6fb','#3ee6a0']}, cardigan:{n:'カーディガン',lv:4,cost:110,colors:['#c9b79a','#2a3550','#ff9ec4','#7a2f45']}, dress:{n:'ワンピース',lv:4,cost:140,colors:['#ff8fb8','#3fb8ff','#f4f6fb','#1c2133','#ffd66b']}, aloha:{n:'アロハシャツ',lv:5,cost:120,colors:['#ff7a3a','#3fb8ff','#3ee6a0']}, downjacket:{n:'ダウンジャケット',lv:7,cost:260,colors:['#1c2133','#c4304a','#eef0f6','#ffc24d']}, coat:{n:'ロングコート',lv:8,cost:300,colors:['#c9a87a','#2b3045','#7a2f45']}});
+Object.assign(WEAR.bottom.items, {sweatpants:{n:'スウェット',lv:2,cost:50,colors:['#9aa3b5','#2b3045','#7a5cff']}, pleated:{n:'プリーツスカート',lv:3,cost:80,colors:['#2a3550','#7a2f45','#3b4058']}, cargo:{n:'カーゴパンツ',lv:4,cost:90,colors:['#6b6a3a','#3b4058','#c9b79a']}, hakama:{n:'袴（はかま）',lv:10,cost:400,colors:['#3a2a6b','#7a2f45','#1c2133']}});
+Object.assign(WEAR.shoes.items, {sandals:{n:'サンダル',lv:2,cost:40,colors:['#c79a5a','#2b3045','#ff6fb0']}, rainboots:{n:'長ぐつ',lv:4,cost:90,colors:['#ffc24d','#c4304a','#2a3550']}, running:{n:'ランニングシューズ',lv:5,cost:110,colors:['#3ee6a0','#ff5c7a','#3fb8ff']}, geta:{n:'下駄',lv:6,cost:120}});
+Object.assign(WEAR.acc.items, {omamori:{n:'お守り',lv:2,cost:40}, necktie:{n:'ネクタイ',lv:4,cost:80,colors:['#c4304a','#1d2a6b','#ffc24d']}, shoulderbag:{n:'ショルダーバッグ',lv:4,cost:120,colors:['#6b4a32','#1c2133','#ff9ec4']}, tail:{n:'ねこのしっぽ',lv:5,cost:150,colors:['#2b3045','#eef0f6','#c79a5a']}, halo:{n:'天使の輪',lv:25,cost:2000}});
 const WEAR_SLOTS = ['head','top','bottom','shoes','acc'];
 const DEF_WEAR = {head: 'none', top: 'hoodie', bottom: 'pants', shoes: 'sneakers', acc: 'none'};
 function defaultLook(gender = 'boy'){ return {gender, hair: gender === 'girl' ? 'long' : 'short', hc: 0, skin: 0, wear: {...DEF_WEAR, bottom: gender === 'girl' ? 'skirt' : 'pants'}, wc: {}}; }
@@ -715,7 +755,7 @@ function randomLook(gender, seed){
   let s = hashStr(String(seed)) || 1; const r = n => { s = (Math.imul(s, 1103515245) + 12345) >>> 0; return (s >>> 8) % n; };
   const hairs = HAIRS[gender].map(h => h[0]);
   return {gender, hair: hairs[r(hairs.length)], hc: r(4), skin: r(3),
-    wear: {head: 'none', top: ['hoodie','sweater','tshirt','jersey'][r(4)], bottom: gender === 'girl' ? ['skirt','longskirt','jeans'][r(3)] : ['pants','jeans','shorts'][r(3)], shoes: 'sneakers', acc: r(4) === 0 ? 'glasses' : 'none'},
+    wear: {head: 'none', top: ['hoodie','sweater','tshirt','jersey','shirt','cardigan'][r(6)], bottom: gender === 'girl' ? ['skirt','longskirt','jeans','pleated'][r(4)] : ['pants','jeans','shorts','cargo'][r(4)], shoes: ['sneakers','sneakers','running'][r(3)], acc: r(4) === 0 ? 'glasses' : 'none'},
     wc: {top: r(4), bottom: r(3), shoes: r(3)}};
 }
 const wcol = (L, slot) => { const it = WEAR[slot].items[(L.wear || {})[slot]] || WEAR[slot].items[DEF_WEAR[slot]]; const cols = it.colors || ['#888888']; return cols[((L.wc || {})[slot] || 0) % cols.length]; };
@@ -723,7 +763,7 @@ const wcol = (L, slot) => { const it = WEAR[slot].items[(L.wear || {})[slot]] ||
 function headParts(L){
   const sk = SKINS[L.skin || 0], hc = HAIRC[L.hc || 0], w = Object.assign({}, DEF_WEAR, L.wear || {}), P = [], b = (...a) => P.push(a);
   const skD = mix(sk, '#7a4a30', .22), girl = L.gender === 'girl', H = L.hair || 'short', astro = w.top === 'astronaut';
-  const hat = ['cap', 'beanie'].includes(w.head) && !astro;
+  const hat = ['cap', 'beanie', 'strawhat', 'gradcap', 'santa', 'witch'].includes(w.head) && !astro;
   b(.455, .47, 1.15, .09, .08, .05, skD);                    // neck
   b(.39, .4, 1.2, .22, .22, .06, sk);                        // jaw
   b(.37, .37, 1.26, .26, .26, .23, sk);                      // head
@@ -753,6 +793,13 @@ function headParts(L){
   if (w.head === 'hachimaki') { b(.37, .672, 1.45, .26, .006, .045, '#f4f6fb'); b(.475, .678, 1.455, .05, .004, .035, '#c8102e'); b(.46, .27, 1.33, .03, .04, .13, '#f4f6fb'); b(.51, .27, 1.35, .03, .04, .11, '#f4f6fb'); }
   if (w.head === 'ribbon' && H !== 'pony') { b(.55, .42, 1.57, .14, .05, .07, hcl); b(.6, .43, 1.64, .05, .04, .04, hcl); }
   if (w.head === 'headphones') { b(.35, .48, 1.57, .3, .05, .04, '#1c2133'); b(.31, .44, 1.33, .035, .14, .15, hcl); b(.655, .44, 1.33, .035, .14, .15, hcl); }
+  if (w.head === 'catears') { b(.37, .42, 1.57, .08, .07, .09, hcl); b(.55, .42, 1.57, .08, .07, .09, hcl); b(.39, .49, 1.58, .04, .004, .05, '#ff9ec4'); b(.57, .49, 1.58, .04, .004, .05, '#ff9ec4'); }
+  if (w.head === 'strawhat' && !astro) { b(.26, .26, 1.5, .48, .48, .025, '#e8c66a'); b(.355, .355, 1.525, .29, .29, .035, '#c4304a'); b(.355, .355, 1.56, .29, .29, .07, '#e8c66a'); }
+  if (w.head === 'flower') { [['#ff6fb0', .36, .4], ['#ffd66b', .45, .36], ['#ffffff', .55, .4], ['#ff9ec4', .58, .5], ['#a46bff', .38, .52], ['#ffd66b', .47, .56]].forEach(([c, x, y]) => b(x, y, 1.57, .07, .07, .05, c)); }
+  if (w.head === 'santa' && !astro) { b(.345, .345, 1.49, .31, .3, .05, '#ffffff'); b(.36, .36, 1.54, .28, .27, .1, '#c4304a'); b(.41, .41, 1.64, .18, .17, .08, '#c4304a'); b(.47, .3, 1.66, .08, .1, .05, '#c4304a'); b(.47, .24, 1.62, .07, .06, .07, '#ffffff'); }
+  if (w.head === 'gradcap' && !astro) { b(.355, .355, 1.49, .29, .29, .08, '#1c2133'); b(.28, .28, 1.57, .44, .44, .025, '#1c2133'); b(.48, .48, 1.595, .04, .04, .02, '#ffc24d'); b(.69, .5, 1.44, .02, .02, .13, '#ffc24d'); }
+  if (w.head === 'witch' && !astro) { b(.26, .26, 1.49, .48, .48, .02, hcl); b(.35, .35, 1.51, .3, .3, .1, hcl); b(.36, .36, 1.555, .28, .28, .03, '#ffc24d'); b(.39, .39, 1.61, .22, .22, .1, hcl); b(.43, .43, 1.71, .14, .14, .1, hcl); b(.47, .47, 1.81, .07, .07, .08, hcl); }
+  if (w.acc === 'halo') b(.39, .39, (w.head === 'witch' ? 2.0 : 1.8), .22, .22, .02, '!#ffd66b');
   if (w.head === 'crown') { b(.39, .39, 1.57, .22, .22, .07, '!#ffc24d'); b(.39, .39, 1.64, .05, .05, .05, '!#ffc24d'); b(.475, .475, 1.64, .05, .05, .07, '!#ff5c7a'); b(.56, .56, 1.64, .05, .05, .05, '!#ffc24d'); }
   if (astro) b(.3, .3, 1.15, .4, .4, .5, '~#bcd4ff');
   return P;
@@ -761,11 +808,14 @@ function bodyParts(L, pose = 'stand', seatZ = .78, hold = null, mo = null){
   const sk = SKINS[L.skin || 0], w = Object.assign({}, DEF_WEAR, L.wear || {}), P = [], b = (...a) => P.push(a);
   const girl = L.gender === 'girl', astro = w.top === 'astronaut', sit = pose === 'sit', dz = sit ? seatZ - .7 : 0;
   const tc = astro ? '#eef0f6' : wcol(L, 'top'), tD = mix(tc, '#000000', .22), tL = mix(tc, '#ffffff', .18);
-  const bc = astro ? '#eef0f6' : wcol(L, 'bottom'), bD = mix(bc, '#000000', .2);
-  const sc = w.shoes === 'goldshoes' ? '!#ffc24d' : astro ? '#d8dde8' : wcol(L, 'shoes'), sole = w.shoes === 'goldshoes' ? '#b8892a' : '#2a2a33';
-  const bot = astro ? 'pants' : w.top === 'kimono' ? 'kimono' : w.bottom;
-  const longLeg = bot === 'pants' || bot === 'jeans', drape = bot === 'longskirt' || bot === 'kimono';
-  const sh = w.shoes === 'boots' ? .2 : w.shoes === 'slippers' ? .045 : .075;
+  const dress = w.top === 'dress', pj = w.top === 'pajamas', coat = w.top === 'coat';
+  const bc = astro ? '#eef0f6' : (dress || pj) ? tc : wcol(L, 'bottom'), bD = mix(bc, '#000000', .2);
+  const sc = w.shoes === 'goldshoes' ? '!#ffc24d' : w.shoes === 'geta' ? '#c79a5a' : astro ? '#d8dde8' : wcol(L, 'shoes'), sole = w.shoes === 'goldshoes' ? '#b8892a' : w.shoes === 'geta' ? '#7a5a3a' : '#2a2a33';
+  let bot = astro ? 'pants' : w.top === 'kimono' ? 'kimono' : dress ? 'skirt' : pj ? 'pants' : w.bottom;
+  const pleat = bot === 'pleated'; if (pleat) bot = 'skirt'; if (bot === 'hakama') bot = 'longskirt';
+  const longLeg = ['pants', 'jeans', 'sweatpants', 'cargo'].includes(bot), drape = bot === 'longskirt' || bot === 'kimono';
+  const sh = w.shoes === 'boots' || w.shoes === 'rainboots' ? .2 : w.shoes === 'slippers' || w.shoes === 'sandals' ? .045 : w.shoes === 'geta' ? .085 : .075;
+  const coatSk = coat && !drape && pose !== 'sit';
   const legX = [.375, .515], Z = z => z + dz, F0 = .58;
   // ---------- legs ----------
   if (sit) {
@@ -781,17 +831,20 @@ function bodyParts(L, pose = 'stand', seatZ = .78, hold = null, mo = null){
   } else {
     for (const lx of legX) {
       b(lx - .005, .41, 0, .12, .27, .025, sole); b(lx, .415, .025, .11, .23, sh - .025, sc);
-      if (w.shoes === 'sneakers') b(lx + .01, .645, .03, .09, .005, .02, '#ffffff');
+      if (w.shoes === 'sneakers' || w.shoes === 'running') b(lx + .01, .645, .03, .09, .005, .02, w.shoes === 'running' ? '#2b3045' : '#ffffff');
       if (drape) continue;
       b(lx + .01, .45, sh, .09, .09, .37 - sh, longLeg ? bc : sk);          // shin
+      if (coatSk) continue;
       b(lx + .005, .445, .37, .1, .1, .04, longLeg ? bD : sk);              // knee
       if (bot === 'skirt') b(lx, .44, .41, .11, .11, .09, sk);
       else if (bot === 'shorts') { b(lx, .44, .41, .11, .11, .12, sk); b(lx - .005, .435, .53, .12, .12, .11, bc); }
       else b(lx, .44, .41, .11, .11, .23, bc);                              // thigh
     }
-    if (bot === 'skirt') b(.345, .405, .5, .31, .19, .24, bc);
+    if (coatSk) { b(.335, .4, .37, .33, .2, .37, tc); b(.497, .6, .4, .006, .004, .33, tD); }
+    else if (bot === 'skirt') { b(.345, .405, .5, .31, .19, .24, bc); if (pleat) for (const px of [.38, .44, .5, .56, .62]) b(px, .595, .5, .006, .004, .24, bD); }
     if (drape) { b(.345, .405, .06, .31, .19, .68, bot === 'kimono' ? tc : bc); if (bot === 'kimono') b(.36, .596, .1, .02, .004, .6, mix(tc, '#000000', .25)); }
-    else if (bot !== 'skirt') b(.36, .425, .64, .28, .15, .1, bc);         // hips
+    else if (bot !== 'skirt' && !coatSk) b(.36, .425, .64, .28, .15, .1, bc);         // hips
+    if (bot === 'cargo' && !coatSk) for (const lx of [.37, .615]) b(lx === .37 ? .365 : .625, .47, .46, .01, .07, .08, bD);
   }
   // ---------- torso ----------
   const armX = astro ? [.24, .69] : girl ? [.275, .655] : [.255, .675];
@@ -801,10 +854,10 @@ function bodyParts(L, pose = 'stand', seatZ = .78, hold = null, mo = null){
     b(girl ? .375 : .37, .43, wz, girl ? .25 : .26, .14, wh, tc);                               // waist
     b(girl ? .35 : .335, .42, Z(.9), girl ? .3 : .33, .16, .16, tc);                           // chest
     b(girl ? .345 : .325, .43, Z(1.06), girl ? .31 : .35, .14, .09, tc);                       // shoulders
-    if (w.top !== 'kimono' && w.top !== 'tshirt') b(.37, .57, wz, .26, .006, .03, tD);        // hem line
+    if (!['kimono', 'tshirt', 'aloha', 'dress', 'coat'].includes(w.top)) b(.37, .57, wz, .26, .006, .03, tD);        // hem line
   }
   // ---------- arms ----------
-  const longSleeve = w.top !== 'tshirt';
+  const longSleeve = w.top !== 'tshirt' && w.top !== 'aloha' && w.top !== 'dress';
   const mt = mo && mo.type, mp = mo ? mo.ph : 0, fc = longSleeve ? tc : sk;
   for (const [ai, ax] of armX.entries()) {
     if (longSleeve) b(ax, .445, Z(.9), .07, .11, .25, tc); else { b(ax, .445, Z(1.0), .07, .11, .15, tc); b(ax + .003, .45, Z(.9), .065, .1, .1, sk); }
@@ -836,6 +889,19 @@ function bodyParts(L, pose = 'stand', seatZ = .78, hold = null, mo = null){
   else if (w.top === 'sweater') { b(.37, .571, fz + (sit ? .8 : .74), .26, .006, .04, tD); b(.42, F0, fz + 1.1, .16, .005, .05, tD); }
   else if (w.top === 'tshirt') b(.44, F0, fz + 1.08, .12, .005, .05, mix(sk, '#000000', .08));
   else if (w.top === 'kimono') { b(.37, .571, fz + .8, .26, .008, .1, '#d6b25e'); b(.44, F0, fz + 1.0, .12, .006, .15, '#f4f6fb'); b(.46, F0 + .007, fz + 1.0, .08, .004, .15, tL); }
+  else if (w.top === 'shirt') { b(.42, F0, fz + 1.08, .16, .005, .05, mix(tc, '#ffffff', .4)); for (const zz of [.8, .9, 1.0]) b(.493, F0, fz + zz, .014, .005, .014, '#c9ccd6'); }
+  else if (w.top === 'cardigan') { b(.465, F0, fz + .78, .07, .005, .32, '#f4f6fb'); for (const zz of [.82, .92, 1.0]) b(.44, F0 + .001, fz + zz, .018, .005, .018, tD); }
+  else if (w.top === 'gakuran') { b(.42, F0, fz + 1.09, .16, .005, .05, tD); for (const zz of [.78, .86, .94, 1.02]) b(.49, F0 + .001, fz + zz, .02, .005, .02, '#ffc24d'); }
+  else if (w.top === 'apron') { b(.38, F0 + .002, fz + (sit ? .8 : .62), .24, .006, sit ? .26 : .42, '#f4f6fb'); b(.43, F0 + .009, fz + (sit ? .84 : .72), .14, .004, .08, mix(tc, '#ffffff', .2)); }
+  else if (w.top === 'pajamas') { for (const [px, zz] of [[.39, .8], [.55, .86], [.45, .96], [.6, 1.0], [.4, 1.02]]) b(px, F0, fz + zz, .03, .005, .03, '#ffffff'); }
+  else if (w.top === 'downjacket') { for (const zz of [.84, .94, 1.04]) b(.36, F0 + .001, fz + zz, .28, .005, .012, tD); b(.497, F0 + .002, fz + .76, .006, .004, .32, tD); }
+  else if (w.top === 'coat') { b(.42, F0, fz + 1.08, .16, .005, .05, tD); for (const zz of [.8, .92]) { b(.44, F0 + .001, fz + zz, .02, .005, .02, tD); b(.54, F0 + .001, fz + zz, .02, .005, .02, tD); } b(.37, .571, fz + .77, .26, .008, .04, tD); }
+  else if (w.top === 'aloha') { for (const [px, zz, c] of [[.38, .8, '#ffffff'], [.52, .88, '#ffd66b'], [.42, .98, '#ff6fb0'], [.58, 1.0, '#ffffff']]) b(px, F0, fz + zz, .05, .005, .05, c); b(.44, F0, fz + 1.08, .12, .005, .05, sk); }
+  else if (w.top === 'dress') { b(.37, .571, fz + (sit ? .8 : .76), .26, .008, .03, tD); b(.44, F0, fz + 1.08, .12, .005, .05, sk); }
+  if (w.acc === 'necktie') { b(.485, F0 + .008, fz + .8, .03, .004, .26, wcol(L, 'acc')); b(.478, F0 + .008, fz + .76, .044, .004, .05, wcol(L, 'acc')); }
+  if (w.acc === 'omamori') b(.39, F0 + .008, fz + .9, .04, .004, .06, '#c4304a');
+  if (w.acc === 'shoulderbag' && !sit) { b(.76, .44, fz + .6, .06, .16, .17, wcol(L, 'acc')); b(.36, F0 + .009, fz + 1.0, .28, .004, .025, mix(wcol(L, 'acc'), '#000000', .25)); }
+  if (w.acc === 'tail') { b(.47, .3, fz + (sit ? .84 : .62), .06, .12, .05, wcol(L, 'acc')); b(.47, .23, fz + (sit ? .89 : .67), .05, .07, .22, wcol(L, 'acc')); }
   if (hold === 'book') { const yy = sit ? .76 : .72; b(.36, yy, fz + .86, .28, .035, .19, '#d9576e'); b(.38, yy + .035, fz + .88, .24, .004, .15, '#f4f6fb'); }
   if (hold === 'cup' && !(mt === 'drink' && mp % 6 < 2)) { const yy = sit ? .74 : .7; b(.45, yy, fz + .85, .1, .1, .12, '#eef0f6'); b(.47, yy + .02, fz + .97, .06, .06, .005, '#6b3a1e'); }
   if (w.acc === 'backpack') { b(.36, .3, fz + .8, .28, .12, .34, wcol(L, 'acc')); b(.38, .29, fz + .85, .24, .01, .12, mix(wcol(L, 'acc'), '#000000', .25)); b(.37, F0 + .01, fz + .95, .04, .005, .2, '#2b3045'); b(.59, F0 + .01, fz + .95, .04, .005, .2, '#2b3045'); }
@@ -1817,6 +1883,52 @@ F.washer.useParts = F.washer.parts.map(p => p[6] === '~#7dd3fc' ? [...p.slice(0,
 // ショップの並び順：今買える → レベルは足りるけどコイン不足 → ロック中（それぞれ、この部屋の専用家具が先・安い順）
 function shopRank(t, x, ent){ const d = F[t], lock = x.level < d.lv || !roomUnlocked(t), poor = x.coins < costOf(t);
   return (lock ? 2e6 : poor ? 1e6 : 0) + (d.room && ent && d.room === ent.kind ? 0 : 5e5) + (lock ? d.lv * 1e3 : 0) + costOf(t); }
+/* ---------- いろいろなラグ（模様つき） ---------- */
+Object.assign(F, {
+  rug_round:{n:'丸いラグ', lv:2, cost:150, rug:true, pat:'round', W:2, D:2, colors:['#c9b79a','#3a5a8a','#ff9ec4','#3ee6a0','#2b3045']},
+  rug_stripe:{n:'ストライプラグ', lv:3, cost:180, rug:true, pat:'stripe', W:3, D:2, colors:['#2a3550','#7a2f45','#2f5c55','#c9b79a']},
+  rug_check:{n:'チェックのラグ', lv:4, cost:200, rug:true, pat:'check', W:2, D:2, colors:['#c4304a','#2a3550','#3a7a4a','#6b5a3a']},
+  rug_goza:{n:'ござ', lv:4, cost:120, rug:true, pat:'goza', W:2, D:2, colors:['#c9b46a','#a89a5a']},
+  rug_runner:{n:'ロングラグ', lv:5, cost:160, rug:true, pat:'runner', W:1, D:3, colors:['#7a2f45','#2a3550','#c9b79a']},
+  rug_shaggy:{n:'ふわふわシャギーラグ', lv:6, cost:260, rug:true, pat:'shaggy', W:2, D:2, colors:['#eef0f6','#ffc0d6','#bfe0ff','#c9b79a']},
+  rug_heart:{n:'ハートのラグ', lv:7, cost:280, rug:true, pat:'heart', W:2, D:2, colors:['#ff6fb0','#c4304a','#ffffff']},
+  rug_fur:{n:'ムートンラグ', lv:8, cost:300, rug:true, pat:'fur', W:2, D:1, colors:['#f4efe6','#c9b79a','#4a3a2a']},
+  rug_road:{n:'道路マップのマット', lv:9, cost:320, rug:true, pat:'road', W:3, D:3, colors:['#5cb85c','#3a8a5a']},
+  rug_persian:{n:'ペルシャ絨毯', lv:12, cost:700, rug:true, pat:'persian', W:3, D:2, colors:['#8a1c2a','#1d2a6b','#2f5c55']},
+  rug_rainbow:{n:'虹色ラグ', lv:14, cost:600, rug:true, pat:'rainbow', W:2, D:2, colors:['#ff5c7a','#3fb8ff']},
+  rug_galaxy:{n:'星空ラグ', lv:18, cost:900, rug:true, pat:'galaxy', W:3, D:2, colors:['#0e1238','#1c0e38']}
+});
+function rugInner(d, c, x, y, w, h, sel){
+  const dk = mix(c, '#000000', .3), lt = mix(c, '#ffffff', .35), ol = sel ? '#22e4ff' : dk, NS = 'vector-effect="non-scaling-stroke"', cx = x + w / 2, cy = y + h / 2;
+  const box = (f = c) => `<rect x="${x + .05}" y="${y + .05}" width="${w - .1}" height="${h - .1}" fill="${f}" stroke="${ol}" stroke-width="2" ${NS}/>`;
+  let s = '';
+  switch (d.pat) {
+    case 'round': return `<ellipse cx="${cx}" cy="${cy}" rx="${w / 2 - .08}" ry="${h / 2 - .08}" fill="${c}" stroke="${ol}" stroke-width="2" ${NS}/><ellipse cx="${cx}" cy="${cy}" rx="${w / 2 - .3}" ry="${h / 2 - .3}" fill="none" stroke="${lt}" stroke-width="1.4" stroke-dasharray="3 3" ${NS}/><ellipse cx="${cx}" cy="${cy}" rx="${w / 4}" ry="${h / 4}" fill="${lt}" opacity=".35"/>`;
+    case 'stripe': { s = box(); const n = 7, long = w >= h; for (let i = 1; i < n; i += 2) s += long ? `<rect x="${x + .05 + (w - .1) * i / n}" y="${y + .05}" width="${(w - .1) / n}" height="${h - .1}" fill="${lt}" opacity=".55"/>` : `<rect x="${x + .05}" y="${y + .05 + (h - .1) * i / n}" width="${w - .1}" height="${(h - .1) / n}" fill="${lt}" opacity=".55"/>`; return s; }
+    case 'check': { s = box(); const n = 6; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if ((i + j) % 2) s += `<rect x="${x + .05 + (w - .1) * i / n}" y="${y + .05 + (h - .1) * j / n}" width="${(w - .1) / n}" height="${(h - .1) / n}" fill="${lt}" opacity=".6"/>`; return s; }
+    case 'goza': { s = box(); const long = w >= h, n = 14; for (let i = 1; i < n; i++) s += long ? `<line x1="${x + .05}" y1="${y + .05 + (h - .1) * i / n}" x2="${x + w - .05}" y2="${y + .05 + (h - .1) * i / n}" stroke="${dk}" stroke-width=".7" opacity=".6" ${NS}/>` : `<line x1="${x + .05 + (w - .1) * i / n}" y1="${y + .05}" x2="${x + .05 + (w - .1) * i / n}" y2="${y + h - .05}" stroke="${dk}" stroke-width=".7" opacity=".6" ${NS}/>`;
+      return s + `<rect x="${x + .05}" y="${y + .05}" width="${w - .1}" height="${h - .1}" fill="none" stroke="#2f5c55" stroke-width="3" ${NS}/>`; }
+    case 'runner': { s = box(); s += `<rect x="${x + .18}" y="${y + .18}" width="${w - .36}" height="${h - .36}" fill="none" stroke="${lt}" stroke-width="1.5" ${NS}/>`; const long = h >= w;
+      for (let k = 0; k < 3; k++) { const px = long ? cx : x + w * (k + .5) / 3, py = long ? y + h * (k + .5) / 3 : cy, r = .18; s += `<polygon points="${px},${py - r} ${px + r},${py} ${px},${py + r} ${px - r},${py}" fill="${lt}" opacity=".7"/>`; } return s; }
+    case 'shaggy': { s = `<ellipse cx="${cx}" cy="${cy}" rx="${w / 2 - .06}" ry="${h / 2 - .06}" fill="${c}" stroke="${ol}" stroke-width="2" ${NS}/>`; let q = 7; const rnd = () => (q = (q * 9301 + 49297) % 233280) / 233280;
+      for (let i = 0; i < 70; i++) { const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * .92; s += `<circle cx="${(cx + Math.cos(a) * r * (w / 2 - .1)).toFixed(3)}" cy="${(cy + Math.sin(a) * r * (h / 2 - .1)).toFixed(3)}" r=".045" fill="${i % 2 ? lt : dk}" opacity=".55"/>`; } return s; }
+    case 'heart': { const W2 = w - .2, H2 = h - .2, X = x + .1, Y = y + .1, pt = (u, v) => `${(X + u * W2).toFixed(3)},${(Y + v * H2).toFixed(3)}`;
+      return `<path d="M${pt(.5, .95)} C${pt(.05, .62)} ${pt(-.02, .2)} ${pt(.27, .1)} C${pt(.42, .06)} ${pt(.5, .2)} ${pt(.5, .28)} C${pt(.5, .2)} ${pt(.58, .06)} ${pt(.73, .1)} C${pt(1.02, .2)} ${pt(.95, .62)} ${pt(.5, .95)}Z" fill="${c}" stroke="${ol}" stroke-width="2" ${NS}/><path d="M${pt(.5, .8)} C${pt(.2, .58)} ${pt(.18, .3)} ${pt(.32, .25)}" fill="none" stroke="${lt}" stroke-width="1.5" stroke-dasharray="3 3" ${NS}/>`; }
+    case 'fur': { const pts = []; for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2, r = (i % 2 ? .9 : 1) * (1 - .12 * Math.abs(Math.sin(a * 2))); pts.push(`${(cx + Math.cos(a) * r * (w / 2 - .06)).toFixed(3)},${(cy + Math.sin(a) * r * (h / 2 - .06)).toFixed(3)}`); }
+      return `<polygon points="${pts.join(' ')}" fill="${c}" stroke="${ol}" stroke-width="2" ${NS}/><ellipse cx="${cx}" cy="${cy}" rx="${w / 3}" ry="${h / 3.4}" fill="${lt}" opacity=".35"/>`; }
+    case 'road': { s = box(); const m = .55; s += `<rect x="${x + m}" y="${y + m}" width="${w - 2 * m}" height="${h - 2 * m}" rx=".3" fill="none" stroke="#5a5f70" stroke-width=".32"/><rect x="${x + m}" y="${y + m}" width="${w - 2 * m}" height="${h - 2 * m}" rx=".3" fill="none" stroke="#ffffff" stroke-width="1" stroke-dasharray="4 4" ${NS}/>`;
+      s += `<line x1="${cx}" y1="${y + m}" x2="${cx}" y2="${y + h - m}" stroke="#5a5f70" stroke-width=".32"/><rect x="${x + .15}" y="${y + .15}" width=".3" height=".25" fill="#ff6fb0"/><rect x="${x + w - .45}" y="${y + h - .4}" width=".3" height=".25" fill="#3fb8ff"/><circle cx="${x + w - .3}" cy="${y + .3}" r=".15" fill="#2f7d4f"/>`; return s; }
+    case 'persian': { s = box(); s += `<rect x="${x + .16}" y="${y + .16}" width="${w - .32}" height="${h - .32}" fill="${dk}" stroke="#d6b25e" stroke-width="1.5" ${NS}/><rect x="${x + .3}" y="${y + .3}" width="${w - .6}" height="${h - .6}" fill="${c}" stroke="#d6b25e" stroke-width="1" ${NS}/>`;
+      const r = Math.min(w, h) * .22; s += `<polygon points="${cx},${cy - r} ${cx + r * 1.4},${cy} ${cx},${cy + r} ${cx - r * 1.4},${cy}" fill="#1d2a6b" stroke="#d6b25e" stroke-width="1.2" ${NS}/><circle cx="${cx}" cy="${cy}" r="${r * .35}" fill="#d6b25e"/>`;
+      for (const [u, v] of [[.42, .42], [w - .42, .42], [.42, h - .42], [w - .42, h - .42]]) s += `<circle cx="${x + u}" cy="${y + v}" r=".07" fill="#d6b25e"/>`; return s; }
+    case 'rainbow': { const cols = ['#ff5c7a', '#ff9350', '#ffd66b', '#3ee6a0', '#3fb8ff', '#a46bff'], st = d.colors.indexOf(c) === 1 ? 3 : 0;
+      cols.forEach((cc, i) => { s += `<ellipse cx="${cx}" cy="${cy}" rx="${(w / 2 - .06) * (1 - i / 6.5)}" ry="${(h / 2 - .06) * (1 - i / 6.5)}" fill="${cols[(i + st) % 6]}" ${i ? '' : `stroke="${ol}" stroke-width="2" ${NS}`}/>`; }); return s; }
+    case 'galaxy': { s = box(); s += `<ellipse cx="${cx}" cy="${cy}" rx="${w / 2.6}" ry="${h / 4}" fill="#5a3a9a" opacity=".45"/>`; let q = 3; const rnd = () => (q = (q * 9301 + 49297) % 233280) / 233280;
+      for (let i = 0; i < 40; i++) s += `<circle cx="${(x + .12 + rnd() * (w - .24)).toFixed(3)}" cy="${(y + .12 + rnd() * (h - .24)).toFixed(3)}" r="${(.012 + rnd() * .03).toFixed(3)}" fill="${i % 5 ? '#ffffff' : '#ffd66b'}"/>`;
+      return s + `<circle cx="${x + w * .75}" cy="${y + h * .3}" r=".16" fill="#ffd66b" opacity=".9"/>`; }
+    default: return box() + `<rect x="${x + .22}" y="${y + .22}" width="${w - .44}" height="${h - .44}" fill="none" stroke="${lt}" stroke-width="1.2" stroke-dasharray="3 3" ${NS}/>`;
+  }
+}
 const roomUnlocked = t => { const d = F[t]; return !d.room || (S() && allEntries().some(r => r.kind === d.room)); };
 
 const F_ORDER_OLD = ['desk_basic','chair_basic','lamp_small','poster','banner','carpet','desk_pro','chair_gaming','bookshelf','plant','window','desklight','pc','monitor','clock','sofa','bed','trophy','neon','aquarium','bigwindow','hologram','trophycase'];
@@ -2116,7 +2228,7 @@ function buildSocial(){
   const st = S(); if (!st) return null;
   const inv = {}; for (const [c, k] of Object.entries(st.friendVia || {})) if (st.friends.includes(c) && !isFollowingCode(c)) inv[c] = hashStr(k + ':' + st.code).toString(36);
   const live = liveNow();
-  return {code: st.code, nick: (st.nickname || '').slice(0, 20), vis: st.privacy.vis, ...(live ? {live} : {}), groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200), ok: (st.approved || []).slice(0, 300), ...(Object.keys(inv).length ? {inv} : {})};
+  return {code: st.code, nick: (st.nickname || '').slice(0, 20), vis: st.privacy.vis, ...(live ? {live} : {}), groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200), ok: (st.approved || []).slice(0, 300), ...(avOK(st.avatar) ? {av: st.avatar} : {}), ...(Object.keys(inv).length ? {inv} : {})};
 }
 function buildPub(){
   const so = buildSocial(); if (!so) return null; const sx = buildStats();
@@ -2161,8 +2273,10 @@ async function writePub(){
 /* ================= derived stats ================= */
 let statCache = {v: -1, val: null};
 function goalFor(k){
+  // 設定で目標を変えた日は、その設定が優先（前日の振り返りで決めた「明日の目標」より新しいので）
+  const st = S(); if (st.goalDay && st.goalDay.d === k && st.goalDay.m > 0) return st.goalDay.m;
   const prev = addDays(k, -1), rv = data.months[monthOf(prev)]?.reviews?.[prev];
-  return (rv && rv.tg > 0) ? rv.tg : (S().dailyGoal || 0);
+  return (rv && rv.tg > 0) ? rv.tg : (st.dailyGoal || 0);
 }
 function allSessions(){ return Object.values(data.months).flatMap(m => m.sessions); }
 function stats(){
@@ -2289,7 +2403,7 @@ function badgeToast(b){ toast(`実績解除「${b.n}」 ${b.d}　+${BADGE_R[b.id
 /* ================= router & render ================= */
 const ROUTES = {
   home:['ホーム','home'], timer:['タイマー','timer'], stats:['記録・分析','chart'], room:['勉強部屋','room'],
-  rank:['ランキング','trophy'], groups:['グループ','users'], chat:['チャット','chat'], exams:['入試カウントダウン','cal'], review:['今日の振り返り','pen'], badges:['実績・称号','medal'], prefs:['設定','gear']
+  rank:['ランキング','trophy'], groups:['グループ','users'], chat:['チャット','chat'], exams:['入試カウントダウン','cal'], review:['今日の振り返り','pen'], badges:['実績・称号','medal'], prefs:['設定','gear'], help:['ヘルプ・機能一覧','help']
 };
 const route = () => { const h = (location.hash || '').replace('#', ''); return ROUTES[h] ? h : 'home'; };
 let pendingRender = false, renderQueued = false;
@@ -2306,6 +2420,7 @@ function renderHeader(){
   const x = stats();
   $('#hc-coin').innerHTML = icon('coin') + `<span>${Math.max(0, x.coins).toLocaleString()}</span>`;
   $('#hc-lv').innerHTML = `<span style="color:var(--cyan)">LV</span><span>${x.level}</span>`;
+  const ha = $('#hc-av'); if (ha) ha.innerHTML = avHTML(meDoc(), 30);
 }
 const selfStudying = () => typeof T !== 'undefined' && T.state === 'run' && T.phase === 'study';
 function rawNotifCounts(){
@@ -2330,15 +2445,16 @@ function render(){
   const r = route();
   renderHeader(); renderNav();
   const v = $('#view');
+  try { setTimeout(syncChatFS, 0); } catch {}
   v.innerHTML = `<div class="stack fadein">${VIEWS[r]()}</div>`;
   if (r === 'timer') updateTimerUI();
 }
 window.addEventListener('hashchange', () => { UI.sel = null; UI.place = null; if (route() === 'room') UI.buddyIdx = 0; if (route() === 'room' || route() === 'home') setTimeout(familyTick, 300); if (route() !== 'chat') closeChat(); if (route() !== 'review') UI.rvDate = null; render(); window.scrollTo(0, 0); });
 
 /* ================= charts ================= */
-function ringSVG(pct, size = 176, stroke = 12, id = 'rg'){
+function ringSVG(pct, size = 176, stroke = 12, id = 'rg', cols = ['#22e4ff', '#a46bff']){
   const r = (size - stroke) / 2 - 4, c = 2 * Math.PI * r, p = clamp(pct, 0, 1);
-  return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22e4ff"/><stop offset="1" stop-color="#a46bff"/></linearGradient></defs>
+  return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${cols[0]}"/><stop offset="1" stop-color="${cols[1]}"/></linearGradient></defs>
   <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="${stroke}"/>
   <circle class="prog" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="url(#${id})" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${(c * p).toFixed(1)} ${c.toFixed(1)}" style="filter:drop-shadow(0 0 6px rgba(34,228,255,.6))"/></svg>`;
 }
@@ -2608,7 +2724,7 @@ function roomSVG(room, N, opts = {}){
   // floor
   s += `<g transform="${mF}"><clipPath id="${pfx}fc"><rect x="0" y="0" width="${N}" height="${N}"/></clipPath><g clip-path="url(#${pfx}fc)">${floorPattern(room.floor, N, pfx)}`;
   for (const it of items.filter(i => F[i.t].rug)) { const [w, dd] = footprint(it), c = F[it.t].colors[(it.c || 0) % F[it.t].colors.length];
-    s += `<g data-i="${it.id}" class="${sel === it.id ? 'sel' : ''}${gcls(it.id)}"><rect x="${it.x + .05}" y="${it.y + .05}" width="${w - .1}" height="${dd - .1}" fill="${c}" stroke="${sel === it.id ? '#22e4ff' : mix(c, '#000000', .3)}" stroke-width="2" vector-effect="non-scaling-stroke"/><rect x="${it.x + .22}" y="${it.y + .22}" width="${w - .44}" height="${dd - .44}" fill="none" stroke="${mix(c, '#ffffff', .3)}" stroke-width="1.2" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/></g>`; }
+    s += `<g data-i="${it.id}" class="${sel === it.id ? 'sel' : ''}${gcls(it.id)}">${rugInner(F[it.t], c, it.x, it.y, w, dd, sel === it.id)}</g>`; }
   s += `<rect x="0" y="0" width="${N}" height="${N}" fill="url(#${pfx}shade)"/></g></g>`;
   // light pools
   const LS0 = lightState(room), poolsOn = LS0.lit;
@@ -2679,7 +2795,7 @@ function thumbSVG(t, ci = 0){
   const d = F[t];
   if (d.person) return personThumb(t === 'buddy' ? buddyLook() : defaultLook(), t === 'kid' ? 1 : undefined);
   if (d.wall) { const W = d.W, H = d.H; return `<svg viewBox="${-.1} ${-.1} ${W + .2} ${H + .2}" style="height:70px"><g transform="translate(0 ${H}) scale(1 -1)">${wallItemSVG({t, c: ci, x: 0}, 'th' + t)}</g><defs><linearGradient id="th${t}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2a6e"/><stop offset="1" stop-color="#0a1230"/></linearGradient></defs></svg>`; }
-  if (d.rug) { const c = d.colors[ci % d.colors.length]; return `<svg viewBox="-110 -10 220 120"><g transform="matrix(${TW} ${TH} ${-TW} ${TH} 0 0)"><rect x="0" y="0" width="3" height="2" fill="${c}" stroke="${mix(c, '#000000', .3)}" stroke-width="2" vector-effect="non-scaling-stroke"/><rect x=".2" y=".2" width="2.6" height="1.6" fill="none" stroke="${mix(c, '#ffffff', .3)}" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/></g></svg>`; }
+  if (d.rug) { const c = d.colors[ci % d.colors.length], W = d.W, D = d.D; return `<svg viewBox="${-TW * D - 6} -6 ${TW * (W + D) + 12} ${TH * (W + D) + 12}"><g transform="matrix(${TW} ${TH} ${-TW} ${TH} 0 0)">${rugInner(d, c, 0, 0, W, D, false)}</g></svg>`; }
   const boxes = d.parts.map(p => ({x: p[0], y: p[1], z: p[2], w: p[3], d: p[4], h: p[5], ...resolveCol(p[6], d, ci)}));
   let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
   for (const b of boxes) for (const pt of [P(b.x, b.y, b.z), P(b.x + b.w, b.y, b.z + b.h), P(b.x, b.y + b.d, b.z), P(b.x + b.w, b.y + b.d, b.z), P(b.x, b.y, b.z + b.h)]) { minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]); minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]); }
@@ -2941,8 +3057,9 @@ function updateTimerUI(){
   if (ring) { const r = +ring.getAttribute('r'), c = 2 * Math.PI * r; ring.setAttribute('stroke-dasharray', `${(c * D.pct).toFixed(1)} ${c.toFixed(1)}`); }
   set('#t-xp', D.isBrk ? '休憩中は記録されません' : `いまの獲得予定 +${Math.floor(Math.min(D.el, sessionCap()) / 60000)} XP`);
   // ホームの「計測中」カード
-  set('#h-ttime', D.time); set('#h-tinfo', D.info); set('#h-tlabel', D.label);
-  const hb = $('#h-tbar'); if (hb) hb.style.width = (D.pct * 100).toFixed(1) + '%';
+  set('#h-ttime', D.time); set('#h-tinfo', D.info.replace(/（.*?）/, ''));
+  const hr = $('#h-ring .prog'); if (hr) { const r = +hr.getAttribute('r'), c = 2 * Math.PI * r; hr.setAttribute('stroke-dasharray', `${(c * D.pct).toFixed(1)} ${c.toFixed(1)}`); }
+  if (route() === 'home' && UI.homeLive !== (T.state !== 'idle')) scheduleRender();
   paintMini(D);
 }
 function timerStart(){
@@ -3102,6 +3219,47 @@ async function openMini(){
 }
 function closeMini(){ MINI.overlay = false; const o = document.getElementById('mini-overlay'); if (o) o.remove(); try { MINI.wake && MINI.wake.release(); } catch {} MINI.wake = null; if (T.state === 'idle') stopTick(); }
 setInterval(() => { const o = MINI.overlay && document.getElementById('mini-overlay'); if (o) { const c = o.querySelector('[data-m="clock"]'); if (c) c.textContent = hmOf(Date.now()); } }, 1000);
+/* ================= プロフィールのアイコン（丸い写真） ================= */
+const AV_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+const avOK = v => typeof v === 'string' && v.length < 60000 && AV_RE.test(v);
+const avColorG = id => ['#22e4ff','#a46bff','#3d7bff','#3ee6a0','#ffc24d','#ff6fb0','#ff9350'][hashStr(String(id || '?')) % 7];
+function avHTML(d, size = 34, cls = ''){
+  const uid = d && d.uid, nick = (d && d.nick) || 'ななしの受験生', av = d && (uid && uid === UID ? S().avatar : d.av);
+  return `<span class="av ${cls}" style="--c:${avColorG(uid || nick)};width:${size}px;height:${size}px;font-size:${Math.round(size * .42)}px">${avOK(av) ? `<img src="${av}" alt="" loading="lazy">` : esc(nick.slice(0, 1))}</span>`;
+}
+const meDoc = () => ({uid: UID || 'me', nick: S().nickname, av: S().avatar});
+// 写真を選んで、丸く切り抜く（ドラッグで位置、スライダーで大きさ）
+function avatarEditor(file){
+  const url = URL.createObjectURL(file), img = new Image();
+  img.onerror = () => { URL.revokeObjectURL(url); toast('この画像は読み込めませんでした。', 'x'); };
+  img.onload = () => {
+    const E = UI.avEd = {img, url, z: 1, x: 0, y: 0};
+    showModal(`<div class="ph"><div><span class="eyebrow">ICON</span><h3>アイコンの位置を合わせる</h3></div></div>
+      <div class="aved"><canvas id="av-cv" width="280" height="280" aria-label="アイコンのプレビュー（ドラッグで動かせます）"></canvas></div>
+      <label class="fld" for="av-z" style="margin-top:10px">大きさ<input id="av-z" type="range" min="1" max="4" step="0.01" value="1"></label>
+      <p class="note" style="margin:6px 0 0">写真をドラッグして、丸の中に入れたい部分を合わせてね。</p>
+      <div class="acts"><button class="btn ghost" data-act="modal-close">やめる</button><button class="btn primary" data-act="av-save">${icon('check')}このアイコンにする</button></div>`,
+      {mount: m => { const cv = m.querySelector('#av-cv'); drawAvEd();
+        let drag = null; cv.addEventListener('pointerdown', e => { drag = {x: e.clientX, y: e.clientY, ox: E.x, oy: E.y}; cv.setPointerCapture(e.pointerId); });
+        cv.addEventListener('pointermove', e => { if (!drag) return; const k = 280 / cv.getBoundingClientRect().width; E.x = drag.ox + (e.clientX - drag.x) * k; E.y = drag.oy + (e.clientY - drag.y) * k; drawAvEd(); });
+        cv.addEventListener('pointerup', () => { drag = null; }); cv.addEventListener('pointercancel', () => { drag = null; });
+        m.querySelector('#av-z').addEventListener('input', e => { E.z = +e.target.value; drawAvEd(); }); }});
+  };
+  img.src = url;
+}
+function avDraw(g, S0, mask){
+  const E = UI.avEd, iw = E.img.naturalWidth, ih = E.img.naturalHeight, base = S0 / Math.min(iw, ih), sc = base * E.z, k = S0 / 280;
+  const w = iw * sc, h = ih * sc; E.x = clamp(E.x, -(w / k - 280) / 2, (w / k - 280) / 2); E.y = clamp(E.y, -(h / k - 280) / 2, (h / k - 280) / 2);
+  g.fillStyle = '#fff'; g.fillRect(0, 0, S0, S0); g.drawImage(E.img, (S0 - w) / 2 + E.x * k, (S0 - h) / 2 + E.y * k, w, h);
+  if (mask) { g.fillStyle = 'rgba(4,5,11,.62)'; g.beginPath(); g.rect(0, 0, S0, S0); g.arc(S0 / 2, S0 / 2, S0 / 2 - 6, 0, Math.PI * 2, true); g.fill(); g.strokeStyle = '#22e4ff'; g.lineWidth = 2; g.beginPath(); g.arc(S0 / 2, S0 / 2, S0 / 2 - 6, 0, Math.PI * 2); g.stroke(); }
+}
+function drawAvEd(){ const cv = $('#av-cv'); if (!cv || !UI.avEd) return; avDraw(cv.getContext('2d'), 280, true); }
+function saveAvatar(){
+  const E = UI.avEd; if (!E) return; const c = document.createElement('canvas'), S0 = 160; c.width = c.height = S0;
+  const g = c.getContext('2d'); const k = 280 / S0; const ox = E.x, oy = E.y; avDraw(g, S0, false); E.x = ox; E.y = oy;
+  let q = .85, out = c.toDataURL('image/jpeg', q); while (out.length > 40000 && q > .4) { q -= .1; out = c.toDataURL('image/jpeg', q); }
+  URL.revokeObjectURL(E.url); UI.avEd = null; S().avatar = out; queueWrite('state'); publishPub(200); closeModal(); render(); toast('アイコンを変えました！ ランキングやチャットに表示されます。', 'check', 4000);
+}
 /* ================= VIEWS ================= */
 const VIEWS = {};
 function nextExam(){
@@ -3121,18 +3279,15 @@ VIEWS.home = () => {
   return `
   ${showReview ? `<a class="banner" href="#review" style="text-decoration:none;color:inherit">${icon('moon')}<span style="flex:1">夜の振り返りの時間です。今日がんばったことを記録しよう。</span>${icon('chevR')}</a>` : ''}
   ${showY ? `<button class="banner" data-act="rv-yesterday" style="width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer">${icon('pen')}<span style="flex:1">昨日（${fmtMD(yk)}）の振り返りがまだです。今からでも書けます。</span>${icon('chevR')}</button>` : ''}
-  ${T.state !== 'idle' ? (() => { const sj = subjOf(T.subj), D = timerDisplay(); return `<section class="panel hometimer ${T.state === 'run' ? 'running' : ''}"><div class="row wrap" style="gap:14px;align-items:center">
-      <div style="flex:1;min-width:180px"><span class="eyebrow" id="h-tlabel">${esc(D.label)}</span><div class="disp hometime" id="h-ttime">${D.time}</div>
-        <div class="note"><span class="dot" style="--c:${sj.color};display:inline-block;margin-right:6px"></span>${esc(sj.name)} · <span id="h-tinfo">${esc(D.info)}</span></div>
-        <div class="bar" style="margin-top:8px"><i id="h-tbar" style="width:${(D.pct * 100).toFixed(1)}%"></i></div></div>
-      <div class="row nowrapbtns" style="gap:6px">${T.state === 'run' ? `<button class="btn sm" data-act="t-pause">${icon('pause')}一時停止</button>` : `<button class="btn sm primary" data-act="t-resume">${icon('play')}再開</button>`}<a class="btn sm" href="#timer">${icon('timer')}タイマー</a><button class="btn sm" data-act="mini-open" aria-label="ミニ表示（ウィジェット）" title="ミニ表示">${icon('pip')}</button></div></div></section>`; })() : ''}
   ${evStatusHTML()}
+  ${(() => { UI.homeLive = T.state !== 'idle'; return ''; })()}
   <section class="panel hero"><div class="home-hero">
-    <div class="ringwrap">${ringSVG(pct, 176, 12, 'hr')}<div class="rc"><span class="disp">${th}<small style="font-size:16px;margin:0 2px">h</small>${pad2(tm)}<small style="font-size:16px;margin-left:2px">m</small></span><small>今日の勉強時間</small></div></div>
+    <div class="rings ${T.state !== 'idle' ? 'two' : ''}">${T.state !== 'idle' ? (() => { const D = timerDisplay(), sj = subjOf(T.subj); return `<a class="ringwrap live ${T.state === 'pause' ? 'paused' : ''}" href="#timer" id="h-ring" aria-label="計測中のタイマーを開く">${ringSVG(D.pct, 176, 12, 'hl', ['#3ee6a0', '#22e4ff'])}<div class="rc"><span class="disp" id="h-ttime">${D.time}</span><small id="h-tlabel">${T.phase === 'break' ? '休憩中' : T.state === 'pause' ? '一時停止中' : '計測中'} · ${esc(sj.name)}</small><small class="rinfo" id="h-tinfo">${esc(D.info.replace(/（.*?）/, ''))}</small></div></a>`; })() : ''}<div class="ringwrap">${ringSVG(pct, 176, 12, 'hr')}<div class="rc"><span class="disp">${th}<small style="font-size:16px;margin:0 2px">h</small>${pad2(tm)}<small style="font-size:16px;margin-left:2px">m</small></span><small>今日の勉強時間</small></div></div></div>
     <div class="stack" style="gap:14px;min-width:0">
       <div><span class="eyebrow">TODAY · ${fmtMD(today)}（${WD[parseD(today).getDay()]}）</span>
       <div class="row wrap" style="gap:8px;margin-top:6px"><span class="pill ${pct >= 1 ? 'good' : 'cy'}">目標達成率 ${Math.floor(pct * 100)}%</span><span class="pill">目標 ${fmtHM(goal)}</span></div></div>
-      <div class="row wrap" style="gap:10px"><a class="btn primary big" href="#timer">${icon('play')}勉強を始める</a><a class="btn big" href="#room" style="font-size:15px">${icon('room')}自分の部屋へ</a></div>
+      ${T.state !== 'idle' ? `<div class="row wrap" style="gap:8px">${T.state === 'run' ? `<button class="btn" data-act="t-pause">${icon('pause')}一時停止</button>` : `<button class="btn primary" data-act="t-resume">${icon('play')}再開</button>`}<button class="btn" data-act="t-finish">${icon('stop')}${T.phase === 'break' ? '休憩を終える' : '終了して記録'}</button><button class="btn ghost" data-act="mini-open" aria-label="ミニ表示（ウィジェット）" title="ミニ表示">${icon('pip')}</button></div>` : ''}
+      <div class="row wrap" style="gap:10px">${T.state === 'idle' ? `<a class="btn primary big" href="#timer">${icon('play')}勉強を始める</a>` : ''}<a class="btn big" href="#room" style="font-size:15px">${icon('room')}自分の部屋へ</a></div>
     </div></div></section>
   ${liveStrip()}
 
@@ -3331,6 +3486,33 @@ function unplacedPeople(){
   return out;
 }
 const HAIR_N = {short: 'ショート', spiky: 'ツンツン', bob: 'ボブ', long: 'ロング', pony: 'ポニーテール'};
+/* ---------- 360°プレビュー：人をぐるっと回して見る（面ごとに奥から順に描く） ---------- */
+function spinSVG(L, stage, ang, pose){
+  const o = {stage}, now = Date.now(); if (pose === 'walk') o.walk = Math.floor(now / 140); if (pose === 'wave') o.mo = {type: 'wave', ph: Math.floor(now / 380)};
+  const parts = personParts(L, 'stand', o), ca = Math.cos(ang), sa = Math.sin(ang), R = (x, y) => [.5 + (x - .5) * ca - (y - .5) * sa, .5 + (x - .5) * sa + (y - .5) * ca];
+  const faces = [];
+  for (const [x, y, z, w, d, h, key] of parts) {
+    const col = resolveCol(key, F.buddy, 0), cs = [[x, y], [x + w, y], [x + w, y + d], [x, y + d]].map(([a, b]) => R(a, b));
+    const op = col.tr ? ' fill-opacity=".25"' : '', st = col.tr ? `stroke="${col.c}" stroke-opacity=".6"` : 'stroke="rgba(0,0,0,.28)"';
+    for (let i = 0; i < 4; i++) { const A = cs[i], B = cs[(i + 1) % 4], ex = B[0] - A[0], ey = B[1] - A[1], ln = Math.hypot(ex, ey) || 1, nx = ey / ln, ny = -ex / ln;
+      if (nx + ny <= 0.001) continue;   // 裏側の面は描かない
+      const amt = col.emi ? .05 : .22 + .12 * (nx - ny), mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2;
+      faces.push({k: mx + my + .94 * (z + h / 2), pts: [P(A[0], A[1], z), P(B[0], B[1], z), P(B[0], B[1], z + h), P(A[0], A[1], z + h)], fill: mix(col.c, '#000000', Math.max(0, amt)), op, st}); }
+    const cx = cs.reduce((a, q) => a + q[0], 0) / 4, cy = cs.reduce((a, q) => a + q[1], 0) / 4;
+    faces.push({k: cx + cy + .94 * (z + h) + .001, pts: cs.map(([a, b]) => P(a, b, z + h)), fill: col.emi ? mix(col.c, '#ffffff', .35) : mix(col.c, '#ffffff', .15), op, st});
+  }
+  faces.sort((a, b) => a.k - b.k);
+  const sh = P(.5, .5, 0);
+  return `<svg viewBox="-36 -64 72 92" aria-hidden="true"><ellipse cx="${sh[0]}" cy="${sh[1]}" rx="22" ry="11" fill="rgba(0,0,0,.35)"/>${faces.map(f => `<polygon points="${poly(f.pts)}" fill="${f.fill}"${f.op} ${f.st} stroke-width=".5"/>`).join('')}</svg>`;
+}
+const SPIN = {timer: null, drag: null};
+function spinPaint(){ const el = $('#spinbox'); if (!el) { clearInterval(SPIN.timer); SPIN.timer = null; return; }
+  if (UI.spinAuto && !SPIN.drag) UI.spinA = (UI.spinA || 0) + .06;
+  const who = UI.spinWho; el.innerHTML = spinSVG(who.L, who.stage, UI.spinA || 0, UI.spinPose || 'stand'); }
+function spinStart(){ if (!SPIN.timer) SPIN.timer = setInterval(() => { if (!$('#spinbox')) { clearInterval(SPIN.timer); SPIN.timer = null; return; } if (UI.spinAuto || (UI.spinPose && UI.spinPose !== 'stand')) spinPaint(); }, 70); }
+document.addEventListener('pointerdown', e => { const el = e.target.closest && e.target.closest('#spinbox'); if (!el) return; SPIN.drag = {x: e.clientX, a: UI.spinA || 0}; try { el.setPointerCapture(e.pointerId); } catch {} });
+document.addEventListener('pointermove', e => { if (!SPIN.drag) return; UI.spinA = SPIN.drag.a - (e.clientX - SPIN.drag.x) * .025; spinPaint(); });
+document.addEventListener('pointerup', () => { SPIN.drag = null; }); document.addEventListener('pointercancel', () => { SPIN.drag = null; });
 function wearPanel(){
   const st = S(), x = stats(), f = st.family;
   const whos = [['buddy', st.buddy.name], ...(f.partner ? [['partner', f.partner.name]] : []), ...f.kids.filter(k => !k.left).map(k => [k.id, k.name])];
@@ -3339,7 +3521,11 @@ function wearPanel(){
   const owns = (sl, k) => !WEAR[sl].items[k].cost || !!st.buddy.closet[sl + ':' + k];
   const cur = WEAR[slot].items[L.wear[slot]] || {};
   return `${whos.length > 1 ? `<div class="chips" style="margin-bottom:12px">${whos.map(([k, n]) => `<button class="chip ${who === k ? 'on' : ''}" style="--c:#22e4ff" data-act="wr-who" data-v="${esc(k)}"><i></i>${esc(n)}</button>`).join('')}</div>` : ''}
-    <div class="wearhead"><div class="wearprev">${personThumb(L, stage)}</div><div class="stack" style="gap:10px;flex:1;min-width:0">
+    ${(() => { UI.spinWho = {L, stage: tStage}; setTimeout(spinStart, 0); return ''; })()}
+    <div class="wearhead"><div class="spinwrap"><div class="wearprev spin" id="spinbox" title="左右にドラッグで回転" aria-label="キャラクターの360°プレビュー。左右にドラッグすると回ります">${spinSVG(L, tStage, UI.spinA || 0, UI.spinPose || 'stand')}</div>
+      <div class="spinctl"><button class="btn sm ghost" data-act="spin-turn" data-v="-1" aria-label="左に回す">↺</button><button class="btn sm ${UI.spinAuto ? 'primary' : 'ghost'}" data-act="spin-auto" aria-pressed="${!!UI.spinAuto}">${UI.spinAuto ? '止める' : '回す'}</button><button class="btn sm ghost" data-act="spin-turn" data-v="1" aria-label="右に回す">↻</button></div>
+      <div class="seg spinpose">${[['stand', '立つ'], ['walk', '歩く'], ['wave', '手をふる']].map(([k, n]) => `<button data-act="spin-pose" data-v="${k}" class="${(UI.spinPose || 'stand') === k ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+      <div class="stack" style="gap:10px;flex:1;min-width:0">
       <div><div class="note" style="margin:0 0 4px">性別</div><div class="chips">${[['boy','男の子'],['girl','女の子']].map(([g, n]) => `<button class="chip ${L.gender === g ? 'on' : ''}" style="--c:#a46bff" data-act="wr-gender" data-v="${g}"><i></i>${n}</button>`).join('')}</div></div>
       <div><div class="note" style="margin:0 0 4px">髪型</div><div class="chips">${Object.entries(HAIR_N).map(([k, n]) => `<button class="chip ${L.hair === k ? 'on' : ''}" style="--c:#ffc24d" data-act="wr-hair" data-v="${k}"><i></i>${n}</button>`).join('')}</div></div>
       <div class="row wrap" style="gap:14px"><div><div class="note" style="margin:0 0 4px">髪の色</div><div class="swatches">${HAIRC.map((c, i) => `<button class="sw sm ${L.hc === i ? 'on' : ''}" style="--c:${c}" data-act="wr-hc" data-v="${i}" aria-label="髪の色${i + 1}"></button>`).join('')}</div></div>
@@ -3402,7 +3588,7 @@ VIEWS.rank = () => {
       ${st.privacy.vis === 'none' ? '<p class="banner" style="margin:0 0 10px">ランキングを非公開にしています。ほかの人の画面にあなたは表示されません（下の設定で変更できます）。</p>' : st.privacy.vis === 'friends' ? '<p class="note" style="margin:0 0 10px">あなたの記録は「互いにフレンド」の人にだけ見えています。</p>' : ''}
       ${UI.rankScope === 'group' && gs.length ? `<div class="chips" style="margin:-2px 0 12px">${gs.map(g => `<button class="chip ${UI.rankGroup === g.c ? 'on' : ''}" style="--c:#a46bff" data-act="rank-g" data-v="${esc(g.c)}"><i></i>${esc(groupName(g.c))}</button>`).join('')}</div>` : ''}
       ${UI.rankScope === 'group' && !gs.length ? `<div class="empty">まだグループに入っていません。<br><a class="btn primary" href="#groups" style="margin-top:12px">${icon('plus')}グループを作る・参加する</a></div>` :
-        rows.length ? `<div>${rows.map((r, i) => `<div class="rk ${i < 3 && r.v > 0 ? 'top' + (i + 1) : ''} ${r.uid === UID ? 'me' : ''}"><span class="n">${i + 1}</span><span class="av ${isLive(r) ? 'live' : ''}" style="--c:${avColor(r.uid)}">${esc((r.nick || '?').slice(0, 1))}</span>
+        rows.length ? `<div>${rows.map((r, i) => `<div class="rk ${i < 3 && r.v > 0 ? 'top' + (i + 1) : ''} ${r.uid === UID ? 'me' : ''}"><span class="n">${i + 1}</span>${avHTML(r, 36, isLive(r) ? 'live' : '')}
           <div class="rk-m"><b>${esc(r.nick || 'ななしの受験生')}${r.uid === UID ? '（あなた）' : ''}</b><span class="note">${liveTag(r)}LV${r.lv || 1} · ${streakText(r)}${r.room && r.uid !== UID ? ` <button class="rk-room" data-act="see-room" data-v="${esc(r.uid)}" aria-label="${esc(r.nick || '')}の部屋を見る">${icon('eye')}部屋</button>` : ''}</span></div>
           <div class="rk-t"><span class="on"><small>${PER[UI.rankPeriod][0]}</small>${fmtHM(r.v)}</span>${sub(r).map(([n, v]) => `<span><small>${n}</small>${fmtHM(v)}</span>`).join('')}</div></div>`).join('')}</div>`
         : `<div class="empty">${UI.rankScope === 'friends' ? 'まだフレンドやフォロー中の人がいません。招待リンクを送るか、フレンドコードでフォロー申請しよう。' : 'まだ参加者がいません。'}</div>`}
@@ -3461,7 +3647,7 @@ VIEWS.groups = () => {
     const total = mem.reduce((a, d) => a + Math.max(0, d.v), 0);
     return `<section class="panel"><div class="ph"><div style="min-width:0"><span class="eyebrow">GROUP · ${esc(g.c)}</span><h2 style="overflow:hidden;text-overflow:ellipsis">${esc(name)}</h2></div>${g.own ? '<span class="pill cy">作成者</span>' : ''}</div>
       <div class="row wrap" style="gap:16px;margin-bottom:10px"><div class="kv"><span class="k">メンバー</span><span class="v" style="font-size:18px">${mem.length}<small>人</small></span></div><div class="kv"><span class="k">今週のみんなの合計</span><span class="v" style="font-size:18px">${fmtHM(total)}</span></div></div>
-      ${mem.length ? `<div>${mem.slice(0, UI.grpAll === g.c ? 200 : 5).map((d, i) => `<div class="rk ${i < 3 && d.v > 0 ? 'top' + (i + 1) : ''} ${d.uid === UID ? 'me' : ''}" style="padding:7px 4px"><span class="n">${i + 1}</span><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(d.nick || 'ななしの受験生')}${d.uid === UID ? '（あなた）' : ''}</b>${liveTag(d)}</div><span class="disp">${d.hasStats ? fmtHM(d.v) : '<span class="note">非公開</span>'}</span>${memberFriendBtn(d)}</div>`).join('')}</div>` : ''}
+      ${mem.length ? `<div>${mem.slice(0, UI.grpAll === g.c ? 200 : 5).map((d, i) => `<div class="rk ${i < 3 && d.v > 0 ? 'top' + (i + 1) : ''} ${d.uid === UID ? 'me' : ''}" style="padding:7px 4px"><span class="n">${i + 1}</span>${avHTML(d, 28, isLive(d) ? 'live' : '')}<div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500">${esc(d.nick || 'ななしの受験生')}${d.uid === UID ? '（あなた）' : ''}</b>${liveTag(d)}</div><span class="disp">${d.hasStats ? fmtHM(d.v) : '<span class="note">非公開</span>'}</span>${memberFriendBtn(d)}</div>`).join('')}</div>` : ''}
       ${mem.length > 5 ? `<button class="linkbtn" style="margin-top:6px;font-size:13px" data-act="grp-all" data-v="${UI.grpAll === g.c ? '' : esc(g.c)}">${UI.grpAll === g.c ? '閉じる' : `メンバー全員を見る（ほか ${mem.length - 5}人）`}</button>` : ''}
       ${UI.grpRename === g.c ? `<form class="row" data-form="grp-rename" data-v="${esc(g.c)}" style="margin-top:12px"><input id="gr-name" type="text" maxlength="20" value="${esc(name)}" aria-label="グループ名"><button class="btn primary" type="submit">保存</button><button class="btn ghost" type="button" data-act="grp-rename" data-v="">やめる</button></form>` : ''}
       <div class="row wrap" style="gap:8px;margin-top:14px"><button class="btn sm primary" data-act="grp-invite" data-v="${esc(g.c)}">${icon('users')}招待リンクを送る</button><button class="btn sm" data-act="chat-open" data-v="g:${esc(g.c)}">${icon('chat')}チャット</button><button class="btn sm" data-act="grp-rank" data-v="${esc(g.c)}">${icon('trophy')}ランキング</button>
@@ -3480,6 +3666,87 @@ VIEWS.groups = () => {
   ${gs.length ? gs.map(card).join('') : '<section class="panel"><div class="empty">まだグループに入っていません。上でグループを作るか、友達から届いたコードで参加しよう。</div></section>'}`;
 };
 
+/* ================= ヘルプ・機能一覧 ================= */
+const HELP = [
+  ['はじめに', 'home', [
+    ['このアプリでできること', '勉強した時間を記録すると、XP（経験値）とコインがたまります。XPでレベルが上がり、コインで部屋の家具や家を買えます。仲間とランキングで競ったり、チャットで励まし合ったりもできます。', ''],
+    ['1分＝1XP＝1コイン', '勉強1分ごとに1XPと1コインがもらえます。ミッション・実績・称号・イベントでもコインがもらえます。', 'badges'],
+    ['データの保存', 'ログインして使うと、記録はクラウドに保存され、スマホとパソコンなど別の端末でも同じデータが使えます。「この端末だけ」モードでは、その端末のブラウザに保存されます。', '']]],
+  ['タイマー', 'timer', [
+    ['カウントダウン', '25分・50分・90分、または自由な分数を決めて計ります。0になると自動で終了して記録されます。画面に「終了予定 21:30」のように終わる時刻が出ます。', 'timer'],
+    ['ストップウォッチ', '0から数え上げます。「終了して記録」を押すまで計ります（最長12時間）。', 'timer'],
+    ['アラーム', '「21:30に終わる」のように時計の時刻で決めます。その時刻にアラームが鳴って自動で記録されます。', 'timer'],
+    ['一時停止', '一時停止している間の時間は、勉強時間に入りません。', 'timer'],
+    ['休憩', 'カウントダウン・アラームが終わったあと、5〜15分の休憩を自動で始められます。休憩は記録されません。', 'timer'],
+    ['環境音・BGM', '雨音・たき火・Lo-fiなどを重ねて流せます。自分の音声ファイルも追加できます。', 'timer'],
+    ['1分未満は記録されない', '1分より短いセッションは記録に残りません。', ''],
+    ['ミニ表示（ウィジェット）', 'パソコン（Chrome・Edge）では、ほかのアプリの上にずっと出ている小さなタイマー窓になります。スマホでは全画面の大きな時計になり、立てて置いておけます。', 'timer']]],
+  ['ホーム', 'home', [
+    ['今日の勉強時間の円', '今日の合計と、目標に対する達成率です。', 'home'],
+    ['計測中の円', 'タイマーを動かしていると、今日の円のとなりにもう1つ円が出て、いま計っている時間がわかります。タップするとタイマーへ。', 'home'],
+    ['連続勉強日数', `1日${STREAK_MIN}分以上勉強した日が続くと増えます。今日まだ勉強していなくても、昨日までの記録は今日の終わりまで消えません。`, 'home'],
+    ['今日のミッション', '毎日4つ出ます。達成するとコインがもらえます。「夜の振り返り」は18時以降に書くと達成です。', 'home']]],
+  ['目標・振り返り', 'review', [
+    ['1日の目標時間', '設定で変えると、今日の目標もすぐ変わります。夜の振り返りで「明日の目標」を決めると、次の日はそちらが使われます。', 'prefs'],
+    ['夜の振り返り', 'できたこと・反省・明日やることを書きます。「今日／昨日」を切りかえて、昨日の分もあとから書けます（夜中の4時までなら昨日のミッションも達成）。', 'review'],
+    ['やることリスト', '振り返りで決めた「明日やること」は、次の日のホームにチェックリストとして出ます。', 'review'],
+    ['記録・分析', '日・週・月ごとのグラフと、科目ごとの割合が見られます。', 'stats']]],
+  ['部屋・家', 'room', [
+    ['家具ショップ', 'コインで家具を買えます。今買えるものが上に並びます。レベルが上がると新しい家具が解放されます。', 'room'],
+    ['置き方', '持ち物から「置く」を押して、矢印か床のタップで場所を決めます。家具をタップすると移動・回転・色変え・しまうができます。小物は机や棚の上にも置けます。', 'room'],
+    ['電気', '「つける／消す／自動」を選べます。自動は夕方〜夜11時と、タイマーで勉強中につきます。夜に「つける」にすると、寝ている家族が起きます。', 'room'],
+    ['部屋が広くなる', 'レベルが上がると勉強部屋が広くなります。', 'room'],
+    ['家を建てる・増やす', '「家」タブから、リビング・台所・お風呂などの部屋をコインで増築できます。2階・3階、ちがう形の家への建てかえ、2軒目以降の家（最大4軒）も持てます。部屋を建てると、その部屋専用の家具が解放されます。', 'room'],
+    ['着せ替え・360°プレビュー', '「着せ替え」で髪型・服・色などを変えられます。プレビューは左右にドラッグ（またはボタン）でぐるっと回して見られます。', 'room']]],
+  ['家族・同居人', 'room', [
+    ['ルームメイト', '最初からいる同居人です。タイマーで勉強していると、となりで一緒に勉強します。', 'room'],
+    ['パートナー・子ども', 'レベル8以上でパートナーが訪ねてくるイベントがあります。レベル12以上では子どもが生まれることも。子どもはあなたの勉強時間で成長します。', 'room'],
+    ['家の人の生活', '家の人は自分で歩き回り、本を読んだり、料理・お風呂・テレビなどをしたりします。夜11時〜朝6時は寝ます。家の図で、いまだれがどこにいるかわかります。', 'room']]],
+  ['イベント', 'home', [
+    ['不定期イベント', 'アプリを開いていると、ときどきイベントが起きます（1日最大6回）。落とし物・流れ星・宅配便・おみくじ・1問クイズなど。', ''],
+    ['ラッキータイム・チャレンジ・セール', 'ラッキータイムは1時間コイン1.5倍。集中チャレンジは時間内に決められた分数を勉強するとボーナス。セールは家具が20%OFF。発動中はホームに表示されます。', 'home'],
+    ['行事', 'お正月・七夕・ハロウィン・クリスマスなどの日や、入試の「あと100日・30日・7日・1日」にも特別なイベントがあります。', 'exams']]],
+  ['ランキング・フォロー・グループ', 'rank', [
+    ['ランキング', '今日・今週・今月・累計で並べかえられます。「友達／グループ／全員」で範囲を切りかえます。', 'rank'],
+    ['公開範囲', '「全員」「互いにフレンドのみ」「非公開」から選べます。非公開でもチャットやフォローは使えます。', 'rank'],
+    ['フォローとフレンド', 'フレンドコードでフォロー申請 → 相手が承認するとフォローできます。承認した人には「フォローバックしますか？」と出て、お互いにフォローすると「フレンド」になります。', 'rank'],
+    ['招待リンク', '招待リンクから登録した人のフォローは自動で承認されます（フォローバックするかは自分で選べます）。', 'rank'],
+    ['グループ', 'クラスや塾の仲間でグループを作ると、メンバーだけのランキングとグループチャットが使えます。', 'groups'],
+    ['勉強中の表示', 'タイマーで勉強していると、仲間に「勉強中」と表示されます。', '']]],
+  ['チャット', 'chat', [
+    ['グループチャット・個人チャット', 'グループのメンバー、またはお互いにフォローしているフレンドと話せます。', 'chat'],
+    ['写真', '📷ボタンで写真を送れます。自動で小さくしてから送ります。', 'chat'],
+    ['プレゼント', '個人チャットの🎁ボタンで、部屋の小物を送れます。しまってある物はそのまま、持っていない物はコインで買って送れます。', 'chat'],
+    ['勉強中の通知', '勉強中の人には通知が届かず、終わってからまとめてお知らせされます。', 'chat']]],
+  ['プロフィール・設定', 'prefs', [
+    ['アイコン', '好きな写真を丸いアイコンにできます。ランキング・チャット・フレンド一覧に表示されます。', 'prefs'],
+    ['ニックネーム', '名前の変更は月に1回までです。', 'prefs'],
+    ['通知', '設定でオンにすると、タイマー終了・チャット・フォロー申請などをお知らせします。アプリを開いたまま、別のタブや別のアプリを見ているときに届きます。', 'prefs'],
+    ['科目', '科目の追加・色・表示／非表示を変えられます。', 'prefs'],
+    ['入試カウントダウン', '試験日を登録すると、あと何日かがホームに出ます。', 'exams']]]
+];
+const FAQ = [
+  ['勉強した時間が記録されない', '1分未満のセッションは記録されません。ストップウォッチは「終了して記録」を押すと記録されます。'],
+  ['目標時間を変えたのにホームが変わらない', '設定の「1日の目標勉強時間」で保存すると、今日の目標もすぐ変わります。前の日の振り返りで決めた「明日の目標」より、設定で変えたほうが優先されます。'],
+  ['連続日数が0になった', `1日${STREAK_MIN}分以上勉強しなかった日があると、連続記録はリセットされます。`],
+  ['フレンドの記録が見えない', '相手のランキング公開範囲が「非公開」か、「互いにフレンドのみ」でまだお互いにフォローしていない可能性があります。'],
+  ['写真が送れない', '管理している人が Supabase で photos.sql を1回実行する必要があります。'],
+  ['通知が来ない', 'ブラウザで通知を許可しているか、アプリを開いたままにしているか確認してください。アプリを完全に閉じていると届きません。iPhone はホーム画面に追加したアプリから開いてください。'],
+  ['名前が変えられない', '名前の変更は月に1回までです。次の月の1日から変えられます。'],
+  ['家族が寝ない／起きている', '夜でも電気を「つける」にしている部屋では起きています。「消す」か「自動」にすると眠ります。']
+];
+VIEWS.help = () => {
+  const qy = (UI.helpQ || '').trim().toLowerCase(), hit = t => !qy || t.toLowerCase().includes(qy);
+  const secs = HELP.map(([sec, ic, items]) => [sec, ic, items.filter(([t, d]) => hit(sec + t + d))]).filter(x => x[2].length);
+  const faq = FAQ.filter(([q, a]) => hit(q + a));
+  return `<div class="pagehead"><div><span class="eyebrow">HELP</span><h1>ヘルプ・機能一覧</h1></div></div>
+  <section class="panel"><label class="fld" for="help-q">さがす（例：アラーム、フォロー、写真）<input id="help-q" type="text" enterkeyhint="search" value="${esc(UI.helpQ || '')}" placeholder="知りたい機能を入力" autocomplete="off"></label>
+    <div class="chips" style="margin-top:10px">${HELP.map(([sec, ic]) => `<a class="chip" href="#help" data-act="help-jump" data-v="${esc(sec)}" style="--c:#22e4ff;text-decoration:none"><i></i>${esc(sec)}</a>`).join('')}<a class="chip" href="#help" data-act="help-jump" data-v="faq" style="--c:#ffc24d;text-decoration:none"><i></i>よくある質問</a></div></section>
+  ${secs.map(([sec, ic, items]) => `<section class="panel helpsec" id="help-${esc(sec)}"><div class="ph"><h2>${icon(ic)} ${esc(sec)}</h2></div>
+    ${items.map(([t, d, go]) => `<details class="rv helpitem" ${qy ? 'open' : ''}><summary><b>${esc(t)}</b></summary><p style="margin:8px 0 0;font-size:14px;line-height:1.7">${esc(d)}</p>${go ? `<a class="btn sm" href="#${go}" style="margin-top:8px">${icon(ROUTES[go][1])}${esc(ROUTES[go][0])}を開く</a>` : ''}</details>`).join('')}</section>`).join('')}
+  ${faq.length ? `<section class="panel helpsec" id="help-faq"><div class="ph"><h2>${icon('help')} よくある質問</h2></div>${faq.map(([q, a]) => `<details class="rv helpitem" ${qy ? 'open' : ''}><summary><b>Q. ${esc(q)}</b></summary><p style="margin:8px 0 0;font-size:14px;line-height:1.7">A. ${esc(a)}</p></details>`).join('')}</section>` : ''}
+  ${!secs.length && !faq.length ? '<section class="panel"><div class="empty">見つかりませんでした。ちがう言葉でさがしてみてください。</div></section>' : ''}`;
+};
 VIEWS.exams = () => {
   const st = S(), today = dkey();
   const list = st.exams.slice().sort((a, b) => a.date.localeCompare(b.date));
@@ -3685,10 +3952,10 @@ function friendListHTML(){
   for (const c of st.friends) { const d = pubDocs.find(p => p.code === c); if (isMutualDoc(d)) mutual.push(d); else if (isFollowingDoc(d)) following.push(d); else out.push([c, d]); }
   const chatBtn = d => `<button class="btn sm ghost" data-act="chat-open" data-v="${esc(dmRoom(d.uid))}" aria-label="${name(d)}さんとチャット">${icon('chat')}</button>`;
   let h = '';
-  if (reqs.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フォロー申請 <span class="pill cy">${reqs.length}</span></h3><div class="list">${reqs.map(d => `<div class="li"><div class="t"><b>${name(d)}</b><span>あなたをフォローしたいそうです</span></div><button class="btn sm primary" data-act="fr-accept" data-v="${esc(d.code)}">承認</button><button class="btn sm ghost" data-act="fr-decline" data-v="${esc(d.code)}">拒否</button></div>`).join('')}</div>`;
-  if (mutual.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フレンド（お互いにフォロー）</h3><div class="list">${mutual.map(d => `<div class="li"><div class="t"><b>${name(d)} ${liveTag(d)}</b><span>${d.hasStats ? `LV${d.lv || 1} · 今日 ${fmtHM(d.dk === dkey() ? d.dMin || 0 : 0)}` : d.vis === 'none' ? 'ランキング非公開' : STATS_OK === false ? '記録を読めません（friends.sql 未実行）' : '記録を読み込み中…（相手がアプリを開くと届きます）'}</span></div>${chatBtn(d)}<button class="btn sm ghost" data-act="fr-del" data-v="${esc(d.code)}" data-n="${name(d)}" aria-label="フレンドをやめる">${icon('x')}</button></div>`).join('')}</div>`;
-  if (followers.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フォロワー <span class="note">（相手だけがフォロー）</span></h3><div class="list">${followers.map(d => `<div class="li"><div class="t"><b>${name(d)} ${liveTag(d)}</b><span>フォローバックでフレンドに</span></div><button class="btn sm primary" data-act="fr-req" data-v="${esc(d.code)}">フォローバック</button><button class="btn sm ghost" data-act="fr-rmfol" data-v="${esc(d.code)}" data-n="${name(d)}" aria-label="フォロワーから外す">${icon('x')}</button></div>`).join('')}</div>`;
-  if (following.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フォロー中 <span class="note">（あなただけがフォロー）</span></h3><div class="list">${following.map(d => `<div class="li"><div class="t"><b>${name(d)} ${liveTag(d)}</b><span>${d.hasStats ? `LV${d.lv || 1} · 今日 ${fmtHM(d.dk === dkey() ? d.dMin || 0 : 0)}` : '相手がフォローバックするとフレンドになります'}</span></div><button class="btn sm ghost" data-act="fr-unf" data-v="${esc(d.code)}" data-n="${name(d)}">フォローをやめる</button></div>`).join('')}</div>`;
+  if (reqs.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フォロー申請 <span class="pill cy">${reqs.length}</span></h3><div class="list">${reqs.map(d => `<div class="li">${avHTML(d, 34)}<div class="t"><b>${name(d)}</b><span>あなたをフォローしたいそうです</span></div><button class="btn sm primary" data-act="fr-accept" data-v="${esc(d.code)}">承認</button><button class="btn sm ghost" data-act="fr-decline" data-v="${esc(d.code)}">拒否</button></div>`).join('')}</div>`;
+  if (mutual.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フレンド（お互いにフォロー）</h3><div class="list">${mutual.map(d => `<div class="li">${avHTML(d, 34, isLive(d) ? 'live' : '')}<div class="t"><b>${name(d)} ${liveTag(d)}</b><span>${d.hasStats ? `LV${d.lv || 1} · 今日 ${fmtHM(d.dk === dkey() ? d.dMin || 0 : 0)}` : d.vis === 'none' ? 'ランキング非公開' : STATS_OK === false ? '記録を読めません（friends.sql 未実行）' : '記録を読み込み中…（相手がアプリを開くと届きます）'}</span></div>${chatBtn(d)}<button class="btn sm ghost" data-act="fr-del" data-v="${esc(d.code)}" data-n="${name(d)}" aria-label="フレンドをやめる">${icon('x')}</button></div>`).join('')}</div>`;
+  if (followers.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フォロワー <span class="note">（相手だけがフォロー）</span></h3><div class="list">${followers.map(d => `<div class="li">${avHTML(d, 34)}<div class="t"><b>${name(d)} ${liveTag(d)}</b><span>フォローバックでフレンドに</span></div><button class="btn sm primary" data-act="fr-req" data-v="${esc(d.code)}">フォローバック</button><button class="btn sm ghost" data-act="fr-rmfol" data-v="${esc(d.code)}" data-n="${name(d)}" aria-label="フォロワーから外す">${icon('x')}</button></div>`).join('')}</div>`;
+  if (following.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">フォロー中 <span class="note">（あなただけがフォロー）</span></h3><div class="list">${following.map(d => `<div class="li">${avHTML(d, 34)}<div class="t"><b>${name(d)} ${liveTag(d)}</b><span>${d.hasStats ? `LV${d.lv || 1} · 今日 ${fmtHM(d.dk === dkey() ? d.dMin || 0 : 0)}` : '相手がフォローバックするとフレンドになります'}</span></div><button class="btn sm ghost" data-act="fr-unf" data-v="${esc(d.code)}" data-n="${name(d)}">フォローをやめる</button></div>`).join('')}</div>`;
   if (out.length) h += `<h3 style="margin:14px 0 4px;font-size:14px">申請中</h3><div class="list">${out.map(([c, d]) => `<div class="li"><span class="disp" style="letter-spacing:.15em">${esc(c)}</span><div class="t"><b>${d ? name(d) : '—'}</b><span>${d ? '相手の承認を待っています' : 'まだ見つかりません'}</span></div><button class="btn sm ghost" data-act="fr-cancel" data-v="${esc(c)}">取り消す</button></div>`).join('')}</div>`;
   if (st.declined.length) h += `<p class="note" style="margin:10px 0 0">拒否した申請 ${st.declined.length}件 · <button class="linkbtn" data-act="fr-undecline">もう一度表示する</button></p>`;
   return h;
@@ -3734,9 +4001,10 @@ const hhmm = iso => { const d = new Date(iso); return `${pad2(d.getHours())}:${p
 function msgHTML(m, prev){
   const mine = m.user_id === UID, day = dkey(new Date(m.created_at)), pday = prev ? dkey(new Date(prev.created_at)) : null;
   const same = prev && prev.user_id === m.user_id && pday === day && (new Date(m.created_at) - new Date(prev.created_at)) < 5 * 60000;
-  return `${day !== pday ? `<div class="cday"><span>${fmtDate(day)}</span></div>` : ''}<div class="msg2 ${mine ? 'me' : ''} ${same ? 'cont' : ''}" data-mid="${m.id}">
+  return `${day !== pday ? `<div class="cday"><span>${fmtDate(day)}</span></div>` : ''}<div class="msg2 ${mine ? 'me' : 'other'} ${same ? 'cont' : ''}" data-mid="${m.id}">
+    ${!mine ? `<div class="mav">${!same ? avHTML(pubDocs.find(p => p.uid === m.user_id) || {uid: m.user_id, nick: m.nick}, 30) : ''}</div><div class="mcol">` : ''}
     ${!mine && !same ? `<div class="who">${esc(msgName(m))}</div>` : ''}
-    <div class="mrow">${mine ? `<button class="mdel" data-act="chat-del" data-v="${m.id}" aria-label="このメッセージを削除">${icon('trash')}</button>` : ''}${(() => { const g = GIFT_RE.exec(m.body || ''); if (g) return giftCard(m, g); if (m.img && IMG_RE.test(m.img)) return `<button class="mimg" data-act="img-view" data-v="${m.id}" aria-label="写真を大きく見る"><img src="${m.img}" alt="送られた写真" loading="lazy"></button>`; return `<div class="mb">${esc(m.body)}</div>`; })()}<span class="mt">${hhmm(m.created_at)}</span></div></div>`;
+    <div class="mrow">${mine ? `<button class="mdel" data-act="chat-del" data-v="${m.id}" aria-label="このメッセージを削除">${icon('trash')}</button>` : ''}${(() => { const g = GIFT_RE.exec(m.body || ''); if (g) return giftCard(m, g); if (m.img && IMG_RE.test(m.img)) return `<button class="mimg" data-act="img-view" data-v="${m.id}" aria-label="写真を大きく見る"><img src="${m.img}" alt="送られた写真" loading="lazy"></button>`; return `<div class="mb">${esc(m.body)}</div>`; })()}<span class="mt">${hhmm(m.created_at)}</span></div>${!mine ? '</div>' : ''}</div>`;
 }
 function paintLog(stick){
   const log = $('#chat-log'); if (!log) return;
@@ -3769,6 +4037,17 @@ async function openChat(id){
     if (more && more.length) addMsgs(more);
   }, 6000);
 }
+// スマホ：チャット画面を全画面にして、キーボードの上に入力欄を出す（LINEのように）
+function syncChatFS(){ const on = route() === 'chat' && !!CHAT.room && innerWidth < 960; document.body.classList.toggle('chatfs', on); if (on) vvSync(); }
+function vvSync(){ const vv = window.visualViewport, r = document.documentElement.style; if (!vv) { r.setProperty('--vvh', innerHeight + 'px'); r.setProperty('--vvt', '0px'); return; }
+  r.setProperty('--vvh', vv.height + 'px'); r.setProperty('--vvt', vv.offsetTop + 'px');
+  if (document.body.classList.contains('chatfs')) { const log = $('#chat-log'); if (log && document.activeElement && document.activeElement.id === 'chat-in') log.scrollTop = log.scrollHeight; } }
+try { if (window.visualViewport) { visualViewport.addEventListener('resize', vvSync); visualViewport.addEventListener('scroll', vvSync); } } catch {}
+window.addEventListener('resize', () => { try { syncChatFS(); } catch {} });
+// 文字を打っている間は、下のメニューバーをかくす（キーボードと一緒に上がってこないように）
+const isTyping = el => el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|file|color)$/.test(el.type)));
+document.addEventListener('focusin', e => { if (isTyping(e.target)) document.body.classList.add('kbd'); });
+document.addEventListener('focusout', () => setTimeout(() => { if (!isTyping(document.activeElement)) document.body.classList.remove('kbd'); }, 120));
 function closeChat(){ if (CHAT.chan) { try { SB.removeChannel(CHAT.chan); } catch {} CHAT.chan = null; } clearInterval(CHAT.poll); CHAT.poll = null; CHAT.room = null; }
 const dmPartner = room => room && room.startsWith('d:') ? pubDocs.find(d => d.uid !== UID && dmRoom(d.uid) === room) : null;
 // 写真を小さくしてから送る（長い辺 720px・JPEG）
@@ -3812,14 +4091,18 @@ function giftPicker(){
       ${spare > 0 ? `<button class="btn sm primary" data-act="gift-send" data-v="${t}" data-h="inv">持ち物から送る</button>` : `<button class="btn sm" data-act="gift-send" data-v="${t}" data-h="buy" ${x.coins < costOf(t) ? 'disabled' : ''}>${costOf(t)}cで送る</button>`}</div>`).join('')}</div>`, {cls: 'wide'});
 }
 async function sendChat(f){
-  const inp = f.querySelector('#chat-in'), body = (inp.value || '').trim();
+  const inp = $('#chat-in'); if (!inp) return; const body = (inp.value || '').trim();
   if (!body || CHAT.sending || !CHAT.room) return;
   if (body.length > 500) { toast('500文字までです。', 'x'); return; }
   CHAT.sending = true; const room = CHAT.room;
+  // 送ったらすぐ入力欄を空にする（スマホの日本語入力で文字が戻ってくることがあるので、少しあとにもう一度消す）
+  const clearIfSame = () => { const i = $('#chat-in'); if (i && i.value.trim() === body) { i.value = ''; CHAT.draft = ''; } };
+  inp.value = ''; CHAT.draft = ''; setTimeout(clearIfSame, 0); setTimeout(clearIfSame, 150); setTimeout(clearIfSame, 400);
   const {data: row, error} = await SB.from('messages').insert({room, nick: (S().nickname || '').slice(0, 20), body}).select('id,room,user_id,nick,body,created_at').single();
   CHAT.sending = false;
-  if (error) { toast(chatMissing(error) ? 'チャットの設定（chat.sql）がまだです。' : room.startsWith('g:') ? '送れませんでした。ランキング参加がオンになっているか確認してください。' : '送れませんでした。フレンド登録とランキング参加がオンになっているか確認してください。', 'x', 6000); return; }
-  inp.value = ''; CHAT.draft = ''; addMsgs([row]); paintLog(true); inp.focus();
+  if (error) { const i = $('#chat-in'); if (i && !i.value) { i.value = body; CHAT.draft = body; }
+    toast(chatMissing(error) ? 'チャットの設定（chat.sql）がまだです。' : room.startsWith('g:') ? '送れませんでした。ランキング参加がオンになっているか確認してください。' : '送れませんでした。お互いにフォローしているか確認してください。', 'x', 6000); return; }
+  clearIfSame(); addMsgs([row]); paintLog(true); const i = $('#chat-in'); if (i && document.activeElement !== i && innerWidth >= 960) i.focus();
 }
 VIEWS.chat = () => {
   if (MODE !== 'cloud') return `<div class="pagehead"><h1>チャット</h1></div><section class="panel"><div class="empty">${icon('chat')}<br>チャットはログインして使えます。</div></section>`;
@@ -3827,7 +4110,7 @@ VIEWS.chat = () => {
   if (CHAT.room) {
     const r = chatRooms().find(x => x.id === CHAT.room) || {name: 'チャット', sub: '', kind: CHAT.room[0]};
     return `<div class="chatwrap">
-      <div class="chathead"><button class="btn sm ghost" data-act="chat-back" aria-label="一覧に戻る">${icon('chevL')}</button><div style="min-width:0;flex:1"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.name)} ${liveTag(dmPartner(CHAT.room))}</b><span class="note">${esc(r.sub)}</span></div></div>
+      <div class="chathead"><button class="btn sm ghost" data-act="chat-back" aria-label="一覧に戻る">${icon('chevL')}</button>${dmPartner(CHAT.room) ? avHTML(dmPartner(CHAT.room), 34) : ''}<div style="min-width:0;flex:1"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.name)} ${liveTag(dmPartner(CHAT.room))}</b><span class="note">${esc(r.sub)}</span></div></div>
       ${setup}
       <div class="chatlog" id="chat-log" aria-live="polite"><div class="empty">読み込み中…</div></div>
       ${(() => { const o = dmPartner(CHAT.room), busy = o && isLive(o), lives = r.kind === 'g' ? groupMembers(CHAT.room.slice(2)).filter(d => d.uid !== UID && isLive(d)) : [];
@@ -3839,7 +4122,7 @@ VIEWS.chat = () => {
   const rooms = chatRooms(), rm = readMap();
   return `<div class="pagehead"><h1>チャット</h1><span class="note">グループとフレンドで話せます</span></div>${setup}
   <section class="panel">${rooms.length ? `<div class="list">${rooms.map(r => { const p = CHAT.previews[r.id], unread = p && p.user_id !== UID && new Date(p.created_at).getTime() > (rm[r.id] || 0);
-    return `<button class="li chatitem" data-act="chat-open" data-v="${esc(r.id)}"><span class="av" style="--c:${r.kind === 'g' ? '#a46bff' : '#22e4ff'}">${icon(r.kind === 'g' ? 'users' : 'chat')}</span><div class="t"><b>${esc(r.name)} ${r.kind === 'd' ? liveTag(pubDocs.find(d => dmRoom(d.uid) === r.id)) : ''}</b><span>${p ? `${esc(p.user_id === UID ? 'あなた' : msgName(p))}：${esc(msgText(p).slice(0, 40))}` : esc(r.sub)}</span></div>${p ? `<span class="note" style="flex:none">${hhmm(p.created_at)}</span>` : ''}${unread ? '<span class="udot" aria-label="未読あり"></span>' : ''}</button>`; }).join('')}</div>`
+    return `<button class="li chatitem" data-act="chat-open" data-v="${esc(r.id)}">${r.kind === 'd' && pubDocs.find(d => dmRoom(d.uid) === r.id) ? avHTML(pubDocs.find(d => dmRoom(d.uid) === r.id), 40) : `<span class="av" style="--c:${r.kind === 'g' ? '#a46bff' : '#22e4ff'}">${icon(r.kind === 'g' ? 'users' : 'chat')}</span>`}<div class="t"><b>${esc(r.name)} ${r.kind === 'd' ? liveTag(pubDocs.find(d => dmRoom(d.uid) === r.id)) : ''}</b><span>${p ? `${esc(p.user_id === UID ? 'あなた' : msgName(p))}：${esc(msgText(p).slice(0, 40))}` : esc(r.sub)}</span></div>${p ? `<span class="note" style="flex:none">${hhmm(p.created_at)}</span>` : ''}${unread ? '<span class="udot" aria-label="未読あり"></span>' : ''}</button>`; }).join('')}</div>`
     : `<div class="empty">話せる相手がまだいません。<br>グループに入るか、フレンドを追加するとここに出ます。<div class="row wrap" style="justify-content:center;gap:8px;margin-top:12px"><a class="btn sm primary" href="#groups">${icon('users')}グループ</a><a class="btn sm" href="#rank">${icon('plus')}フレンドを追加</a></div></div>`}</section>
   <p class="note">チャットに参加するには「ランキングに参加する」をオンにしておく必要があります。個人チャットはフレンドどうしだけで使えます。</p>`;
 };
@@ -3863,9 +4146,12 @@ VIEWS.prefs = () => {
   return `<div class="pagehead"><h1>設定</h1></div>
   <div class="grid2">
     <form class="panel stack" data-form="profile" style="gap:12px"><div class="ph" style="margin:0"><h2>プロフィール</h2></div>
+      <div class="row" style="gap:14px;align-items:center">${avHTML(meDoc(), 72, 'big')}<div class="stack" style="gap:6px"><b style="font-size:14px">アイコン</b><div class="row wrap" style="gap:6px"><label class="btn sm primary" for="av-file" style="cursor:pointer">${icon('image')}写真を選ぶ</label>${st.avatar ? '<button type="button" class="btn sm ghost" data-act="av-del">外す</button>' : ''}</div><span class="note">ランキング・チャット・フレンド一覧に丸く表示されます</span></div></div>
+      <input id="av-file" type="file" accept="image/*" hidden>
       ${(() => { const used = st.nickChangedM === monthOf(dkey()); return `<label class="fld" for="pf-nick">ニックネーム（ランキングに表示）<input id="pf-nick" type="text" maxlength="20" value="${esc(st.nickname)}" placeholder="例：たける" ${used ? 'disabled' : ''}></label>
       <p class="note" style="margin:-6px 0 0">${used ? `名前は今月もう変更しました。次に変えられるのは ${nextMonthLabel()} からです。` : '名前の変更は月に1回までです（今月はあと1回）。'}</p>`; })()}
-      <label class="fld" for="pf-goal">1日の目標勉強時間（分）<input id="pf-goal" type="number" min="10" max="1200" step="10" inputmode="numeric" value="${st.dailyGoal}"></label>
+      <label class="fld" for="pf-goal">1日の目標勉強時間（分）<input id="pf-goal" type="number" min="10" max="1200" step="10" inputmode="numeric" value="${goalFor(dkey())}"></label>
+      <p class="note" style="margin:-6px 0 0">ここで変えると、今日の目標もすぐ変わります。夜の振り返りで「明日の目標」を決めると、次の日はそちらが使われます。</p>
       <label class="fld" for="pf-rt">振り返りのお知らせ時刻<input id="pf-rt" type="time" value="${esc(st.prefs.reviewTime)}"></label>
       <button class="btn primary" type="submit">${icon('check')}保存する</button></form>
     <section class="panel"><div class="ph"><h2>通知・ウィジェット</h2></div>
@@ -3913,9 +4199,15 @@ const ACT = {
   more(){
     if ($('#sheet')) { $('#sheet').remove(); return; }
     const el = document.createElement('div');
-    el.innerHTML = `<div class="scrim" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-label="メニュー"><div class="sheet-grid">${(() => { const nc = notifCounts(); return ['rank','groups','chat','exams','review','badges','prefs'].map(k => `<a href="#${k}" data-act="sheet-close">${icon(ROUTES[k][1])}${ROUTES[k][0]}${k === 'chat' ? nbadge(nc.chat, '未読のチャット') : k === 'rank' ? nbadge(nc.rank, 'フォロー申請') : ''}</a>`).join(''); })()}</div></div>`;
+    el.innerHTML = `<div class="scrim" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-label="メニュー"><div class="sheet-grid">${(() => { const nc = notifCounts(); return ['rank','groups','chat','exams','review','badges','prefs','help'].map(k => `<a href="#${k}" data-act="sheet-close">${icon(ROUTES[k][1])}${ROUTES[k][0]}${k === 'chat' ? nbadge(nc.chat, '未読のチャット') : k === 'rank' ? nbadge(nc.rank, 'フォロー申請') : ''}</a>`).join(''); })()}</div></div>`;
     el.id = 'sheet'; document.body.appendChild(el);
   },
+  'av-save'(){ saveAvatar(); },
+  'av-del'(){ confirmBox('アイコンの写真を外しますか？', '名前の頭文字のアイコンにもどります。', '外す', () => { delete S().avatar; queueWrite('state'); publishPub(200); render(); }); },
+  'spin-turn'(b){ UI.spinA = (UI.spinA || 0) + (+b.dataset.v) * Math.PI / 4; spinPaint(); },
+  'spin-auto'(b){ UI.spinAuto = !UI.spinAuto; b.classList.toggle('primary', UI.spinAuto); b.classList.toggle('ghost', !UI.spinAuto); b.textContent = UI.spinAuto ? '止める' : '回す'; spinStart(); },
+  'spin-pose'(b){ UI.spinPose = b.dataset.v; b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); spinPaint(); spinStart(); },
+  'help-jump'(b){ setTimeout(() => { const el = document.getElementById('help-' + b.dataset.v); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 30); },
   'sheet-close'(){ $('#sheet')?.remove(); },
   'modal-close'(){ closeModal(); },
   't-start': timerStart, 't-pause': timerPause, 't-resume': timerResume,
@@ -4388,7 +4680,7 @@ document.addEventListener('submit', e => {
     if (nn !== (st.nickname || '')) {
       if (st.nickChangedM === monthOf(dkey())) toast(`名前の変更は月に1回までです。次は ${nextMonthLabel()} から変更できます。`, 'x', 5000);
       else { st.nickname = nn; st.nickChangedM = monthOf(dkey()); toast(`名前を「${nn || 'ななしの受験生'}」に変更しました。次の変更は ${nextMonthLabel()} からできます。`, 'check', 5000); }
-    } st.dailyGoal = clamp(+val('pf-goal') || 180, 10, 1200); if (val('pf-rt')) st.prefs.reviewTime = val('pf-rt'); queueWrite('state'); publishPub(); toast('設定を保存しました。', 'check'); pendingRender = false; render(); }
+    } const ng = clamp(+val('pf-goal') || 180, 10, 1200); if (ng !== st.dailyGoal || ng !== goalFor(dkey())) st.goalDay = {d: dkey(), m: ng}; st.dailyGoal = ng; dataV++; if (val('pf-rt')) st.prefs.reviewTime = val('pf-rt'); queueWrite('state'); publishPub(); toast('設定を保存しました。', 'check'); pendingRender = false; render(); }
   if (k === 'subj-add') { const n = val('sj-name'); if (!n) return; const used = st.subjects.length; st.subjects.push({id: 'c' + uid6(), name: n.slice(0, 12), color: EXTRA_COLORS[used % EXTRA_COLORS.length], hidden: false}); queueWrite('state'); pendingRender = false; render(); toast(`「${n}」を追加しました。`, 'plus'); }
   if (k === 'add-friend') { addFriend(val('fr-code')); return; }
   if (k === 'grp-create') { const n = val('gc-name').slice(0, 20); if (!n) { toast('グループ名を入れてください。', 'x'); return; }
@@ -4418,9 +4710,11 @@ document.addEventListener('submit', e => {
   }
   if (k === 'chat-send') sendChat(f);
 });
+document.addEventListener('keydown', e => { if (e.target && e.target.id === 'chat-in' && e.key === 'Enter' && (e.isComposing || e.keyCode === 229)) e.preventDefault(); }, true);
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'chat-in') CHAT.draft = t.value;
+  if (t.id === 'help-q') { UI.helpQ = t.value; clearTimeout(UI.helpT); UI.helpT = setTimeout(() => { render(); const i = $('#help-q'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 250); }
   if (t.id === 'snd-vol') { S().prefs.vol = +t.value; AudioEng.setVol(+t.value); queueWrite('state', 1500); }
   if (t.dataset && t.dataset.ch) { const st = S(); st.prefs.mix = Object.assign({}, st.prefs.mix, {[t.dataset.ch]: +t.value}); AudioEng.setChVol(t.dataset.ch, +t.value); queueWrite('state', 2000); }
   if (t.id === 't-custom') { const v = Math.round(+t.value); if (v >= 1 && v <= 600) { T.target = v; saveTimer(); updateTimerUI(); } }
@@ -4433,6 +4727,7 @@ document.addEventListener('change', e => {
   if (t.id === 't-alarm' && t.value) { T.alarm = t.value; saveTimer(); updateTimerUI(); }
   if (t.id === 'snd-file' && t.files && t.files.length) addSoundFiles([...t.files]);
   if (t.id === 'chat-photo' && t.files && t.files[0]) { sendPhoto(t.files[0]); t.value = ''; }
+  if (t.id === 'av-file' && t.files && t.files[0]) { if (/^image\//.test(t.files[0].type)) avatarEditor(t.files[0]); else toast('画像ファイルを選んでください。', 'x'); t.value = ''; }
 });
 document.addEventListener('keydown', e => { if (UI.place && route() === 'room' && !/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) { const m = {ArrowLeft: F[UI.place.t].wall ? 'wl' : 'xm', ArrowRight: F[UI.place.t].wall ? 'wr' : 'xp', ArrowUp: 'ym', ArrowDown: 'yp'}[e.key]; if (m) { e.preventDefault(); nudgePlace(m); return; } if (e.key === 'Enter') { e.preventDefault(); commitPlace(); return; } } if (e.key === 'Escape') { if (UI.place) { UI.place = null; render(); } else if (modalOpen && !$('[data-form="onboard"]')) closeModal(); $('#sheet')?.remove(); } });
 
