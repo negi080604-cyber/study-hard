@@ -322,6 +322,17 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .av.live{box-shadow:0 0 0 2px #3ee6a0,0 0 10px rgba(62,230,160,.6)}
 .av.big{box-shadow:0 0 0 2px var(--line-2)}
 .hav{display:flex;text-decoration:none;flex:none}
+.subed{display:flex;flex-direction:column;gap:10px}.subrow{padding:10px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
+.subrow select{max-width:110px}.subnums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin-top:8px}
+.subnums label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--mute)}.subnums input{padding:7px 8px;min-width:0}
+@media (min-width:700px){.subnums{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.subtbl{display:flex;flex-direction:column;font-size:13px}.strow{display:grid;grid-template-columns:minmax(0,1.3fr) .9fr .9fr .8fr;gap:6px;padding:7px 2px;border-top:1px solid var(--line);align-items:center}
+.strow.head{font-size:11px;color:var(--mute);border-top:0;line-height:1.3}.strow.foot{font-weight:700}.strow small{color:var(--mute)}
+.mrows{display:flex;flex-direction:column;gap:6px}.mrow{display:grid;grid-template-columns:minmax(0,1.4fr) .8fr .8fr .8fr auto;gap:6px;align-items:center}.mrow.head{font-size:11px;color:var(--mute)}.mrow input{padding:7px 6px;min-width:0}
+@media (max-width:600px){.mrow{grid-template-columns:repeat(3,minmax(0,1fr)) auto}.mrow.head{display:none}.mrow>input:first-child{grid-column:1/4}.mrow>.btn{grid-column:4;grid-row:1}.mrows{gap:10px}.mrow{padding-bottom:8px;border-bottom:1px dashed var(--line)}}
+.fixlbl{white-space:nowrap}.fixlbl input{width:70px !important;padding:6px 8px}
+.mockmemo{display:block;margin-top:4px;font-style:normal;color:var(--ink) !important;opacity:.85}
+.prefseg button{padding:5px 8px;font-size:11.5px}
 .pttable{display:flex;flex-direction:column;gap:6px}.ptrow{display:grid;grid-template-columns:minmax(0,1fr) 88px 88px;gap:8px;align-items:center;font-size:13px}.ptrow.head{color:var(--mute);font-size:11.5px}.ptrow input{padding:7px 8px;min-width:0}
 .chk{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:14px;cursor:pointer}.chk span{flex:1}.chk span.done{color:var(--mute);text-decoration:line-through}.chk .btn{padding:4px 7px;opacity:.55}.chk .btn .ic{width:14px;height:14px}.chk input{width:18px;height:18px;flex:none;accent-color:#22e4ff}
 .planhome{display:block;text-decoration:none;color:inherit;border-color:rgba(255,194,77,.45)}
@@ -3829,9 +3840,9 @@ const HELP = [
     ['今日のミッション', '毎日4つ出ます。達成するとコインがもらえます。「夜の振り返り」は18時以降に書くと達成です。', 'home']]],
   ['合格プラン', 'plan', [
     ['第一志望と試験日', '志望校の中から第一志望をえらび、試験日と目標の得点率を決めます。本番まであと何日・あと何時間勉強できるかがわかります。', 'plan'],
-    ['配点', '共通テストと二次・個別試験の配点を科目ごとに入れます。よくある形のテンプレートもありますが、正しい数字は大学の募集要項で確認してね。', 'plan'],
-    ['今日のおすすめ配分', '配点が大きい科目と、模試で点が取れていない科目ほど時間を多めに、1日の目標時間を科目ごとに分けて出します。最近7日の勉強が足りない科目も教えてくれます。', 'plan'],
-    ['模試の記録', '模試の点数・判定・偏差値を記録すると、得点率のグラフになります。', 'plan'],
+    ['科目・配点・目標点', '「編集」から科目を自由に追加・名前変更・削除できます（例：英語リスニング、数学ⅠA、小論文）。科目ごとに共通テストと二次の配点・目標点を入れられます。テンプレートもありますが、正しい数字は大学の募集要項で確認してね。', 'plan'],
+    ['今日のおすすめ配分', '1日の目標時間を科目ごとに分けて出します。「目標との差」「苦手を重視」「配点どおり」から考え方を選べます。「調整する」で科目ごとに なし・少なめ・ふつう・多め・最優先 を選んだり、時間を自分で決めたりできます（決めた分を先にとって、残りを自動で分けます）。', 'plan'],
+    ['模試の記録', '模試ごとに科目を自由に追加して、点数・満点・科目ごとの偏差値・総合の偏差値・判定・感想を記録できます。あとから編集もできます。得点率と偏差値のグラフを、総合や科目ごとに見られます。', 'plan'],
     ['合格までにやること', '時期ごとのチェックリストです。自分で追加・削除もできます。', 'plan']]],
   ['目標・振り返り', 'review', [
     ['1日の目標時間', '設定で変えると、今日の目標もすぐ変わります。夜の振り返りで「明日の目標」を決めると、次の日はそちらが使われます。', 'prefs'],
@@ -3897,11 +3908,12 @@ VIEWS.help = () => {
   ${!secs.length && !faq.length ? '<section class="panel"><div class="empty">見つかりませんでした。ちがう言葉でさがしてみてください。</div></section>' : ''}`;
 };
 /* ================= 合格プラン：志望校を決めて、配点・模試・逆算で「何をどれだけやるか」をはっきりさせる ================= */
+// テンプレート：[科目名, タイマーの科目, 共通テストの配点, 二次の配点]（あくまで例）
 const PLAN_TPL = {
-  kokubun: ['国公立・文系の例', {en: [200, 150], ja: [200, 150], ma: [200, 100], jh: [100, 0], wh: [100, 0], bi: [100, 0], it: [100, 0]}],
-  kokuri: ['国公立・理系の例', {en: [200, 150], ja: [200, 0], ma: [200, 200], ph: [100, 100], ch: [100, 100], ge: [100, 0], it: [100, 0]}],
-  shibun: ['私立・文系3教科の例', {en: [0, 150], ja: [0, 100], jh: [0, 100]}],
-  shiri: ['私立・理系3教科の例', {en: [0, 100], ma: [0, 150], ch: [0, 150]}]
+  kokubun: ['国公立・文系の例', [['英語', 'en', 200, 150], ['国語', 'ja', 200, 150], ['数学ⅠA', 'ma', 100, 0], ['数学ⅡBC', 'ma', 100, 100], ['日本史', 'jh', 100, 0], ['世界史', 'wh', 100, 0], ['理科基礎', 'bi', 100, 0], ['情報Ⅰ', 'it', 100, 0]]],
+  kokuri: ['国公立・理系の例', [['英語', 'en', 200, 150], ['国語', 'ja', 200, 0], ['数学ⅠA', 'ma', 100, 0], ['数学ⅡBC', 'ma', 100, 0], ['数学（二次）', 'ma', 0, 200], ['物理', 'ph', 100, 100], ['化学', 'ch', 100, 100], ['地理', 'ge', 100, 0], ['情報Ⅰ', 'it', 100, 0]]],
+  shibun: ['私立・文系3教科の例', [['英語', 'en', 0, 150], ['国語', 'ja', 0, 100], ['日本史', 'jh', 0, 100]]],
+  shiri: ['私立・理系3教科の例', [['英語', 'en', 0, 100], ['数学', 'ma', 0, 150], ['化学', 'ch', 0, 150]]]
 };
 const PLAN_CHECK = [
   ['基礎（〜夏）', ['英単語帳を1周する', '英文法の問題集を1周する', '数学の教科書・基本例題を全部解けるようにする', '古文単語・古典文法を覚える', '理科・社会の教科書を1回通して読む']],
@@ -3909,81 +3921,128 @@ const PLAN_CHECK = [
   ['仕上げ（冬）', ['共通テストの過去問・予想問題を本番と同じ時間で解く', '志望校の過去問を5年分解く', '併願校を決める', '出願書類・受験料の準備をする']],
   ['直前', ['まちがいノートで総復習する', '本番と同じ時間に起きる生活リズムにする', '受験票・会場・交通手段を確認する', '睡眠と食事で体調をととのえる']]
 ];
+const SUB_COLORS = ['#3fb8ff', '#a98bff', '#ff6fb0', '#ffc24d', '#ff9350', '#3ee6a0', '#22e4ff', '#8d93ff', '#7be36b', '#e57bff', '#ff5c7a', '#c9b79a'];
+const PREFS = [[0, 'なし'], [.5, '少なめ'], [1, 'ふつう'], [1.5, '多め'], [2, '最優先']];
+const numOr = (v, d = null) => v === '' || v == null || isNaN(+v) ? d : +v;
 function PL(){ const st = S(); if (!st.plan || typeof st.plan !== 'object') st.plan = {}; const p = st.plan;
   p.info = p.info || {}; p.mocks = Array.isArray(p.mocks) ? p.mocks : []; p.dream = p.dream || '';
   if (!Array.isArray(p.check)) p.check = PLAN_CHECK.flatMap(([ph, items], pi) => items.map(t => ({id: uid6(), t, done: false, ph: pi})));
+  for (const m of p.mocks) if (!Array.isArray(m.rows)) { m.rows = Object.entries(m.sc || {}).map(([sid, [g, mx]]) => ({sid, n: subjOf(sid).name, g, m: mx, dev: null})); delete m.sc; }
   if (!st.targets.some(t => t.id === p.main)) p.main = st.targets[0] ? st.targets[0].id : null;
   return p; }
-const planInfo = id => { const p = PL(); if (!p.info[id]) p.info[id] = {exam: '', date: '', goalK: 75, goalN: 65, pts: {}}; return p.info[id]; };
+function planInfo(id){ const p = PL(); if (!p.info[id]) p.info[id] = {exam: '', date: '', goalK: 75, goalN: 65, goalDev: null, subs: [], mode: 'gap'}; const inf = p.info[id];
+  if (!Array.isArray(inf.subs)) { inf.subs = Object.entries(inf.pts || {}).map(([sid, [k, n]], i) => ({id: sid, name: subjOf(sid).name, color: subjOf(sid).color, tsid: sid, k, n, gk: null, gn: null, pref: 1, fix: null})); delete inf.pts; }
+  inf.mode = inf.mode || 'gap'; return inf; }
 function planDate(inf){ if (inf.date) return inf.date; const ex = S().exams.find(e => e.id === inf.exam); return ex ? ex.date : ''; }
-const mockRate = (m, sid) => { const v = m.sc && m.sc[sid]; return v && v[1] > 0 ? clamp(v[0] / v[1], 0, 1) : null; };
-const mockTotal = m => { let g = 0, mx = 0; for (const [a, b] of Object.values(m.sc || {})) if (b > 0) { g += a; mx += b; } return mx ? g / mx : null; };
-function planSubjects(inf){ return S().subjects.filter(sj => { const v = inf.pts[sj.id]; return v && (v[0] > 0 || v[1] > 0); }); }
-function latestRate(sid){ const ms = PL().mocks.slice().sort((a, b) => b.date.localeCompare(a.date)); for (const m of ms) { const r = mockRate(m, sid); if (r != null) return r; } return null; }
-// 今日のおすすめ配分：配点が大きいほど、模試の点が低いほど、時間を多めに
+const rowRate = r => r && +r.m > 0 && r.g !== '' && r.g != null ? clamp(+r.g / +r.m, 0, 1) : null;
+const mockRow = (m, sub) => m.rows.find(r => r.sid && r.sid === sub.id) || m.rows.find(r => r.n && r.n === sub.name);
+const mockTotal = m => { let g = 0, mx = 0; for (const r of m.rows) if (rowRate(r) != null) { g += +r.g; mx += +r.m; } return mx ? g / mx : null; };
+const mocksAsc = () => PL().mocks.slice().sort((a, b) => a.date.localeCompare(b.date));
+function latestOf(sub){ for (const m of mocksAsc().reverse()) { const r = mockRow(m, sub), rate = rowRate(r); if (rate != null) return {rate, dev: numOr(r.dev), g: +r.g, m: +r.m, date: m.date}; } return null; }
+const subPts = sub => (+sub.k || 0) + (+sub.n || 0);
+function subGoalRate(inf, sub){ const pts = subPts(sub), gp = (+sub.gk || 0) + (+sub.gn || 0); return gp > 0 && pts > 0 ? clamp(gp / pts, 0, 1) : (inf.goalK || 70) / 100; }
+function planGoalRate(inf){ const subs = inf.subs.filter(x => x.name && subPts(x) > 0); if (subs.length && subs.every(x => (+x.gk || 0) + (+x.gn || 0) > 0)) { const P = subs.reduce((a, x) => a + subPts(x), 0), G = subs.reduce((a, x) => a + (+x.gk || 0) + (+x.gn || 0), 0); return G / P; } return (inf.goalK || 70) / 100; }
+// おすすめ配分：自分で決めた分（固定）を先にとって、残りを「配点 × 必要度 × 希望」で分ける
 function planAlloc(inf, goal){
-  const subs = planSubjects(inf); if (!subs.length) return [];
-  const w = subs.map(sj => { const [k, n] = inf.pts[sj.id], r = latestRate(sj.id); return {sj, pts: k + n, rate: r, w: (k + n) * (1.25 - (r == null ? .5 : r))}; });
-  const tot = w.reduce((a, x) => a + x.w, 0) || 1;
+  const subs = inf.subs.filter(x => x.name); if (!subs.length) return [];
   const since = addDays(dkey(), -6), done = {}; for (const ss of stats().sessions) if (ss.d >= since) done[ss.s] = (done[ss.s] || 0) + ss.m;
-  const all7 = Object.values(done).reduce((a, b) => a + b, 0) || 0;
-  return w.map(x => ({...x, min: Math.max(5, Math.round(goal * x.w / tot / 5) * 5), share: x.w / tot, did7: done[x.sj.id] || 0, didShare: all7 ? (done[x.sj.id] || 0) / all7 : 0})).sort((a, b) => b.min - a.min);
+  const rows = subs.map(sub => { const L = latestOf(sub), rate = L ? L.rate : null, pts = subPts(sub) || 100, gr = subGoalRate(inf, sub), pref = sub.pref ?? 1;
+    const need = inf.mode === 'pts' ? 1 : inf.mode === 'weak' ? Math.pow(1 - (rate ?? .5), 1.5) + .1 : Math.max(0, gr - (rate ?? gr - .15)) + .2;
+    return {sub, L, rate, pts, gr, pref, w: pts * need * pref, fixed: numOr(sub.fix) != null}; });
+  const fixedSum = rows.filter(r => r.fixed).reduce((a, r) => a + numOr(r.sub.fix, 0), 0), rest = Math.max(0, goal - fixedSum), wsum = rows.filter(r => !r.fixed).reduce((a, r) => a + r.w, 0) || 1;
+  const all7 = Object.values(done).reduce((a, b) => a + b, 0);
+  const sameT = {}; for (const r of rows) sameT[r.sub.tsid] = (sameT[r.sub.tsid] || 0) + 1;
+  return rows.map(r => { const min = r.fixed ? numOr(r.sub.fix, 0) : (r.pref ? Math.round(rest * r.w / wsum / 5) * 5 : 0);
+    return {...r, min, share: goal ? min / goal : 0, did7: done[r.sub.tsid] || 0, didShare: all7 ? (done[r.sub.tsid] || 0) / all7 : 0, shared: sameT[r.sub.tsid] > 1}; }).sort((a, b) => b.min - a.min);
 }
-function mockChart(ms, goal){
-  const W = 340, H = 150, L = 30, B = 22, T0 = 12, R = 8, n = ms.length, xp = i => L + (W - L - R) * (n === 1 ? .5 : i / (n - 1)), yp = v => T0 + (H - T0 - B) * (1 - v / 100);
-  let g = ''; for (const v of [0, 25, 50, 75, 100]) g += `<line x1="${L}" x2="${W - R}" y1="${yp(v)}" y2="${yp(v)}" stroke="rgba(255,255,255,.07)"/><text x="${L - 6}" y="${yp(v) + 4}" text-anchor="end" font-size="10" fill="var(--mute)">${v}</text>`;
-  if (goal) g += `<line x1="${L}" x2="${W - R}" y1="${yp(goal)}" y2="${yp(goal)}" stroke="#ffc24d" stroke-dasharray="5 4"/><text x="${W - R}" y="${yp(goal) - 4}" text-anchor="end" font-size="10" fill="#ffc24d">目標 ${goal}%</text>`;
-  const pts = ms.map((m, i) => [xp(i), yp(Math.round(mockTotal(m) * 100))]);
-  g += `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="url(#mkg)" stroke-width="3" stroke-linejoin="round"/>` + pts.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="4" fill="#22e4ff"/><text x="${x}" y="${y - 8}" text-anchor="middle" font-size="10" fill="#e8eeff">${Math.round(mockTotal(ms[i]) * 100)}</text><text x="${x}" y="${H - 6}" text-anchor="middle" font-size="9.5" fill="var(--mute)">${fmtMD(ms[i].date)}</text>`).join('');
-  return `<svg viewBox="0 0 ${W} ${H}" class="achsvg" role="img" aria-label="模試の得点率の推移"><defs><linearGradient id="mkg" x1="0" x2="1"><stop offset="0" stop-color="#22e4ff"/><stop offset="1" stop-color="#a46bff"/></linearGradient></defs>${g}</svg>`;
+function mockChart(inf){
+  const metric = UI.mockMetric || 'rate', sid = UI.mockSub || 'total', sub = inf.subs.find(x => x.id === sid), dev = metric === 'dev';
+  const pts = []; for (const m of mocksAsc()) { let v = null; if (sid === 'total') v = dev ? numOr(m.dev) : (mockTotal(m) != null ? mockTotal(m) * 100 : null); else if (sub) { const r = mockRow(m, sub); v = dev ? numOr(r && r.dev) : (rowRate(r) != null ? rowRate(r) * 100 : null); } if (v != null) pts.push([m, v]); }
+  if (pts.length < 1) return `<div class="empty" style="padding:14px">${dev ? '偏差値' : '点数'}が入った模試がまだありません。</div>`;
+  const lo = dev ? 30 : 0, hi = dev ? 80 : 100, goal = dev ? numOr(inf.goalDev) : Math.round((sub ? subGoalRate(inf, sub) : planGoalRate(inf)) * 100);
+  const W = 340, H = 150, L = 30, B = 22, T0 = 14, R = 10, n = pts.length, xp = i => L + (W - L - R) * (n === 1 ? .5 : i / (n - 1)), yp = v => T0 + (H - T0 - B) * (1 - (clamp(v, lo, hi) - lo) / (hi - lo));
+  let g = ''; for (let v = lo; v <= hi; v += dev ? 10 : 25) g += `<line x1="${L}" x2="${W - R}" y1="${yp(v)}" y2="${yp(v)}" stroke="rgba(255,255,255,.07)"/><text x="${L - 6}" y="${yp(v) + 4}" text-anchor="end" font-size="10" fill="var(--mute)">${v}</text>`;
+  if (goal != null) g += `<line x1="${L}" x2="${W - R}" y1="${yp(goal)}" y2="${yp(goal)}" stroke="#ffc24d" stroke-dasharray="5 4"/><text x="${W - R}" y="${yp(goal) - 4}" text-anchor="end" font-size="10" fill="#ffc24d">目標 ${goal}${dev ? '' : '%'}</text>`;
+  const P2 = pts.map(([, v], i) => [xp(i), yp(v)]);
+  g += `<polyline points="${P2.map(q => q.join(',')).join(' ')}" fill="none" stroke="url(#mkg)" stroke-width="3" stroke-linejoin="round"/>` + P2.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="4" fill="#22e4ff"/><text x="${x}" y="${y - 8}" text-anchor="middle" font-size="10" fill="#e8eeff">${Math.round(pts[i][1] * 10) / 10}</text><text x="${x}" y="${H - 6}" text-anchor="middle" font-size="9.5" fill="var(--mute)">${fmtMD(pts[i][0].date)}</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" class="achsvg" role="img" aria-label="模試の推移"><defs><linearGradient id="mkg" x1="0" x2="1"><stop offset="0" stop-color="#22e4ff"/><stop offset="1" stop-color="#a46bff"/></linearGradient></defs>${g}</svg>`;
+}
+const tsOpts = sel => S().subjects.filter(sj => !sj.hidden).map(sj => `<option value="${sj.id}" ${sel === sj.id ? 'selected' : ''}>${esc(sj.name)}</option>`).join('');
+const guessTs = name => { const sj = S().subjects.find(x => !x.hidden && name && (name.includes(x.name) || x.name.includes(name.slice(0, 2)))); return sj ? sj.id : 'ot'; };
+function subsEditor(){
+  const D = UI.subsDraft;
+  return `<div class="subed">${D.map((x, i) => `<div class="subrow"><div class="row" style="gap:6px"><span class="dot" style="--c:${x.color};flex:none"></span><input type="text" maxlength="16" value="${esc(x.name)}" data-sf="${i}:name" placeholder="科目名（例：英語リスニング）" aria-label="科目名" style="flex:1;min-width:0">
+      <select data-sf="${i}:tsid" aria-label="タイマーの科目" title="タイマーで記録するときの科目">${tsOpts(x.tsid)}</select><button type="button" class="btn sm ghost" data-act="sub-del" data-v="${i}" aria-label="この科目を消す">${icon('x')}</button></div>
+    <div class="subnums"><label>共通配点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.k ?? ''}" data-sf="${i}:k" placeholder="0"></label><label>共通目標点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.gk ?? ''}" data-sf="${i}:gk" placeholder="—"></label>
+      <label>二次配点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.n ?? ''}" data-sf="${i}:n" placeholder="0"></label><label>二次目標点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.gn ?? ''}" data-sf="${i}:gn" placeholder="—"></label></div></div>`).join('')}</div>
+    <div class="row wrap" style="gap:8px;margin-top:10px"><button type="button" class="btn sm" data-act="sub-add">${icon('plus')}科目を追加</button><span class="sp"></span><button type="button" class="btn sm ghost" data-act="sub-cancel">やめる</button><button type="button" class="btn sm primary" data-act="sub-save">${icon('check')}保存</button></div>
+    <p class="note" style="margin:8px 0 0">右の選択は「タイマーで記録するときの科目」です（勉強時間を数えるのに使います）。数学ⅠAと数学ⅡBCのように、同じ科目に2つ以上つないでもOK。</p>`;
+}
+function mockEditor(inf){
+  const D = UI.mockDraft, judges = ['', 'A', 'B', 'C', 'D', 'E'];
+  return `<div class="mockform stack" style="gap:10px;margin-bottom:14px"><div class="row wrap" style="gap:8px"><label class="fld" style="width:150px">日付<input type="date" value="${esc(D.date)}" data-mh="date"></label><label class="fld" style="flex:1;min-width:150px">模試の名前<input type="text" maxlength="30" value="${esc(D.name)}" data-mh="name" placeholder="例：第2回 共通テスト模試"></label></div>
+    <div class="row wrap" style="gap:8px"><label class="fld" style="width:120px">判定<select data-mh="judge">${judges.map(j => `<option ${D.judge === j ? 'selected' : ''} value="${j}">${j || '—'}</option>`).join('')}</select></label><label class="fld" style="width:120px">総合の偏差値<input type="number" step="0.1" inputmode="decimal" value="${D.dev ?? ''}" data-mh="dev" placeholder="任意"></label></div>
+    <div class="mrows"><div class="mrow head"><span>科目</span><span>点</span><span>満点</span><span>偏差値</span><span></span></div>
+    ${D.rows.map((r, i) => `<div class="mrow"><input type="text" maxlength="16" value="${esc(r.n)}" data-mf="${i}:n" placeholder="科目" aria-label="科目名"><input type="number" min="0" inputmode="numeric" value="${r.g ?? ''}" data-mf="${i}:g" aria-label="点" placeholder="点"><input type="number" min="1" inputmode="numeric" value="${r.m ?? ''}" data-mf="${i}:m" aria-label="満点" placeholder="満点"><input type="number" step="0.1" inputmode="decimal" value="${r.dev ?? ''}" data-mf="${i}:dev" aria-label="偏差値" placeholder="偏差値"><button type="button" class="btn sm ghost" data-act="mrow-del" data-v="${i}" aria-label="この科目を消す">${icon('x')}</button></div>`).join('')}</div>
+    <button type="button" class="btn sm" data-act="mrow-add" style="align-self:flex-start">${icon('plus')}科目を追加</button>
+    <label class="fld">感想・反省（かんたんでOK）<textarea rows="3" maxlength="300" data-mh="memo" placeholder="例：英語の長文で時間が足りなかった。次は大問ごとに時間を決める。">${esc(D.memo || '')}</textarea></label>
+    <div class="row" style="gap:8px"><span class="sp"></span><button type="button" class="btn ghost" data-act="mock-cancel">やめる</button><button type="button" class="btn primary" data-act="mock-save">${icon('check')}${D.id ? '変更を保存' : '模試を記録'}</button></div></div>`;
 }
 VIEWS.plan = () => {
   const st = S(), p = PL(), today = dkey();
   if (!st.targets.length) return `<div class="pagehead"><div><span class="eyebrow">ROAD TO 合格</span><h1>合格プラン</h1></div></div><section class="panel"><div class="empty">まず志望校を登録しよう。<br><a class="btn primary" href="#exams" style="margin-top:12px">${icon('plus')}志望大学を登録する</a></div></section>`;
   const t = st.targets.find(x => x.id === p.main) || st.targets[0], inf = planInfo(t.id), date = planDate(inf), left = date ? daysBetween(today, date) : null;
-  const subs = planSubjects(inf), goal = goalFor(today), alloc = planAlloc(inf, goal);
-  const ms = p.mocks.slice().sort((a, b) => a.date.localeCompare(b.date)), last = ms[ms.length - 1], lastRate = last ? mockTotal(last) : null;
-  const sumK = subs.reduce((a, sj) => a + inf.pts[sj.id][0], 0), sumN = subs.reduce((a, sj) => a + inf.pts[sj.id][1], 0);
-  const doneN = p.check.filter(c => c.done).length;
+  const goal = goalFor(today), alloc = planAlloc(inf, goal), subs = inf.subs.filter(x => x.name);
+  const ms = mocksAsc(), last = ms[ms.length - 1], lastRate = last ? mockTotal(last) : null, gRate = planGoalRate(inf);
+  const sumK = subs.reduce((a, x) => a + (+x.k || 0), 0), sumN = subs.reduce((a, x) => a + (+x.n || 0), 0), sumGK = subs.reduce((a, x) => a + (+x.gk || 0), 0), sumGN = subs.reduce((a, x) => a + (+x.gn || 0), 0);
+  const doneN = p.check.filter(c => c.done).length, allocSum = alloc.reduce((a, r) => a + r.min, 0);
   const judgeC = j => ({A: '#3ee6a0', B: '#22e4ff', C: '#ffc24d', D: '#ff9350', E: '#ff5c7a'})[j] || 'var(--mute)';
   return `<div class="pagehead"><div><span class="eyebrow">ROAD TO 合格</span><h1>合格プラン</h1></div><a class="btn sm ghost" href="#exams">${icon('pen')}志望校を編集</a></div>
   <section class="panel"><div class="note" style="margin:0 0 6px">第一志望をえらぶ</div><div class="chips">${st.targets.map(x => `<button class="chip ${x.id === t.id ? 'on' : ''}" style="--c:#ffc24d" data-act="pl-main" data-v="${x.id}"><i></i>${esc(x.univ)}${x.fac ? ' ' + esc(x.fac) : ''}</button>`).join('')}</div></section>
   <section class="panel hero plancard"><div class="row wrap" style="gap:18px;align-items:center">
     <div style="flex:1;min-width:200px"><span class="eyebrow">🎯 第一志望</span><h2 style="margin:4px 0">${esc(t.univ)} <small style="font-size:15px;color:var(--mute)">${esc(t.fac || '')}</small></h2>
-      <div class="row wrap" style="gap:6px">${left != null ? `<span class="pill ${left <= 30 ? 'warn' : 'cy'}">本番まで ${left < 0 ? '終了' : left + '日'}</span>` : '<span class="pill">試験日を選んでね</span>'}${lastRate != null ? `<span class="pill">最新模試 ${Math.round(lastRate * 100)}%</span>` : ''}${last && last.judge ? `<span class="pill" style="color:${judgeC(last.judge)};border-color:${judgeC(last.judge)}">判定 ${last.judge}</span>` : ''}</div></div>
-    <div class="kv" style="text-align:right"><span class="k">目標との差（得点率）</span><span class="v" style="font-size:26px;color:${lastRate == null ? 'var(--mute)' : lastRate * 100 >= inf.goalK ? '#3ee6a0' : '#ffc24d'}">${lastRate == null ? '—' : (lastRate * 100 >= inf.goalK ? '+' : '') + Math.round(lastRate * 100 - inf.goalK) + '<small>pt</small>'}</span><span class="note">目標 ${inf.goalK}%${sumN ? ` / 二次 ${inf.goalN}%` : ''}</span></div></div>
+      <div class="row wrap" style="gap:6px">${left != null ? `<span class="pill ${left <= 30 ? 'warn' : 'cy'}">本番まで ${left < 0 ? '終了' : left + '日'}</span>` : '<span class="pill">試験日を選んでね</span>'}${lastRate != null ? `<span class="pill">最新模試 ${Math.round(lastRate * 100)}%</span>` : ''}${last && last.dev ? `<span class="pill">偏差値 ${last.dev}${inf.goalDev ? ` / 目標 ${inf.goalDev}` : ''}</span>` : ''}${last && last.judge ? `<span class="pill" style="color:${judgeC(last.judge)};border-color:${judgeC(last.judge)}">判定 ${last.judge}</span>` : ''}</div></div>
+    <div class="kv" style="text-align:right"><span class="k">目標との差（得点率）</span><span class="v" style="font-size:26px;color:${lastRate == null ? 'var(--mute)' : lastRate >= gRate ? '#3ee6a0' : '#ffc24d'}">${lastRate == null ? '—' : (lastRate >= gRate ? '+' : '') + Math.round((lastRate - gRate) * 100) + '<small>pt</small>'}</span><span class="note">目標 ${Math.round(gRate * 100)}%${sumGK + sumGN ? `（${sumGK + sumGN}点）` : ''}</span></div></div>
     ${left != null && left > 0 ? `<p class="note" style="margin:10px 0 0">1日の目標 ${fmtHM(goal)} を続けると、本番までにあと <b style="color:var(--ink)">約${Math.round(goal * left / 60).toLocaleString()}時間</b> 勉強できます。</p>` : ''}
     <form class="row wrap" data-form="pl-info" style="gap:8px;margin-top:12px;align-items:flex-end">
       <label class="fld" style="flex:1;min-width:150px">試験日<select id="pl-exam"><option value="">（日付を直接入れる）</option>${st.exams.map(e => `<option value="${e.id}" ${inf.exam === e.id ? 'selected' : ''}>${esc(e.name)}（${fmtMD(e.date)}）</option>`).join('')}</select></label>
       <label class="fld" style="width:150px">日付<input id="pl-date" type="date" value="${esc(inf.exam ? '' : inf.date || '')}"></label>
-      <label class="fld" style="width:120px">共通テスト目標%<input id="pl-gk" type="number" min="0" max="100" inputmode="numeric" value="${inf.goalK}"></label>
-      <label class="fld" style="width:110px">二次目標%<input id="pl-gn" type="number" min="0" max="100" inputmode="numeric" value="${inf.goalN}"></label>
-      <button class="btn primary" type="submit">${icon('check')}保存</button></form></section>
+      <label class="fld" style="width:110px">共通 目標%<input id="pl-gk" type="number" min="0" max="100" inputmode="numeric" value="${inf.goalK}"></label>
+      <label class="fld" style="width:100px">二次 目標%<input id="pl-gn" type="number" min="0" max="100" inputmode="numeric" value="${inf.goalN}"></label>
+      <label class="fld" style="width:100px">目標偏差値<input id="pl-gd" type="number" step="0.1" inputmode="decimal" value="${inf.goalDev ?? ''}" placeholder="任意"></label>
+      <button class="btn primary" type="submit">${icon('check')}保存</button></form>
+    <p class="note" style="margin:6px 0 0">科目ごとの目標点を全部入れると、目標の得点率はその合計から計算されます。</p></section>
 
   <div class="grid2">
-  <section class="panel"><div class="ph"><div><span class="eyebrow">TODAY</span><h2>今日のおすすめ配分</h2></div><span class="pill">${fmtHM(goal)}</span></div>
-    ${alloc.length ? `<div class="stack" style="gap:10px">${alloc.map(a => `<div><div class="row" style="justify-content:space-between;font-size:13px"><span><span class="dot" style="--c:${a.sj.color};display:inline-block;margin-right:6px"></span><b>${esc(a.sj.name)}</b> <span class="note">配点${a.pts}${a.rate != null ? ` · 模試${Math.round(a.rate * 100)}%` : ''}</span></span><b class="disp">${fmtHM(a.min)}</b></div>
-      <div class="bar" style="margin-top:4px"><i style="width:${(a.share * 100).toFixed(1)}%;background:${a.sj.color}"></i></div>
-      <div class="note" style="margin-top:2px">最近7日：${fmtHM(a.did7)}${a.didShare + .08 < a.share ? ' <b style="color:#ffc24d">← もっと時間をかけよう</b>' : ''}</div></div>`).join('')}</div>
-      <p class="note" style="margin:10px 0 0">配点が大きい科目と、模試で点が取れていない科目ほど、時間を多めにしています。</p>
-      <a class="btn sm primary" href="#timer" style="margin-top:10px">${icon('play')}${esc(alloc[0].sj.name)}から始める</a>`
-      : '<div class="empty">下の「配点」を入れると、科目ごとのおすすめ時間が出ます。</div>'}</section>
+  <section class="panel"><div class="ph"><div><span class="eyebrow">TODAY</span><h2>今日のおすすめ配分</h2></div><button class="btn sm ${UI.allocEdit ? 'primary' : ''}" data-act="alloc-edit">${UI.allocEdit ? icon('check') + 'できた' : icon('pen') + '調整する'}</button></div>
+    <div class="seg" style="margin-bottom:10px">${[['gap', '目標との差'], ['weak', '苦手を重視'], ['pts', '配点どおり']].map(([k, n]) => `<button data-act="alloc-mode" data-v="${k}" class="${inf.mode === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+    ${alloc.length ? `<div class="stack" style="gap:12px">${alloc.map(a => `<div class="allocrow"><div class="row" style="justify-content:space-between;font-size:13px;gap:6px"><span style="min-width:0"><span class="dot" style="--c:${a.sub.color};display:inline-block;margin-right:6px"></span><b>${esc(a.sub.name)}</b>${a.fixed ? ' <span class="pill" style="font-size:10px;padding:1px 6px">固定</span>' : ''}</span><b class="disp">${fmtHM(a.min)}</b></div>
+      <div class="bar" style="margin-top:4px"><i style="width:${(clamp(a.share, 0, 1) * 100).toFixed(1)}%;background:${a.sub.color}"></i></div>
+      <div class="note" style="margin-top:2px">${subPts(a.sub) ? `配点${subPts(a.sub)}` : '配点なし'}${(+a.sub.gk || 0) + (+a.sub.gn || 0) ? ` · 目標${(+a.sub.gk || 0) + (+a.sub.gn || 0)}点` : ''}${a.L ? ` · 最新 ${a.L.g}/${a.L.m}${a.L.dev ? `（偏差値${a.L.dev}）` : ''}` : ''} · 最近7日 ${fmtHM(a.did7)}${a.shared ? '（同じ科目の合計）' : ''}${!a.fixed && a.didShare + .08 < a.share ? ' <b style="color:#ffc24d">← もっと時間を</b>' : ''}</div>
+      ${UI.allocEdit ? `<div class="row wrap" style="gap:6px;margin-top:6px;align-items:center"><div class="seg prefseg">${PREFS.map(([v, n]) => `<button data-act="alloc-pref" data-v="${a.sub.id}" data-p="${v}" class="${(a.sub.pref ?? 1) === v ? 'on' : ''}">${n}</button>`).join('')}</div>
+        <label class="row fixlbl" style="gap:4px;font-size:12px;color:var(--mute)">時間を自分で決める<input type="number" min="0" max="600" step="5" inputmode="numeric" data-fix="${a.sub.id}" value="${numOr(a.sub.fix) ?? ''}" placeholder="自動" style="width:72px">分</label></div>` : ''}</div>`).join('')}</div>
+      <p class="note" style="margin:10px 0 0">合計 ${fmtHM(allocSum)}${allocSum > goal + 4 ? `（1日の目標 ${fmtHM(goal)} をこえています）` : ` / 1日の目標 ${fmtHM(goal)}`}。${inf.mode === 'gap' ? '目標点との差が大きい科目ほど多めにしています。' : inf.mode === 'weak' ? '模試の点が低い科目ほど多めにしています。' : '配点の大きさどおりに分けています。'}「調整する」で、科目ごとに多め・少なめや、時間を自分で決められます。</p>
+      <button class="btn sm primary" data-act="alloc-go" data-v="${esc(alloc[0].sub.tsid)}" style="margin-top:10px">${icon('play')}${esc(alloc[0].sub.name)}から始める</button>`
+      : '<div class="empty">右の「科目・配点・目標点」を入れると、科目ごとのおすすめ時間が出ます。</div>'}</section>
 
-  <section class="panel"><div class="ph"><div><span class="eyebrow">POINTS</span><h2>配点</h2></div><span class="note">共通 ${sumK} / 二次 ${sumN}</span></div>
+  <section class="panel"><div class="ph"><div><span class="eyebrow">SUBJECTS</span><h2>科目・配点・目標点</h2></div>${UI.subsDraft ? '' : `<button class="btn sm" data-act="sub-edit">${icon('pen')}編集</button>`}</div>
     <div class="chips" style="margin-bottom:10px">${Object.entries(PLAN_TPL).map(([k, [n]]) => `<button class="chip" style="--c:#a46bff" data-act="pl-tpl" data-v="${k}"><i></i>${n}</button>`).join('')}</div>
-    <form data-form="pl-pts"><div class="pttable"><div class="ptrow head"><span>科目</span><span>共通テスト</span><span>二次・個別</span></div>
-      ${st.subjects.filter(sj => !sj.hidden && sj.id !== 'ot').map(sj => { const v = inf.pts[sj.id] || [0, 0]; return `<div class="ptrow"><span><span class="dot" style="--c:${sj.color};display:inline-block;margin-right:6px"></span>${esc(sj.name)}</span><input type="number" min="0" max="1000" inputmode="numeric" data-pk="${sj.id}" value="${v[0] || ''}" placeholder="0" aria-label="${esc(sj.name)} 共通テストの配点"><input type="number" min="0" max="1000" inputmode="numeric" data-pn="${sj.id}" value="${v[1] || ''}" placeholder="0" aria-label="${esc(sj.name)} 二次の配点"></div>`; }).join('')}</div>
-      <button class="btn sm primary" type="submit" style="margin-top:10px">${icon('check')}配点を保存</button></form>
+    ${UI.subsDraft ? subsEditor() : subs.length ? `<div class="subtbl"><div class="strow head"><span>科目</span><span>配点<br>共通/二次</span><span>目標点</span><span>最新</span></div>${subs.map(x => { const L = latestOf(x); return `<div class="strow"><span><span class="dot" style="--c:${x.color};display:inline-block;margin-right:5px"></span>${esc(x.name)}</span><span>${+x.k || 0} / ${+x.n || 0}</span><span>${(+x.gk || 0) + (+x.gn || 0) ? `${x.gk ?? '—'} / ${x.gn ?? '—'}` : '—'}</span><span>${L ? `${Math.round(L.rate * 100)}%${L.dev ? `<br><small>偏差値${L.dev}</small>` : ''}` : '—'}</span></div>`; }).join('')}
+      <div class="strow foot"><span>合計</span><span>${sumK} / ${sumN}</span><span>${sumGK + sumGN ? `${sumGK} / ${sumGN}` : '—'}</span><span></span></div></div>` : `<div class="empty" style="padding:14px">科目がまだありません。上のテンプレートを使うか「編集」から追加してね。</div>`}
     <p class="note" style="margin:8px 0 0">テンプレートはあくまで例です。正しい配点は、${esc(t.univ)}の募集要項（学部ごと）で確認して入れてね。</p></section>
   </div>
 
-  <section class="panel"><div class="ph"><div><span class="eyebrow">MOCK EXAMS</span><h2>模試の記録</h2></div><button class="btn sm ${UI.mockAdd ? '' : 'primary'}" data-act="pl-mockadd">${UI.mockAdd ? 'とじる' : icon('plus') + '記録する'}</button></div>
-    ${UI.mockAdd ? `<form class="stack mockform" data-form="pl-mock" style="gap:10px;margin-bottom:14px"><div class="row wrap" style="gap:8px"><label class="fld" style="width:150px">日付<input id="mk-date" type="date" value="${today}"></label><label class="fld" style="flex:1;min-width:150px">模試の名前<input id="mk-name" type="text" maxlength="30" placeholder="例：共通テスト模試"></label>
-      <label class="fld" style="width:110px">${esc(t.univ).slice(0, 8)}の判定<select id="mk-judge"><option value="">—</option>${['A','B','C','D','E'].map(j => `<option>${j}</option>`).join('')}</select></label><label class="fld" style="width:100px">偏差値<input id="mk-dev" type="number" step="0.1" inputmode="decimal" placeholder="任意"></label></div>
-      <div class="pttable"><div class="ptrow head"><span>科目</span><span>とった点</span><span>満点</span></div>${(subs.length ? subs : st.subjects.filter(sj => !sj.hidden && sj.id !== 'ot').slice(0, 5)).map(sj => `<div class="ptrow"><span>${esc(sj.name)}</span><input type="number" min="0" inputmode="numeric" data-mg="${sj.id}" aria-label="${esc(sj.name)}の点"><input type="number" min="1" inputmode="numeric" data-mm="${sj.id}" value="${(inf.pts[sj.id] && inf.pts[sj.id][0]) || 100}" aria-label="${esc(sj.name)}の満点"></div>`).join('')}</div>
-      <button class="btn primary" type="submit">${icon('check')}模試を記録</button></form>` : ''}
-    ${ms.length ? `${ms.length >= 2 ? mockChart(ms, inf.goalK) : ''}<div class="list">${ms.slice().reverse().map(m => { const r = mockTotal(m); return `<div class="li"><div class="t"><b>${esc(m.name || '模試')}${m.judge ? ` <span class="pill" style="color:${judgeC(m.judge)};border-color:${judgeC(m.judge)}">${m.judge}判定</span>` : ''}</b><span>${fmtDate(m.date)} · ${r != null ? Math.round(r * 100) + '%' : '—'}${m.dev ? ` · 偏差値 ${m.dev}` : ''} · ${Object.entries(m.sc || {}).map(([sid, [a, b]]) => `${esc(subjOf(sid).name)} ${a}/${b}`).join('、')}</span></div><button class="btn sm ghost" data-act="pl-mockdel" data-v="${m.id}" aria-label="削除">${icon('trash')}</button></div>`; }).join('')}</div>`
-      : '<div class="empty">模試を受けたら記録しよう。得点率のグラフと、科目ごとのおすすめ時間に反映されます。</div>'}</section>
+  <section class="panel"><div class="ph"><div><span class="eyebrow">MOCK EXAMS</span><h2>模試の記録</h2></div>${UI.mockDraft ? '' : `<button class="btn sm primary" data-act="mock-new">${icon('plus')}記録する</button>`}</div>
+    ${UI.mockDraft ? mockEditor(inf) : ''}
+    ${ms.length ? `<div class="row wrap" style="gap:8px;margin-bottom:8px"><div class="seg">${[['rate', '得点率'], ['dev', '偏差値']].map(([k, n]) => `<button data-act="mk-metric" data-v="${k}" class="${(UI.mockMetric || 'rate') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+      <div class="chips">${[['total', '総合', '#22e4ff'], ...subs.map(x => [x.id, x.name, x.color])].map(([k, n, c]) => `<button class="chip ${(UI.mockSub || 'total') === k ? 'on' : ''}" style="--c:${c}" data-act="mk-sub" data-v="${esc(k)}"><i></i>${esc(n)}</button>`).join('')}</div></div>
+      ${mockChart(inf)}
+      <div class="list">${ms.slice().reverse().map(m => { const r = mockTotal(m); return `<div class="li" style="align-items:flex-start"><div class="t"><b>${esc(m.name || '模試')}${m.judge ? ` <span class="pill" style="color:${judgeC(m.judge)};border-color:${judgeC(m.judge)}">${m.judge}判定</span>` : ''}</b>
+        <span>${fmtDate(m.date)} · ${r != null ? Math.round(r * 100) + '%' : '—'}${m.dev ? ` · 偏差値 ${m.dev}` : ''}</span>
+        <span>${m.rows.filter(x => x.n).map(x => `${esc(x.n)} ${x.g ?? '—'}/${x.m ?? '—'}${numOr(x.dev) != null ? `（${x.dev}）` : ''}`).join('、')}</span>
+        ${m.memo ? `<span class="mockmemo">💭 ${esc(m.memo)}</span>` : ''}</div>
+        <div class="row" style="gap:2px;flex:none"><button class="btn sm ghost" data-act="mock-edit" data-v="${m.id}" aria-label="編集">${icon('pen')}</button><button class="btn sm ghost" data-act="pl-mockdel" data-v="${m.id}" aria-label="削除">${icon('trash')}</button></div></div>`; }).join('')}</div>`
+      : UI.mockDraft ? '' : '<div class="empty">模試を受けたら記録しよう。得点率・偏差値のグラフと、おすすめ配分に反映されます。</div>'}</section>
 
   <div class="grid2">
   <section class="panel"><div class="ph"><div><span class="eyebrow">CHECKLIST</span><h2>合格までにやること</h2></div><span class="pill ${doneN === p.check.length ? 'good' : ''}">${doneN}/${p.check.length}</span></div>
@@ -3998,9 +4057,9 @@ VIEWS.plan = () => {
 // ホームの小さなカード
 function planHomeHTML(){
   const st = S(); if (!st.plan || !st.targets.length) return ''; const p = PL(), t = st.targets.find(x => x.id === p.main); if (!t) return '';
-  const inf = planInfo(t.id), date = planDate(inf), left = date ? daysBetween(dkey(), date) : null, al = planAlloc(inf, goalFor(dkey())).slice(0, 3);
+  const inf = planInfo(t.id), date = planDate(inf), left = date ? daysBetween(dkey(), date) : null, al = planAlloc(inf, goalFor(dkey())).filter(a => a.min > 0).slice(0, 3);
   return `<a class="panel planhome" href="#plan"><div class="row wrap" style="gap:10px;align-items:center"><span style="font-size:24px">🎯</span><div style="flex:1;min-width:0"><b>${esc(t.univ)}${left != null && left >= 0 ? ` まであと${left}日` : ''}</b>
-    <div class="note">${al.length ? '今日のおすすめ：' + al.map(a => `${esc(a.sj.name)} ${fmtHM(a.min)}`).join('・') : '配点を入れると、今日のおすすめ配分が出ます'}${p.dream && hashStr(dkey()) % 3 === 0 ? `<br>💭 ${esc(p.dream.split('\n')[0].slice(0, 40))}` : ''}</div></div>${icon('chevR')}</div></a>`;
+    <div class="note">${al.length ? '今日のおすすめ：' + al.map(a => `${esc(a.sub.name)} ${fmtHM(a.min)}`).join('・') : '科目と配点を入れると、今日のおすすめ配分が出ます'}${p.dream && hashStr(dkey()) % 3 === 0 ? `<br>💭 ${esc(p.dream.split('\n')[0].slice(0, 40))}` : ''}</div></div>${icon('chevR')}</div></a>`;
 }
 VIEWS.exams = () => {
   const st = S(), today = dkey();
@@ -4480,8 +4539,32 @@ const ACT = {
   'spin-auto'(b){ UI.spinAuto = !UI.spinAuto; b.classList.toggle('primary', UI.spinAuto); b.classList.toggle('ghost', !UI.spinAuto); b.textContent = UI.spinAuto ? '止める' : '回す'; spinStart(); },
   'spin-pose'(b){ UI.spinPose = b.dataset.v; b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); spinPaint(); spinStart(); },
   'pl-main'(b){ PL().main = b.dataset.v; queueWrite('state'); render(); },
-  'pl-tpl'(b){ const [n, pts] = PLAN_TPL[b.dataset.v], p = PL(), inf = planInfo(p.main); confirmBox(`「${n}」を入れますか？`, '今の配点は上書きされます。あとで大学の募集要項を見て、正しい数字に直してね。', '入れる', () => { inf.pts = {}; for (const [k, v] of Object.entries(pts)) if (S().subjects.some(sj => sj.id === k)) inf.pts[k] = v.slice(); queueWrite('state'); render(); }); },
-  'pl-mockadd'(){ UI.mockAdd = !UI.mockAdd; render(); },
+  'pl-tpl'(b){ const [n, list] = PLAN_TPL[b.dataset.v]; confirmBox(`「${n}」を入れますか？`, '今の科目と配点は入れかわります（模試の記録は消えません）。あとで大学の募集要項を見て、正しい数字に直してね。', '入れる', () => {
+    const inf = planInfo(PL().main); inf.subs = list.map(([name, tsid, k, nn], i) => ({id: 'p' + uid6(), name, tsid: S().subjects.some(x => x.id === tsid) ? tsid : 'ot', color: SUB_COLORS[i % SUB_COLORS.length], k, n: nn, gk: null, gn: null, pref: 1, fix: null})); UI.subsDraft = null; queueWrite('state'); render(); }); },
+  'sub-edit'(){ UI.subsDraft = JSON.parse(JSON.stringify(planInfo(PL().main).subs)); render(); },
+  'sub-add'(){ const D = UI.subsDraft; if (!D) return; D.push({id: 'p' + uid6(), name: '', tsid: 'ot', color: SUB_COLORS[D.length % SUB_COLORS.length], k: null, n: null, gk: null, gn: null, pref: 1, fix: null}); render(); setTimeout(() => { const el = $(`[data-sf="${D.length - 1}:name"]`); if (el) el.focus(); }, 30); },
+  'sub-del'(b){ const D = UI.subsDraft; if (!D) return; D.splice(+b.dataset.v, 1); render(); },
+  'sub-cancel'(){ UI.subsDraft = null; render(); },
+  'sub-save'(){ const D = UI.subsDraft; if (!D) return; const inf = planInfo(PL().main);
+    inf.subs = D.filter(x => (x.name || '').trim()).map(x => ({...x, name: x.name.trim().slice(0, 16), k: numOr(x.k), n: numOr(x.n), gk: numOr(x.gk), gn: numOr(x.gn)}));
+    UI.subsDraft = null; queueWrite('state'); render(); toast('科目・配点・目標点を保存しました。おすすめ配分に反映されます。', 'check'); },
+  'alloc-edit'(){ UI.allocEdit = !UI.allocEdit; render(); },
+  'alloc-mode'(b){ planInfo(PL().main).mode = b.dataset.v; queueWrite('state'); render(); },
+  'alloc-pref'(b){ const sub = planInfo(PL().main).subs.find(x => x.id === b.dataset.v); if (sub) { sub.pref = +b.dataset.p; queueWrite('state'); render(); } },
+  'alloc-go'(b){ T.subj = b.dataset.v; saveTimer(); location.hash = '#timer'; },
+  'mock-new'(){ const inf = planInfo(PL().main); UI.mockDraft = {date: dkey(), name: '', judge: '', dev: '', memo: '', rows: inf.subs.filter(x => x.name).map(x => ({sid: x.id, n: x.name, g: '', m: +x.k || +x.n || 100, dev: ''}))}; if (!UI.mockDraft.rows.length) UI.mockDraft.rows.push({sid: '', n: '', g: '', m: 100, dev: ''}); render(); },
+  'mock-edit'(b){ const m = PL().mocks.find(x => x.id === b.dataset.v); if (!m) return; UI.mockDraft = JSON.parse(JSON.stringify({...m, dev: m.dev ?? '', memo: m.memo || ''})); render(); setTimeout(() => $('.mockform')?.scrollIntoView({behavior: 'smooth', block: 'center'}), 50); },
+  'mrow-add'(){ const D = UI.mockDraft; if (!D) return; D.rows.push({sid: '', n: '', g: '', m: 100, dev: ''}); render(); setTimeout(() => { const el = $(`[data-mf="${D.rows.length - 1}:n"]`); if (el) el.focus(); }, 30); },
+  'mrow-del'(b){ const D = UI.mockDraft; if (!D) return; D.rows.splice(+b.dataset.v, 1); render(); },
+  'mock-cancel'(){ UI.mockDraft = null; render(); },
+  'mock-save'(){ const D = UI.mockDraft, p = PL(), inf = planInfo(p.main); if (!D) return;
+    const rows = D.rows.filter(r => (r.n || '').trim() && r.g !== '' && r.g != null && +r.m > 0).map(r => { const sub = inf.subs.find(x => x.id === r.sid) || inf.subs.find(x => x.name === r.n.trim()); return {sid: sub ? sub.id : '', n: r.n.trim().slice(0, 16), g: clamp(+r.g, 0, +r.m), m: +r.m, dev: numOr(r.dev) != null ? Math.round(+r.dev * 10) / 10 : null}; });
+    if (!rows.length) { toast('1科目以上、科目名・点・満点を入れてください。', 'x'); return; }
+    const rec = {id: D.id || uid6(), date: D.date || dkey(), name: (D.name || '').trim().slice(0, 30), judge: D.judge || '', dev: numOr(D.dev) != null ? Math.round(+D.dev * 10) / 10 : null, memo: (D.memo || '').trim().slice(0, 300), rows};
+    const k = p.mocks.findIndex(m => m.id === rec.id); if (k >= 0) p.mocks[k] = rec; else p.mocks.push(rec); p.mocks = p.mocks.slice(-60);
+    UI.mockDraft = null; queueWrite('state'); render(); toast(k >= 0 ? '模試の記録を直しました。' : '模試を記録しました！ おすすめ配分が更新されます。', 'check'); },
+  'mk-metric'(b){ UI.mockMetric = b.dataset.v; render(); },
+  'mk-sub'(b){ UI.mockSub = b.dataset.v; render(); },
   'pl-mockdel'(b){ confirmBox('この模試の記録を消しますか？', '', '消す', () => { const p = PL(); p.mocks = p.mocks.filter(m => m.id !== b.dataset.v); queueWrite('state'); render(); }, true); },
   'pl-chk'(b){ const c = PL().check.find(x => x.id === b.dataset.v); if (c) { c.done = b.checked; queueWrite('state'); if (c.done) toast(`「${c.t}」クリア！`, 'check', 2500); setTimeout(render, 250); } },
   'pl-chkdel'(b){ const p = PL(); p.check = p.check.filter(x => x.id !== b.dataset.v); queueWrite('state'); render(); },
@@ -4969,12 +5052,7 @@ document.addEventListener('submit', e => {
       else { st.nickname = nn; st.nickChangedM = monthOf(dkey()); toast(`名前を「${nn || 'ななしの受験生'}」に変更しました。次の変更は ${nextMonthLabel()} からできます。`, 'check', 5000); }
     } const ng = clamp(+val('pf-goal') || 180, 10, 1200); if (ng !== st.dailyGoal || ng !== goalFor(dkey())) st.goalDay = {d: dkey(), m: ng}; st.dailyGoal = ng; dataV++; if (val('pf-rt')) st.prefs.reviewTime = val('pf-rt'); queueWrite('state'); publishPub(); toast('設定を保存しました。', 'check'); pendingRender = false; render(); }
   if (k === 'subj-add') { const n = val('sj-name'); if (!n) return; const used = st.subjects.length; st.subjects.push({id: 'c' + uid6(), name: n.slice(0, 12), color: EXTRA_COLORS[used % EXTRA_COLORS.length], hidden: false}); queueWrite('state'); pendingRender = false; render(); toast(`「${n}」を追加しました。`, 'plus'); }
-  if (k === 'pl-info') { const p = PL(), inf = planInfo(p.main); inf.exam = val('pl-exam'); inf.date = inf.exam ? '' : val('pl-date'); inf.goalK = clamp(+val('pl-gk') || 0, 0, 100); inf.goalN = clamp(+val('pl-gn') || 0, 0, 100); queueWrite('state'); toast('保存しました。', 'check'); pendingRender = false; render(); return; }
-  if (k === 'pl-pts') { const p = PL(), inf = planInfo(p.main); inf.pts = {}; f.querySelectorAll('[data-pk]').forEach(i => { const sid = i.dataset.pk, n = f.querySelector(`[data-pn="${sid}"]`); const a = Math.max(0, Math.round(+i.value || 0)), b = Math.max(0, Math.round(+(n && n.value) || 0)); if (a || b) inf.pts[sid] = [a, b]; }); queueWrite('state'); toast('配点を保存しました。おすすめ配分に反映されます。', 'check'); pendingRender = false; render(); return; }
-  if (k === 'pl-mock') { const p = PL(), sc = {}; f.querySelectorAll('[data-mg]').forEach(i => { const sid = i.dataset.mg, mx = +(f.querySelector(`[data-mm="${sid}"]`) || {}).value; if (i.value !== '' && mx > 0) sc[sid] = [clamp(+i.value, 0, mx), mx]; });
-    if (!Object.keys(sc).length) { toast('1科目以上、点数を入れてください。', 'x'); return; }
-    p.mocks.push({id: uid6(), date: val('mk-date') || dkey(), name: val('mk-name').slice(0, 30), judge: val('mk-judge'), dev: val('mk-dev') ? Math.round(+val('mk-dev') * 10) / 10 : null, sc}); p.mocks = p.mocks.slice(-60);
-    UI.mockAdd = false; queueWrite('state'); toast('模試を記録しました！ おすすめ配分が更新されます。', 'check'); pendingRender = false; render(); return; }
+  if (k === 'pl-info') { const p = PL(), inf = planInfo(p.main); inf.exam = val('pl-exam'); inf.date = inf.exam ? '' : val('pl-date'); inf.goalK = clamp(+val('pl-gk') || 0, 0, 100); inf.goalN = clamp(+val('pl-gn') || 0, 0, 100); inf.goalDev = val('pl-gd') ? Math.round(+val('pl-gd') * 10) / 10 : null; queueWrite('state'); toast('保存しました。', 'check'); pendingRender = false; render(); return; }
   if (k === 'pl-chkadd') { const t = val('pl-chkt'); if (!t) return; PL().check.push({id: uid6(), t: t.slice(0, 50), done: false, ph: +val('pl-ph') || 0}); queueWrite('state'); pendingRender = false; render(); return; }
   if (k === 'm1') { st.m1 = val('m1-in').slice(0, 40); queueWrite('state'); publishPub(200); toast(st.m1 ? '1位のひとことをのせました！ みんなのランキングに表示されます。' : 'ひとことを消しました。', 'trophy', 4000); pendingRender = false; render(); return; }
   if (k === 'add-friend') { addFriend(val('fr-code')); return; }
@@ -5010,6 +5088,10 @@ document.addEventListener('keydown', e => { if (e.target && e.target.id === 'cha
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'chat-in') CHAT.draft = t.value;
+  if (t.dataset && t.dataset.sf && UI.subsDraft) { const [i, f] = t.dataset.sf.split(':'), x = UI.subsDraft[+i]; if (x) x[f] = t.value; }
+  if (t.dataset && t.dataset.mf && UI.mockDraft) { const [i, f] = t.dataset.mf.split(':'), r = UI.mockDraft.rows[+i]; if (r) r[f] = t.value; }
+  if (t.dataset && t.dataset.mh && UI.mockDraft) UI.mockDraft[t.dataset.mh] = t.value;
+  if (t.dataset && t.dataset.fix) { const sub = planInfo(PL().main).subs.find(x => x.id === t.dataset.fix); if (sub) { sub.fix = t.value === '' ? null : clamp(Math.round(+t.value || 0), 0, 600); queueWrite('state', 1500); } }
   if (t.id === 'pl-dream') { PL().dream = t.value.slice(0, 400); queueWrite('state', 2000); }
   if (t.id === 'help-q') { UI.helpQ = t.value; clearTimeout(UI.helpT); UI.helpT = setTimeout(() => { render(); const i = $('#help-q'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 250); }
   if (t.id === 'snd-vol') { S().prefs.vol = +t.value; AudioEng.setVol(+t.value); queueWrite('state', 1500); }
@@ -5023,6 +5105,8 @@ document.addEventListener('change', e => {
   if (t.id === 't-custom') render();
   if (t.id === 't-alarm' && t.value) { T.alarm = t.value; saveTimer(); updateTimerUI(); }
   if (t.id === 'snd-file' && t.files && t.files.length) addSoundFiles([...t.files]);
+  if (t.dataset && t.dataset.fix && route() === 'plan') render();
+  if (t.dataset && (t.dataset.sf || t.dataset.mh) && t.tagName === 'SELECT') { /* 値はinputイベントで保存済み */ }
   if (t.id === 'chat-photo' && t.files && t.files[0]) { sendPhoto(t.files[0]); t.value = ''; }
   if (t.id === 'av-file' && t.files && t.files[0]) { if (/^image\//.test(t.files[0].type)) avatarEditor(t.files[0]); else toast('画像ファイルを選んでください。', 'x'); t.value = ''; }
 });
