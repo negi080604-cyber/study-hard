@@ -922,6 +922,9 @@ function bodyParts(L, pose = 'stand', seatZ = .78, hold = null, mo = null){
   if (w.acc === 'omamori') b(.39, F0 + .008, fz + .9, .04, .004, .06, '#c4304a');
   if (w.acc === 'shoulderbag' && !sit) { b(.76, .44, fz + .6, .06, .16, .17, wcol(L, 'acc')); b(.36, F0 + .009, fz + 1.0, .28, .004, .025, mix(wcol(L, 'acc'), '#000000', .25)); }
   if (w.acc === 'tail') { b(.47, .3, fz + (sit ? .84 : .62), .06, .12, .05, wcol(L, 'acc')); b(.47, .23, fz + (sit ? .89 : .67), .05, .07, .22, wcol(L, 'acc')); }
+  if (hold === 'phone') { const yy = sit ? .76 : .72; b(.44, yy, fz + .88, .12, .025, .2, '#1c2133'); b(.455, yy + .025, fz + .9, .09, .004, .16, '!#7dd3fc'); }
+  if (hold === 'note') { const yy = sit ? .76 : .72; b(.37, yy, fz + .86, .26, .03, .18, '#3d7bff'); b(.39, yy + .03, fz + .88, .22, .004, .14, '#f4f6fb'); }
+  if (hold === 'card') { const yy = sit ? .76 : .72; b(.45, yy, fz + .9, .1, .03, .07, '#f4f6fb'); b(.465, yy + .03, fz + .92, .07, .004, .02, '#3d7bff'); }
   if (hold === 'book') { const yy = sit ? .76 : .72; b(.36, yy, fz + .86, .28, .035, .19, '#d9576e'); b(.38, yy + .035, fz + .88, .24, .004, .15, '#f4f6fb'); }
   if (hold === 'cup' && !(mt === 'drink' && mp % 6 < 2)) { const yy = sit ? .74 : .7; b(.45, yy, fz + .85, .1, .1, .12, '#eef0f6'); b(.47, yy + .02, fz + .97, .06, .06, .005, '#6b3a1e'); }
   if (w.acc === 'backpack') { b(.36, .3, fz + .8, .28, .12, .34, wcol(L, 'acc')); b(.38, .29, fz + .85, .24, .01, .12, mix(wcol(L, 'acc'), '#000000', .25)); b(.37, F0 + .01, fz + .95, .04, .005, .2, '#2b3045'); b(.59, F0 + .01, fz + .95, .04, .005, .2, '#2b3045'); }
@@ -1120,7 +1123,9 @@ const SEATS = {chair_basic: {z: .78}, chair_gaming: {z: .73}, dchair: {z: .72}, 
 const seatOf = t => SEATS[t] ? {z: SEATS[t].z, slots: SEATS[t].slots || [[.5, .5]], face: SEATS[t].face || -1} : null;
 // things to do. kind: use = stand next to it / sit = take a seat / watch = sit where you can see a screen / bath / run / wall = look at something on the wall
 const ACTS = [
-  {id: 'read', types: ['bookshelf', 'books_stack', 'notebook', 'cards'], kind: 'use', hold: 'book', chair: true, emoji: '📖', label: '読書中', lines: ['この本、おもしろい！', 'ふむふむ…なるほど。', '参考書をちょっと復習。'], dur: [14, 26], w: 3},
+  {id: 'note', types: ['notebook'], kind: 'use', hold: 'note', chair: true, emoji: '📝', label: 'ノートを見直し中', lines: ['ここ、テストに出そう。', 'まとめノート、いい感じ！', '赤ペンでチェック。', '昨日やったところの復習。'], dur: [8, 16], w: 2},
+  {id: 'vocab', types: ['cards'], kind: 'use', hold: 'card', chair: true, emoji: '🃏', label: '単語カードで暗記', lines: ['abandon…捨てる！', 'めくって、めくって…', 'これ、まだ覚えてない…', 'よし、全部言えた！'], dur: [6, 12], w: 2},
+  {id: 'read', types: ['bookshelf', 'books_stack'], kind: 'use', hold: 'book', chair: true, emoji: '📖', label: '読書中', lines: ['この本、おもしろい！', 'ふむふむ…なるほど。', '参考書をちょっと復習。'], dur: [14, 26], w: 3},
   {id: 'drink', types: ['mug', 'kettle'], kind: 'use', hold: 'cup', chair: true, emoji: '☕', label: 'ひと休み', lines: ['ほっと一息。', 'あったかい飲み物っていいね。'], dur: [8, 15], w: 2},
   {id: 'plant', types: ['plant', 'cactus', 'bonsai', 'succulent', 'bigplant', 'tree', 'flowerbed', 'planter'], kind: 'use', emoji: '🌿', label: '植物を見てる', lines: ['緑っていいなー。', 'すくすく育ってるね。', '水やりしておこう。'], dur: [6, 12], w: 2},
   {id: 'fridge', types: ['fridge'], kind: 'use', open: true, emoji: '🧃', label: '冷蔵庫', lines: ['なにか飲もうかな…', '冷蔵庫、なに入ってたっけ？'], dur: [5, 9], w: 2},
@@ -1196,7 +1201,7 @@ const WAKE_LINES = ['まぶしっ…！', 'うーん、もう朝…？', 'えっ
 const GREET_LINES = ['やあ！', 'おかえり〜。', 'お、いたんだ。', 'おつかれさま！', 'ちょっとおじゃまするね。'];
 // 新しい小物でできること
 ACTS.push(
-  {id: 'phone', types: ['phone', 'tablet'], kind: 'use', hold: 'book', chair: true, emoji: '📱', label: 'スマホ中', lines: ['ちょっとだけ…', '単語アプリで復習！', '友達から連絡きてた。', '動画は1本だけね。'], dur: [6, 12], w: 2},
+  {id: 'phone', types: ['phone', 'tablet'], kind: 'use', hold: 'phone', chair: true, emoji: '📱', label: 'スマホ中', lines: ['ちょっとだけ…', '単語アプリで復習！', '友達から連絡きてた。', '動画は1本だけね。'], dur: [6, 12], w: 2},
   {id: 'listen', types: ['headphones', 'radio'], kind: 'use', emoji: '🎧', label: '音楽を聴いてる', lines: ['この曲、最高！', 'ラジオ、おもしろい話してる。', '集中できるプレイリスト♪'], dur: [8, 16], w: 2},
   {id: 'puzzle', types: ['rubik', 'gamepad'], kind: 'use', emoji: '🧩', label: '頭の体操', lines: ['あと1面…！', '揃った！', '頭のストレッチ！'], dur: [6, 12], w: 1},
   {id: 'hug', types: ['plush', 'catfig'], kind: 'use', emoji: '🧸', label: 'もふもふ', lines: ['もふもふ〜。', 'かわいい…', 'いやされる〜。'], dur: [5, 9], w: 1},
@@ -2794,11 +2799,12 @@ function roomSVG(room, N, opts = {}){
   for (const b of sorted) s += `<g data-i="${b.iid}" class="${sel === b.iid ? 'sel' : ''}${gcls(b.iid)}${b.anim ? ' ' + b.anim : ''}"${b.anim ? ` style="animation-delay:-${(hashStr(b.iid) % 40) / 10}s"` : ''}${noPtr}>${b.blink ? `<g class="blink" style="animation-delay:-${(hashStr(b.iid) % 50) / 10}s">${boxSVG(b)}</g>` : boxSVG(b)}</g>`;
   s += guides;
   // what everyone is doing: a small chip above their head
-  if (opts.rid && !place) { const now = Date.now();
+  if (opts.rid && !place) { const now = Date.now(), placed = [];
     for (const it of items) { if (!F[it.t] || !F[it.t].person) continue; const q = SIM.p[it.id], a = q && q.act; if (!a || !a.emoji) continue;
       const mine = sorted.filter(b => b.iid === it.id); if (!mine.length) continue;
       let top = 0, cx = 0, cy = 0; for (const b of mine) { top = Math.max(top, b.z + b.h); cx += b.x + b.w / 2; cy += b.y + b.d / 2; } cx /= mine.length; cy /= mine.length;
-      const [px, py] = P(cx, cy, top + .25), txt = now < (a.lineUntil || 0) ? `${a.emoji} ${a.line || a.label}` : a.emoji, w = 14 + [...txt].length * 11;
+      const [px, py0] = P(cx, cy, top + .25), txt = now < (a.lineUntil || 0) && !talking(it.id) ? `${a.emoji} ${a.line || a.label}` : a.emoji, w = 14 + [...txt].length * 11;
+      let py = py0; for (let k = 0; k < 4; k++) { const hit = placed.find(r => Math.abs(r.x - px) < (r.w + w) / 2 + 2 && Math.abs(r.y - py) < 21); if (!hit) break; py = hit.y - 22; } placed.push({x: px, y: py, w});
       s += `<g class="emote" pointer-events="none"><rect x="${(px - w / 2).toFixed(1)}" y="${(py - 22).toFixed(1)}" width="${w}" height="19" rx="9.5" fill="rgba(6,9,20,.82)" stroke="rgba(255,255,255,.25)"/><text x="${px.toFixed(1)}" y="${(py - 8.5).toFixed(1)}" text-anchor="middle" font-size="11" fill="#fff" font-family="'Zen Kaku Gothic New',sans-serif">${esc(txt)}</text></g>`; } }
   // night / lights
   if (LS0.shade > 0) {
@@ -3257,6 +3263,8 @@ function chatNotifyCheck(){
 }
 /* ================= ミニ表示（ウィジェット）：パソコンは常に手前に出る小窓、スマホは全画面のスタンド表示 ================= */
 const MINI = {win: null, overlay: false, wake: null};
+const IS_PHONE = /iPhone|iPod|Android.*Mobile|Mobile.*Android/i.test(navigator.userAgent) || (window.matchMedia && matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) < 600);
+const miniName = () => IS_PHONE ? '全画面表示' : 'ミニ表示（ウィジェット）';
 const MINI_CSS = `*{box-sizing:border-box}body{margin:0;font-family:'Zen Kaku Gothic New','Hiragino Sans',sans-serif;background:radial-gradient(circle at 30% 0,#14204a,#04050b 70%);color:#eef2ff;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;padding:10px;text-align:center;overflow:hidden}
 .ml{font-size:11px;letter-spacing:.18em;color:#22e4ff}.mt{font-family:'Orbitron','Rajdhani',monospace;font-size:clamp(40px,17vw,96px);font-weight:600;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 0 24px rgba(34,228,255,.4)}
 .mi{font-size:12px;color:#9aa3c0}.ms{font-size:13px}.mb{width:min(320px,90%);height:6px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden}.mb i{display:block;height:100%;background:linear-gradient(90deg,#22e4ff,#a46bff)}
@@ -3301,7 +3309,7 @@ async function openMini(lock){
   }
   // スマホなど：全画面の「スタンド表示」（画面がつきっぱなしになります）
   let o = document.getElementById('mini-overlay');
-  if (!o) { o = document.createElement('div'); o.id = 'mini-overlay'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-label', 'ミニ表示');
+  if (!o) { o = document.createElement('div'); o.id = 'mini-overlay'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-label', miniName());
     o.innerHTML = `<style>#mini-overlay{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;padding:20px;text-align:center;background:radial-gradient(circle at 30% 0,#14204a,#04050b 70%);color:#eef2ff}
       #mini-overlay .ml{font-size:12px;letter-spacing:.2em;color:#22e4ff}#mini-overlay .mt{font-family:var(--f-disp);font-size:clamp(64px,22vw,150px);font-weight:600;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 0 30px rgba(34,228,255,.4)}
       #mini-overlay .mi{font-size:13px;color:var(--mute)}#mini-overlay .ms{font-size:15px}#mini-overlay .mb{width:min(420px,86%);height:8px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden}#mini-overlay .mb i{display:block;height:100%;background:linear-gradient(90deg,#22e4ff,#a46bff)}
@@ -3311,7 +3319,7 @@ async function openMini(lock){
       #mini-overlay.locked .locknote{display:block;font-size:13px;color:#ffd66b;letter-spacing:.1em}#mini-overlay .mul.holding{background:rgba(255,194,77,.35);transition:background 1.5s}
       #mini-overlay.locked [data-mact="finish"]{display:none}
       #mini-overlay .mclock{position:absolute;top:calc(18px + env(safe-area-inset-top));left:18px;font-family:var(--f-disp);font-size:18px;color:var(--mute)}</style>
-      <span class="mclock" data-m="clock"></span><button class="mx" data-mact="close">✕ とじる</button><button class="mx mul" data-unlock="1">🔒 長押しでロック解除</button><div class="locknote" data-m="lock">🔒 集中ロック中</div>${miniBody()}<p class="note" style="position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));left:0;right:0;margin:0">スマホを立てて置いておくと、時計がわりのウィジェットになります（画面はつきっぱなし）</p>`;
+      <span class="mclock" data-m="clock"></span><button class="mx" data-mact="close">✕ とじる</button><button class="mx mul" data-unlock="1">🔒 長押しでロック解除</button><div class="locknote" data-m="lock">🔒 集中ロック中</div>${miniBody()}<p class="note" style="position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));left:0;right:0;margin:0">スマホを立てて置いておくと、時計がわりになります（画面はつきっぱなし）</p>`;
     o.addEventListener('click', e => { const b = e.target.closest('[data-mact]'); if (b) miniAct(b.dataset.mact); });
     let hold = null; const ub = o.querySelector('[data-unlock]');
     const down = e => { e.preventDefault(); ub.classList.add('holding'); hold = setTimeout(() => { ub.classList.remove('holding'); closeMini(); try { if (document.fullscreenElement) document.exitFullscreen(); } catch {} toast('ロックを解除しました。タイマーは動いたままです。', 'timer'); }, 1500); };
@@ -3392,7 +3400,7 @@ VIEWS.home = () => {
     <div class="stack" style="gap:14px;min-width:0">
       <div><span class="eyebrow">TODAY · ${fmtMD(today)}（${WD[parseD(today).getDay()]}）</span>
       <div class="row wrap" style="gap:8px;margin-top:6px"><span class="pill ${pct >= 1 ? 'good' : 'cy'}">目標達成率 ${Math.floor(pct * 100)}%</span><span class="pill">目標 ${fmtHM(goal)}</span></div></div>
-      ${T.state !== 'idle' ? `<div class="row wrap" style="gap:8px">${T.state === 'run' ? `<button class="btn" data-act="t-pause">${icon('pause')}一時停止</button>` : `<button class="btn primary" data-act="t-resume">${icon('play')}再開</button>`}<button class="btn" data-act="t-finish">${icon('stop')}${T.phase === 'break' ? '休憩を終える' : '終了して記録'}</button><button class="btn ghost" data-act="mini-open" aria-label="ミニ表示（ウィジェット）" title="ミニ表示">${icon('pip')}</button></div>` : ''}
+      ${T.state !== 'idle' ? `<div class="row wrap" style="gap:8px">${T.state === 'run' ? `<button class="btn" data-act="t-pause">${icon('pause')}一時停止</button>` : `<button class="btn primary" data-act="t-resume">${icon('play')}再開</button>`}<button class="btn" data-act="t-finish">${icon('stop')}${T.phase === 'break' ? '休憩を終える' : '終了して記録'}</button><button class="btn ghost" data-act="mini-open" aria-label="${miniName()}" title="${miniName()}">${icon('pip')}</button></div>` : ''}
       <div class="row wrap" style="gap:10px">${T.state === 'idle' ? `<a class="btn primary big" href="#timer">${icon('play')}勉強を始める</a>` : ''}<a class="btn big" href="#room" style="font-size:15px">${icon('room')}自分の部屋へ</a></div>
     </div></div></section>
   ${liveStrip()}
@@ -3445,7 +3453,7 @@ VIEWS.timer = () => {
         ${!idle ? `<button class="btn big" data-act="t-finish">${icon('stop')}${isBrk ? '休憩を終える' : '終了して記録'}</button>` : ''}
       </div>
       ${T.state === 'pause' && !isBrk ? `<button class="btn sm ghost" data-act="t-discard">記録せずにリセット</button>` : ''}
-      <button class="btn sm ghost" data-act="mini-open" style="margin-top:6px">${icon('pip')}ミニ表示（ウィジェット）</button>
+      <button class="btn sm ghost" data-act="mini-open" style="margin-top:6px">${icon('pip')}${miniName()}</button>
     </div></section>
 
     <div class="stack">
@@ -3813,7 +3821,7 @@ const HELP = [
     ['1分未満は記録されない', '1分より短いセッションは記録に残りません。', ''],
     ['終わったときの合図', '「止めるまで鳴らす」にすると、時間になったら全画面で「時間です！」と出て、「止める」を押すまでアラームが鳴り続けます（最大1分半）。音楽アプリの音は、そのあいだ止まることが多いです。アプリを開いているときに鳴ります。', 'timer'],
     ['集中ロック', 'オンにすると勉強中は全画面のロック表示になり（解除は長押し）、ほかのアプリを開いていた時間は「許可時間」をこえた分だけ記録から外れます。スマホを本当にこのアプリだけにするには、iPhoneの「アクセスガイド」やAndroidの「アプリ固定」を使います（タイマー画面の説明を見てね）。', 'timer'],
-    ['ミニ表示（ウィジェット）', 'パソコン（Chrome・Edge）では、ほかのアプリの上にずっと出ている小さなタイマー窓になります。スマホでは全画面の大きな時計になり、立てて置いておけます。', 'timer']]],
+    [IS_PHONE ? '全画面表示' : 'ミニ表示（ウィジェット）', 'パソコン（Chrome・Edge）では、ほかのアプリの上にずっと出ている小さなタイマー窓になります。スマホでは全画面の大きな時計になり、立てて置いておけます。', 'timer']]],
   ['ホーム', 'home', [
     ['今日の勉強時間の円', '今日の合計と、目標に対する達成率です。', 'home'],
     ['計測中の円', 'タイマーを動かしていると、今日の円のとなりにもう1つ円が出て、いま計っている時間がわかります。タップするとタイマーへ。', 'home'],
@@ -4418,14 +4426,14 @@ VIEWS.prefs = () => {
       <p class="note" style="margin:-6px 0 0">ここで変えると、今日の目標もすぐ変わります。夜の振り返りで「明日の目標」を決めると、次の日はそちらが使われます。</p>
       <label class="fld" for="pf-rt">振り返りのお知らせ時刻<input id="pf-rt" type="time" value="${esc(st.prefs.reviewTime)}"></label>
       <button class="btn primary" type="submit">${icon('check')}保存する</button></form>
-    <section class="panel"><div class="ph"><h2>通知・ウィジェット</h2></div>
+    <section class="panel"><div class="ph"><h2>通知・${IS_PHONE ? '全画面表示' : 'ミニ表示'}</h2></div>
       ${(() => { const sup = notifSupported(), perm = sup ? Notification.permission : 'none', on = sup && perm === 'granted' && st.prefs.notify;
         return `<div class="row wrap" style="gap:8px;align-items:center"><span class="pill ${on ? 'good' : ''}">${on ? '通知オン' : !sup ? 'このブラウザは未対応' : perm === 'denied' ? 'ブロック中' : '通知オフ'}</span>
           <button class="btn sm ${on ? '' : 'primary'}" data-act="notif-toggle">${icon('bell')}${on ? 'オフにする' : 'パソコン・スマホに通知する'}</button>${on ? '<button class="btn sm" data-act="notif-test">テスト通知</button>' : ''}</div>
         <p class="note" style="margin:8px 0 0">タイマー・アラームの終了、休憩の終わり、チャット、フォロー申請、振り返りの時間をお知らせします。<b>アプリを開いたまま別のタブや別のアプリを見ているとき</b>に届きます（アプリを完全に閉じているときは届きません）。勉強中はチャットの通知はおやすみします。</p>
         <p class="note" style="margin:6px 0 0">iPhone は Safari の共有ボタン →「ホーム画面に追加」して、そこから開いたときだけ通知が使えます。</p>`; })()}
-      <div class="row wrap" style="gap:8px;margin-top:12px"><button class="btn sm" data-act="mini-open">${icon('pip')}ミニ表示（ウィジェット）を開く</button></div>
-      <p class="note" style="margin:6px 0 0">パソコン（Chrome・Edge）では、ほかのアプリの上にずっと表示される小さなタイマー窓が出ます。スマホでは全画面の時計表示になり、立てて置いておけます。ホーム画面に追加したアプリのアイコンを長押しすると「タイマー」「ミニ表示」にすぐ飛べます。</p></section>
+      <div class="row wrap" style="gap:8px;margin-top:12px"><button class="btn sm" data-act="mini-open">${icon('pip')}${miniName()}を開く</button></div>
+      <p class="note" style="margin:6px 0 0">パソコン（Chrome・Edge）では、ほかのアプリの上にずっと表示される小さなタイマー窓が出ます。スマホでは全画面の時計表示になり、立てて置いておけます。ホーム画面に追加したアプリのアイコンを長押しすると「タイマー」「全画面表示」にすぐ飛べます。</p></section>
     <section class="panel"><div class="ph"><h2>科目</h2></div>
       <div class="list">${st.subjects.map(s => `<div class="li"><span class="dot" style="--c:${s.color}"></span><div class="t"><b>${esc(s.name)}</b></div><button class="tog ${s.hidden ? '' : 'on'}" data-act="subj-tog" data-v="${s.id}" aria-pressed="${!s.hidden}" aria-label="${esc(s.name)}を表示"></button><button class="btn sm ghost" data-act="subj-del" data-v="${s.id}" aria-label="${esc(s.name)}を削除">${icon('trash')}</button></div>`).join('')}</div>
       <form class="row" data-form="subj-add" style="margin-top:12px"><input id="sj-name" type="text" maxlength="12" placeholder="科目を追加（例：小論文）"><button class="btn" type="submit">${icon('plus')}追加</button></form>
@@ -4505,7 +4513,7 @@ const ACT = {
   'hist-cancel'(){ UI.histConfirm = null; render(); },
   'hist-del'(b){ const m = data.months[b.dataset.m]; if (!m) return; m.sessions = m.sessions.filter(s => s.id !== b.dataset.v); UI.histConfirm = null; queueWrite('m-' + b.dataset.m, 0); publishPub(); toast('記録を削除しました。', 'trash'); render(); },
   // room
-  'buddy-talk'(){ UI.buddyIdx = (UI.buddyIdx || 0) + 1; render(); },
+  'buddy-talk'(){ UI.buddyIdx = (UI.buddyIdx || 0) + 1; const t = UI.sel || (talkTarget() || {}).id; if (t) talkNow(t); render(); },
   'buddy-name'(){ const it = selectedItem(), who = it && F[it.t].person ? whoOfItem(it) : 'buddy'; UI.nameWho = who;
     showModal(`<h3>${who === 'buddy' ? 'ルームメイト' : who === 'partner' ? 'パートナー' : '子ども'}の名前</h3><form class="stack" data-form="buddy-name" style="gap:12px"><input id="bn-name" type="text" maxlength="12" value="${esc(whoName(who))}" aria-label="名前" autofocus><div class="acts"><button class="btn ghost" type="button" data-act="modal-close">やめる</button><button class="btn primary" type="submit">決定</button></div></form>`); },
   'rv-tab'(b){ syncRvDraft(); UI.rvTab = b.dataset.v; render(); },
@@ -4779,9 +4787,12 @@ function buddyLines(room = S().room, pose){
   return L;
 }
 function talkTarget(){ const items = viewItems(CR(), ridOf(curEntry())); return items.find(i => i.id === UI.sel && F[i.t] && F[i.t].person) || items.find(i => i.t === 'buddy') || items.find(i => F[i.t] && F[i.t].person); }
+// 話しかけたとき（人をタップ・「話す」）だけ大きな吹き出しを出す。ふだんは頭の上の小さなひとことだけ
+function talkNow(id){ UI.talk = {id, until: Date.now() + 8000}; clearTimeout(UI.talkT); UI.talkT = setTimeout(() => { if (UI.talk && UI.talk.until <= Date.now()) { UI.talk = null; const b = $('#buddy-bubble'); if (b) b.remove(); if (route() === 'room') drawRoomOnly(); } }, 8100); }
+const talking = id => !!(UI.talk && UI.talk.id === id && UI.talk.until > Date.now());
 function buddyBubble(){
-  if (UI.place) return ''; const it = talkTarget(); if (!it) return '';
-  const L = personLines(it, CR()), line = L[(UI.buddyIdx || 0) % L.length];
+  if (UI.place || !UI.talk || UI.talk.until <= Date.now()) return ''; const it = viewItems(CR(), ridOf(curEntry())).find(i => i.id === UI.talk.id); if (!it) return '';
+  const L = personLinesBase(it, CR()), line = L[(UI.buddyIdx || 0) % L.length];
   return `<div class="bubble" id="buddy-bubble" data-talk="${esc(it.id)}" role="status" hidden><b>${esc(personInfo(it).name)}</b>${esc(line)}</div>`;
 }
 function placeBubble(){
@@ -4898,13 +4909,13 @@ function candidateFromPoint(sx, sy){
 }
 let tapGuard = 0, btnGuard = {act: null, t: 0};
 function roomTap(e, rs){
-  if (e.target.closest('#buddy-bubble')) { UI.buddyIdx = (UI.buddyIdx || 0) + 1; render(); return true; }
+  if (e.target.closest('#buddy-bubble')) { UI.buddyIdx = (UI.buddyIdx || 0) + 1; if (UI.talk) talkNow(UI.talk.id); render(); return true; }
   if (e.target.closest('[data-act]') || e.target.closest('.roombar')) return false;
   const svg = rs.querySelector('svg.roomsvg'); if (!svg) return false;
   if (UI.place) { const p = svgPoint(svg, e.clientX, e.clientY); if (p && candidateFromPoint(p.x, p.y)) render(); return true; }
   const it = e.target.closest('[data-i]');
   const isBuddy = it && viewItems(CR(), ridOf(curEntry())).some(i => i.id === it.dataset.i && F[i.t] && F[i.t].person);
-  if (isBuddy) { if (UI.sel === it.dataset.i) UI.buddyIdx = (UI.buddyIdx || 0) + 1; UI.sel = it.dataset.i; }
+  if (isBuddy) { if (UI.sel === it.dataset.i) UI.buddyIdx = (UI.buddyIdx || 0) + 1; UI.sel = it.dataset.i; talkNow(it.dataset.i); }
   else if (it) UI.sel = UI.sel === it.dataset.i ? null : it.dataset.i;
   else if (UI.sel) UI.sel = null;
   else return false;
