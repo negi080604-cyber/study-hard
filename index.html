@@ -929,7 +929,7 @@ function bodyParts(L, pose = 'stand', seatZ = .78, hold = null, mo = null){
     }
     if (coatSk) { b(.335, .4, .37, .33, .2, .37, tc); b(.497, .6, .4, .006, .004, .33, tD); }
     else if (bot === 'skirt') { b(.345, .405, .5, .31, .19, .24, bc); if (pleat) for (const px of [.38, .44, .5, .56, .62]) b(px, .595, .5, .006, .004, .24, bD); }
-    if (drape) { b(.345, .405, .06, .31, .19, .68, bot === 'kimono' ? tc : bc); if (bot === 'kimono') b(.36, .596, .1, .02, .004, .6, mix(tc, '#000000', .25)); }
+    if (drape) { const dz0 = Math.max(.06, sh); b(.345, .405, dz0, .31, .19, .74 - dz0, bot === 'kimono' ? tc : bc); if (bot === 'kimono') b(.36, .596, Math.max(.1, dz0), .02, .004, .7 - Math.max(.1, dz0), mix(tc, '#000000', .25)); }
     else if (bot !== 'skirt' && !coatSk) b(.36, .425, .64, .28, .15, .1, bc);         // hips
     if (bot === 'cargo' && !coatSk) for (const lx of [.37, .615]) b(lx === .37 ? .365 : .625, .47, .46, .01, .07, .08, bD);
   }
@@ -1010,19 +1010,40 @@ function babyParts(L){
     [.36, .36, .58, .28, .28, .03, hc], [.47, .52, .61, .05, .04, .05, hc]];
 }
 const scaleParts = (P, s) => s === 1 ? P : P.map(([x, y, z, w, d, h, c]) => [.5 + (x - .5) * s, .5 + (y - .5) * s, z * s, w * s, d * s, h * s, c]);
+/* 箱どうしがめりこんでいると、どれを手前に描くかが決められず、足などが消えて見えてしまう。
+   めりこんでいたら、小さいほうの箱を少しけずって、ぴったりくっつく形にする（見た目はほぼ変わらない） */
+function deIntersect(parts){
+  const P = parts.map(p => p.slice()), E = 1e-6, n = P.length;
+  const hit = (A, B) => A[0] < B[0] + B[3] - E && B[0] < A[0] + A[3] - E && A[1] < B[1] + B[4] - E && B[1] < A[1] + A[4] - E && A[2] < B[2] + B[5] - E && B[2] < A[2] + A[5] - E;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    const A = P[i], B = P[j]; if (i === j || !A || !B || !hit(A, B)) continue;
+    const va = A[3] * A[4] * A[5], vb = B[3] * B[4] * B[5]; if (va > vb || (va === vb && i > j)) continue;   // 小さいほう(A)をけずる
+    let best = null;
+    for (let ax = 0; ax < 3; ax++) { const a0 = A[ax], a1 = A[ax] + A[ax + 3], b0 = B[ax], b1 = B[ax] + B[ax + 3], sz = A[ax + 3];
+      if (a0 < b0 - E) { const keep = (b0 - a0) / sz; if (!best || keep > best.keep) best = {ax, lo: a0, hi: b0, keep}; }
+      if (a1 > b1 + E) { const keep = (a1 - b1) / sz; if (!best || keep > best.keep) best = {ax, lo: b1, hi: a1, keep}; } }
+    if (!best) { P[i] = null; continue; }   // 完全にうもれている箱は見えないので消す
+    A[best.ax] = best.lo; A[best.ax + 3] = best.hi - best.lo;
+  }
+  return P.filter(p => p && p[3] > .002 && p[4] > .002 && p[5] > .002);
+}
 function personParts(L, pose = 'stand', o = {}){
-  if (o.stage === 0) return babyParts(L);
+  if (o.stage === 0) return deIntersect(babyParts(L));
   const s = o.stage === 1 ? .6 : o.stage === 2 ? .86 : 1, hk = o.stage === 1 ? 1.32 : o.stage === 2 ? 1.08 : 1;
   const sit = pose === 'sit', seatZ = o.seatZ || .78, dz = sit ? seatZ - .7 : 0, hb = 1.15 + dz;
   const head = headParts(L).map(([x, y, z, w, d, h, c]) => [.5 + (x - .5) * hk, .5 + (y - .5) * hk, hb + (z + dz - hb) * hk, w * hk, d * hk, h * hk, c]);
   let body = bodyParts(L, pose, seatZ, o.hold, o.mo);
   if (o.walk != null && !sit) {   // gait cycle: the swinging foot lifts, lower legs/forearms swing further than thighs/upper arms
-    const ph = o.walk * Math.PI / 3, sw = .085 * Math.sin(ph), lift = [Math.max(0, Math.cos(ph)) * .04, Math.max(0, -Math.cos(ph)) * .04];
-    body = body.map(p => { const [x, y, z, w, d, h, c] = p, left = x + w / 2 < .5, sg = left ? 1 : -1;
-      if (z + h <= .655) { const low = z < .4; return [x, y + sg * sw * (low ? 1.35 : .75), z + (low ? lift[left ? 0 : 1] : 0), w, d, h, c]; }
+    const ph = o.walk * Math.PI / 3, sw = .046 * Math.sin(ph), lift = [Math.max(0, Math.cos(ph)) * .055, Math.max(0, -Math.cos(ph)) * .055], KNEE = .37, e = 1e-6;   // 歩幅は控えめに（大きいと、片足がもう片方の足に完全にかくれて「足がない」ように見える）
+    body = body.map(p => { const [x, y, z, w, d, h, c] = p, left = x + w / 2 < .5, sg = left ? 1 : -1, L = lift[left ? 0 : 1];
+      // 片足ずつの部品だけ動かす（スカート・コート・腰のように両足にまたがるものは動かさない）
+      if (z + h <= .655 + e && w <= .13) {
+        if (z >= KNEE - e) return [x, y + sg * sw * .6, z, w, d, h, c];                                  // ひざ・太もも
+        if (Math.abs(z + h - KNEE) < e) return [x, y + sg * sw, z + L, w, d, Math.max(.01, h - L), c];   // すね：足が上がった分だけ短く（ひざにめりこまない）
+        return [x, y + sg * sw, z + L, w, d, h, c]; }                                              // くつ・くつ底
       if (!o.hold && (x + w <= .35 || x >= .65) && z >= .5 && z < 1.16) return [x, y - sg * sw * (z < .89 ? 1.2 : .55), z, w, d, h, c];
       return p; }); }
-  const all = scaleParts([...body, ...head], s);
+  const all = deIntersect(scaleParts([...body, ...head], s));
   return sit ? all.map(([x, y, z, w, d, h, c]) => [x, Math.min(1 - d, 1 - y - d + .1), z, w, d, h, c]) : all;
 }
 function sleepParts(L, sd, cx, blanket, small){
@@ -1303,7 +1324,8 @@ const solidsOf = rec => rec.room.items.filter(i => F[i.t] && !F[i.t].person);
 function busyTiles(rid, exceptId){
   const out = new Set();
   for (const [id, s] of Object.entries(SIM.p)) { if (id === exceptId || s.room !== rid) continue; out.add(Math.round(s.x) + ',' + Math.round(s.y)); if (s.target && s.target.rid === rid) out.add(s.target.x + ',' + s.target.y); }
-  for (const [id, q] of Object.entries(PSIM)) { if (id === exceptId || q.room !== rid) continue; out.add(Math.round(q.x) + ',' + Math.round(q.y)); if (q.path && q.path.length) { const l = q.path[q.path.length - 1]; out.add(Math.round(l[0]) + ',' + Math.round(l[1])); } }
+  for (const [id, q] of Object.entries(PSIM)) { if (id === exceptId || q.room !== rid) continue; out.add(Math.round(q.x) + ',' + Math.round(q.y)); if (q.path) for (const [px, py] of q.path) out.add(Math.round(px) + ',' + Math.round(py)); }
+  for (const [id, q] of Object.entries(SIM.p)) { if (id === exceptId || q.room !== rid || !q.path) continue; for (const [px, py] of q.path) out.add(Math.round(px) + ',' + Math.round(py)); }   // 歩いている途中のマスも空けておく
   return out;
 }
 const tileFree = (rec, solids, busy, x, y) => x >= 0 && y >= 0 && x < rec.N && y < rec.N && !busy.has(x + ',' + y) && canPlace(solids, rec.N, 'buddy', x, y, 0);
@@ -1611,7 +1633,12 @@ function petModelParts(k, stage, ph, pose, t){
   const K = PK[k]; if (!K) return [];
   let P = K.f ? PET_FORMS[K.f](K, ph, pose, t) : quadParts(K, ph, pose, t);
   const s = [.5, .72, 1][stage || 0] * (K.size || 1) * 1.4, fly = K.fly && pose !== 'sleep' && pose !== 'lie' ? .26 + Math.sin(t * 2.2) * .04 : 0;
-  return P.map(([x, y, z, w, d, h, col]) => [.5 + (x - .5) * s, .5 + (y - .5) * s, z * s + fly, w * s, d * s, h * s, col]);
+  let Q = P.map(([x, y, z, w, d, h, col]) => [.5 + (x - .5) * s, .5 + (y - .5) * s, z * s + fly, w * s, d * s, h * s, col]);
+  // 自分のマスからはみ出さないように（となりにいる人や家具にめりこむと、足などが消えて見えるため）
+  let lo = 1e9, hi = -1e9; for (const q of Q) { lo = Math.min(lo, q[0], q[1]); hi = Math.max(hi, q[0] + q[3], q[1] + q[4]); }
+  const half = Math.max(.5 - lo, hi - .5), fit = half > .47 ? .47 / half : 1;
+  if (fit < 1) Q = Q.map(([x, y, z, w, d, h, col]) => [.5 + (x - .5) * fit, .5 + (y - .5) * fit, z * fit, w * fit, d * fit, h * fit, col]);
+  return deIntersect(Q);
 }
 function petThumb(k, stage = 2){
   const boxes = petModelParts(k, stage, null, 'stand', 0).map(p => rotPart(p, 1, 1, 0)).map(p => ({x: p[0], y: p[1], z: p[2], w: p[3], d: p[4], h: p[5], c: p[6], emi: false, tr: false}));
@@ -3056,7 +3083,7 @@ function burst(){
 function badgeToast(b){ toast(`実績解除「${b.n}」 ${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'medal', 5000); notify(`🏅 実績解除「${b.n}」`, `${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'badge'); }
 
 /* ================= router & render ================= */
-const APP_VERSION = '2026.11.02.6';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
+const APP_VERSION = '2026.11.02.7';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
 const HIDDEN_ROUTES = ['dev'];
 const ROUTES = {
   home:['ホーム','home'], timer:['タイマー','timer'], stats:['記録・分析','chart'], room:['勉強部屋','room'],
