@@ -2527,7 +2527,7 @@ function defaultState(owner){
     owned: {desk_basic:1, chair_basic:1, lamp_small:1},
     spent: 0, bonus: 0, badges: {}, missions: {}, roomLog: [{stage: 0, date: today}],
     seenLevel: 1, prefs: {reviewTime: '22:00', stopSound: true, vol: .5, sound: 'rain'},
-    privacy: {share: true, room: true, vis: 'all'}, friends: [], groups: [], group: '', buddy: {name: 'ミライ', added: false, look: defaultLook('boy'), closet: {}},
+    privacy: {share: true, room: true, vis: 'all', live: true}, friends: [], groups: [], group: '', buddy: {name: 'ミライ', added: false, look: defaultLook('boy'), closet: {}},
     family: {partner: null, kids: [], log: [], lastRoll: '', pending: null, declinedUntil: ''}, house: {rooms: []}, created: Date.now()
   };
 }
@@ -2882,7 +2882,7 @@ const STAT_KEYS = ['lv', 'tot', 'dk', 'dMin', 'ls', 'wk', 'wMin', 'mo', 'mMin', 
 function buildSocial(){
   const st = S(); if (!st) return null;
   const inv = {}; for (const [c, k] of Object.entries(st.friendVia || {})) if (st.friends.includes(c) && !isFollowingCode(c)) inv[c] = hashStr(k + ':' + st.code).toString(36);
-  const live = liveNow();
+  const live = st.privacy.live !== false ? liveNow() : null;   // 「勉強中を知らせる」がOFFなら送らない
   return {code: st.code, nick: (st.nickname || '').slice(0, 20), vis: st.privacy.vis, ...(live ? {live} : {}), groups: (st.groups || []).slice(0, 10).map(g => ({c: g.c, n: g.n, own: !!g.own})), fr: st.friends.slice(0, 200), ok: (st.approved || []).slice(0, 300), ...(st.m1 ? {m1: String(st.m1).slice(0, 40)} : {}), ...(avOK(st.avatar) ? {av: st.avatar} : {}), ...(Object.keys(inv).length ? {inv} : {})};
 }
 function buildPub(){
@@ -3056,7 +3056,7 @@ function burst(){
 function badgeToast(b){ toast(`実績解除「${b.n}」 ${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'medal', 5000); notify(`🏅 実績解除「${b.n}」`, `${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'badge'); }
 
 /* ================= router & render ================= */
-const APP_VERSION = '2026.11.02.5';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
+const APP_VERSION = '2026.11.02.6';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
 const HIDDEN_ROUTES = ['dev'];
 const ROUTES = {
   home:['ホーム','home'], timer:['タイマー','timer'], stats:['記録・分析','chart'], room:['勉強部屋','room'],
@@ -4288,7 +4288,7 @@ VIEWS.timer = () => {
       <div class="tring" id="t-ring">${ringSVG(0, 300, 14, 'tr')}<div class="rc"><span class="tphase ${isBrk ? 'brk' : ''}">${isBrk ? 'BREAK · 休憩' : T.mode === 'cd' ? 'FOCUS · カウントダウン' : T.mode === 'al' ? 'FOCUS · アラーム' : 'FOCUS · ストップウォッチ'}</span><span class="ttime dgt" id="t-time" data-ghost="88:88">00:00</span><span class="talinfo" id="t-alinfo"></span><span class="tsubj"><span class="dot" style="--c:${sj.color};display:inline-block;margin-right:6px;vertical-align:middle"></span>${esc(sj.name)}</span></div></div>
       <div class="cheer">${!idle && !isBrk ? esc(T.cheer || '') : isBrk ? 'しっかり休もう。目を閉じる、ストレッチ、水を飲む。' : '科目と時間を選んでスタート。'}</div>
       <div class="note disp" id="t-xp"></div>
-      ${run && !isBrk && MODE === 'cloud' ? `<div class="focusbar">${icon('moon')}集中モード中：通知はおやすみ。仲間には「勉強中」と表示され、届いたメッセージは終わってからお知らせします</div>` : ''}
+      ${run && !isBrk && MODE === 'cloud' ? `<div class="focusbar">${icon('moon')}集中モード中：通知はおやすみ。${S().privacy.live !== false ? '仲間には「勉強中」と表示され、' : '「勉強中」はだれにも知らせていません。'}届いたメッセージは終わってからお知らせします</div>` : ''}
       <div class="tctl">
         ${idle ? `<button class="btn primary big" data-act="t-start">${icon('play')}開始</button>` : ''}
         ${run ? `<button class="btn big" data-act="t-pause">${icon('pause')}${isBrk ? '休憩を一時停止' : '一時停止'}</button>` : ''}
@@ -4311,6 +4311,8 @@ VIEWS.timer = () => {
         <div style="margin-top:14px"><span class="note">終わったときの合図</span>
           <div class="seg" style="margin-top:6px">${[['loop', '止めるまで鳴らす'], ['chime', 'チャイムだけ']].map(([k, n]) => `<button data-act="t-ring" data-v="${k}" class="${(S().prefs.ring || 'loop') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
           <p class="note" style="margin:6px 0 0">「止めるまで鳴らす」は、全画面の「止める」ボタンを押すまで鳴り続けます。音楽アプリなどの音は、そのあいだ止まることが多いです。</p></div>
+        ${MODE === 'cloud' ? `<div style="margin-top:14px"><div class="row" style="justify-content:space-between;gap:8px"><span class="note" style="margin:0">🔴 勉強中をみんなに知らせる</span><button class="btn sm ${S().privacy.live !== false ? 'primary' : ''}" data-act="priv" data-k="live" aria-pressed="${S().privacy.live !== false}">${S().privacy.live !== false ? 'オン' : 'オフ'}</button></div>
+          <p class="note" style="margin:6px 0 0">オフにすると、ランキングやフレンド一覧に「勉強中」と出なくなります。計測中でも切りかえられます。</p></div>` : ''}
         <div style="margin-top:14px"><div class="row" style="justify-content:space-between;gap:8px"><span class="note" style="margin:0">🔒 集中ロック</span><button class="btn sm ${S().prefs.lock ? 'primary' : ''}" data-act="t-lock" aria-pressed="${!!S().prefs.lock}">${S().prefs.lock ? 'オン' : 'オフ'}</button></div>
           ${S().prefs.lock ? `<div class="row wrap" style="gap:8px;margin-top:6px;align-items:center"><span class="note" style="margin:0">ほかのアプリの許可時間</span><div class="seg">${[0, 1, 3, 5].map(g => `<button data-act="t-grace" data-v="${g}" class="${(S().prefs.lockGrace ?? 1) === g ? 'on' : ''}">${g ? g + '分' : 'なし'}</button>`).join('')}</div></div>` : ''}
           <p class="note" style="margin:6px 0 0">オンにすると、勉強中は全画面のロック表示になり、ほかのアプリを開いていた時間（許可時間をこえた分）は記録から外れます。 <button class="linkbtn" data-act="lock-guide">スマホをこのアプリだけにする方法</button></p></div>
@@ -4591,6 +4593,7 @@ VIEWS.rank = () => {
       <section class="panel"><div class="ph"><h3>ランキングの公開範囲</h3></div>
         <div class="vis-opts">${[['all', '全員に公開', 'ランキングの「全員」にも表示されます'], ['friends', '互いにフレンドのみ', 'フレンド（承認しあった人）にだけ表示'], ['none', '非公開', 'だれのランキングにも表示されません']].map(([k, n, d]) => `<button class="vis-opt ${st.privacy.vis === k ? 'on' : ''}" data-act="vis" data-v="${k}" aria-pressed="${st.privacy.vis === k}"><b>${n}</b><span>${d}</span></button>`).join('')}</div>
         <div class="row" style="margin-top:12px"><span style="flex:1;font-size:14px">勉強部屋も見せる<br><span class="note">上の範囲の人に、部屋の見た目を見せます</span></span><button class="tog ${st.privacy.room && st.privacy.vis !== 'none' ? 'on' : ''}" data-act="priv" data-k="room" aria-pressed="${st.privacy.room}" aria-label="勉強部屋も見せる" ${st.privacy.vis === 'none' ? 'disabled' : ''}></button></div>
+        <div class="row" style="margin-top:12px"><span style="flex:1;font-size:14px">勉強中かどうかを知らせる<br><span class="note">ONにすると、タイマーで勉強しているあいだ、ランキングやフレンド一覧に「🔴 勉強中」と経過時間が出ます。OFFにすると、だれにも知らせません（勉強時間の記録は今までどおり残ります）。</span></span><button class="tog ${st.privacy.live !== false ? 'on' : ''}" data-act="priv" data-k="live" aria-pressed="${st.privacy.live !== false}" aria-label="勉強中かどうかを知らせる"></button></div>
         <p class="note" style="margin:10px 0 0">どの設定でも、フレンド追加・グループ・チャットは使えます（そのためにニックネームとフレンドコードだけは使われます）。科目の内訳・振り返りの文章・志望校は公開されません。</p>
         ${STATS_OK === false ? '<p class="banner" style="margin:10px 0 0">Supabase で friends.sql がまだ実行されていないようです。実行するまで「互いにフレンドのみ」の人の記録は表示されません。実行したら、このページを再読み込みしてください。</p>' : ''}</section>
     </div>
@@ -4699,6 +4702,7 @@ const HELP = [
     ['不定期イベント', 'アプリを開いていると、ときどきイベントが起きます（1日最大6回）。落とし物・流れ星・宅配便・おみくじ・1問クイズなど。', ''],
     ['ラッキータイム・チャレンジ・セール', 'ラッキータイムは1時間コイン1.5倍。集中チャレンジは時間内に決められた分数を勉強するとボーナス。セールは家具が20%OFF。発動中はホームに表示されます。', 'home'],
     ['ペット', '部屋の「ペット」タブで、いぬ・ねこからゾウ・ライオン、カッパ・ドラゴン・おばけまで21種類をお迎えできます。部屋の中を歩き回り、夜は寝ます。毎日えさをあげると成長して（赤ちゃん→子ども→おとな）、大好物だと早く育ちます。えさをあげないと、おなかがへって最後には死んでしまうので注意！ 来られない日は「ペットホテル」へ。なかよしのおとなは、ときどきおみやげ（コイン）を持ってきます。', 'room'],
+    ['勉強中を知らせる', 'タイマーで勉強しているあいだ、ランキングやフレンド一覧に「🔴 勉強中」と出ます。知らせたくないときは、タイマー画面か、フレンド画面の「ランキングの公開範囲」でオフにできます（記録はそのまま残ります）。', 'timer'],
     ['フレンド人形', '家具ショップの上の「フレンド人形」から、お互いにフォローしているフレンドのキャラクターの小さなフィギュアを作れます（150コイン）。机や棚の上に飾れます。', 'room'],
     ['ご近所イベント', 'ランキングにいる人（フレンド多め）の家とつながるイベントです。おすそわけ・合同勉強会・ガレージセール（その人の部屋の家具を半額で買える）・秘密の通路などのいいことも、騒音・ボール・泥棒などのわるいこともあります。選択肢によって結果が変わります。', ''],
     ['泥棒チャンス', 'ご近所さんの家が留守のとき、部屋の家具を1つこっそり持って帰れるチャンス。小さくて安い物ほど成功しやすく、失敗すると罰金。成功しても、あとで相手にバレて仕返しされることも…。ゲームの中だけのお楽しみで、相手の部屋の家具は本当には減りません。', ''],
@@ -5703,7 +5707,7 @@ const ACT = {
   'fr-req'(b){ addFriend(b.dataset.v); },
   'grp-all'(b){ UI.grpAll = b.dataset.v || null; render(); },
   'fr-undecline'(){ S().declined = []; queueWrite('state'); render(); },
-  priv(b){ const k = b.dataset.k; S().privacy[k] = !S().privacy[k]; queueWrite('state'); publishPub(200); render(); },
+  priv(b){ const k = b.dataset.k, pv = S().privacy; pv[k] = k === 'live' ? pv.live === false : !pv[k]; queueWrite('state'); publishPub(200); render(); if (k === 'live') toast(pv.live ? '勉強中のときは、みんなに「勉強中」と知らせます。' : '勉強中かどうかを、だれにも知らせないようにしました。', 'check', 3500); },
   vis(b){ UI.refreshAfterPub = true; const st = S(), v = b.dataset.v; if (st.privacy.vis === v) return; st.privacy.vis = v; st.privacy.share = v !== 'none'; queueWrite('state'); publishPub(200); render();
     toast({all: 'ランキングを全員に公開します。', friends: '「互いにフレンド」の人にだけ記録を見せます。', none: 'ランキングを非公開にしました。チャットやフレンドはそのまま使えます。'}[v], 'lock', 4000); },
   'fr-accept'(b){ UI.refreshAfterPub = true; const st = S(), c = b.dataset.v; if (!st.approved.includes(c)) st.approved.push(c); st.declined = st.declined.filter(x => x !== c); queueWrite('state'); publishPub(200); render(); const d = pubDocs.find(p => p.code === c) || {code: c};
