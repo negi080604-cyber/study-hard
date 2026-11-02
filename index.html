@@ -2484,7 +2484,7 @@ function burst(){
 function badgeToast(b){ toast(`実績解除「${b.n}」 ${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'medal', 5000); notify(`🏅 実績解除「${b.n}」`, `${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'badge'); }
 
 /* ================= router & render ================= */
-const APP_VERSION = '2026.11.02';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
+const APP_VERSION = '2026.11.02.2';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
 const HIDDEN_ROUTES = ['dev'];
 const ROUTES = {
   home:['ホーム','home'], timer:['タイマー','timer'], stats:['記録・分析','chart'], room:['勉強部屋','room'],
@@ -3505,6 +3505,7 @@ async function loadNews(force){
   try {
     const [a, c] = await Promise.all([SB.from('announcements').select('*').order('created_at', {ascending: false}).limit(60), SB.from('app_config').select('key,value,updated_at')]);
     if (a.error) { NEWS.ok = false; return; } NEWS.ok = true; NEWS.list = a.data || []; NEWS.cfg = Object.fromEntries((c.data || []).map(r => [r.key, r.value]));
+    setTimeout(maybeAutoUpdate, 1500);
     if (['home', 'dev'].includes(route())) scheduleRender();
     const seen = LS.get('sh-news-pop') || [];
     for (const n of activeNews()) if (n.popup && !seen.includes(n.id)) { LS.set('sh-news-pop', [...seen, n.id].slice(-100)); queueOverlay(() => newsPopup(n)); break; }
@@ -3528,9 +3529,30 @@ function newsHomeHTML(){
   return (upd ? `<button class="banner updbanner" data-act="app-reload" style="width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer">🆕<span style="flex:1">新しいバージョン（${esc(lv.v)}）があります。<b>タップして更新</b>${lv.note ? `<br><small>${esc(lv.note)}</small>` : ''}</span>${icon('rotate')}</button>` : '')
     + list.map(n => newsCard(n)).join('');
 }
+/* 古いバージョンのまま開いている人は、じゃまにならないときに自動で最新にする
+   ・勉強中（タイマーが動いている・一時停止中）は待つ
+   ・文字を入力中、家具を置いている途中、画面に確認などが出ているときも待つ
+   ・保存していないデータを送ってから再読み込み。同じバージョンへの自動更新は10分に1回まで（ループしないように） */
+let autoUpdT = null;
+function updateSafe(){
+  if (T.state !== 'idle' || modalOpen || UI.place || UI.subsDraft || UI.mockDraft || (UI.newsDraft && route() === 'dev')) return false;
+  if (MINI.overlay || MINI.win || document.getElementById('ring-overlay')) return false;
+  const a = document.activeElement; if (a && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|file)$/.test(a.type)))) return false;
+  if (route() === 'chat' && CHAT.draft) return false;
+  return true;
+}
+function maybeAutoUpdate(){
+  const lv = NEWS.cfg && NEWS.cfg.latest_version; if (!lv || !(verNum(lv.v) > verNum(APP_VERSION))) return;
+  const last = LS.get('sh-autoreload') || {}; if (last.v === lv.v && Date.now() - (last.at || 0) < 10 * 60000) return;
+  if (!updateSafe()) { clearTimeout(autoUpdT); autoUpdT = setTimeout(maybeAutoUpdate, 30000); return; }
+  LS.set('sh-autoreload', {v: lv.v, at: Date.now()});
+  const go = async () => { try { stashRvDraft(); } catch {} try { await Promise.race([flushAll(), new Promise(r => setTimeout(r, 2500))]); } catch {} (window.__testReload || (() => location.reload()))(); };
+  if (document.hidden) go();
+  else { toast(`新しいバージョン（${lv.v}）に更新します…`, 'rotate', 2500); setTimeout(() => { if (updateSafe()) go(); else { LS.del('sh-autoreload'); maybeAutoUpdate(); } }, 1800); }
+}
 setInterval(() => { try { loadNews(false); } catch {} }, 60000);
 setTimeout(() => { try { loadNews(true); } catch {} }, 2500);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) try { loadNews(false); } catch {} });
+document.addEventListener('visibilitychange', () => { try { if (!document.hidden) loadNews(false); else maybeAutoUpdate(); } catch {} });
 
 /* ================= 開発者ページ（設定のバージョン表示を7回タップ → パスワード） ================= */
 let verTaps = [];
@@ -3574,7 +3596,7 @@ const devView = () => {
       <div class="row wrap" style="gap:8px"><span class="pill cy">この画面 ${APP_VERSION}</span><span class="pill">全員に知らせている最新 ${lv ? esc(lv.v) : 'なし'}</span></div>
       <label class="fld" style="margin-top:10px">ひとこと（更新のお知らせに出ます）<input id="dev-vnote" type="text" maxlength="80" placeholder="例：合格プランが新しくなりました！" value="${esc((lv && lv.note) || '')}"></label>
       <button class="btn primary" data-act="ver-publish" style="margin-top:10px">${icon('send')}このバージョン（${APP_VERSION}）を最新として知らせる</button>
-      <p class="note" style="margin:8px 0 0">新しい index.html をアップしたあとに押すと、古い画面を開いたままの人のホームに「新しいバージョンがあります。タップして更新」が出ます。index.html の <code>APP_VERSION</code> の数字を上げてから使ってね。</p></section>
+      <p class="note" style="margin:8px 0 0">新しい index.html をアップしたあとに押すと、古い画面を開いたままの人は、勉強中や入力中でないときに自動で最新に更新されます（勉強中の人はホームに「新しいバージョンがあります」と出て、終わってから更新）。index.html の <code>APP_VERSION</code> の数字を上げてから使ってね。</p></section>
     <section class="panel"><div class="ph"><div><span class="eyebrow">STATS</span><h2>利用状況</h2></div><button class="btn sm ghost" data-act="dev-refresh">${icon('rotate')}更新</button></div>
       <div class="devstats">${[['登録している人', st.users + '人'], ['今日ひらいた人', st.active + '人'], ['今日勉強した人', st.studied + '人'], ['いま勉強中', st.live + '人'], ['今日のみんなの合計', fmtHM(st.mins)], ['グループの数', st.groups]].map(([k, v]) => `<div class="kv"><span class="k">${k}</span><span class="v" style="font-size:20px">${v}</span></div>`).join('')}</div>
       <p class="note" style="margin:8px 0 0">ランキングを非公開にしている人の勉強時間は数えられません。</p></section>
