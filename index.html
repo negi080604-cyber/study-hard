@@ -354,6 +354,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .phleft{font-size:14px;margin-top:4px}.phleft b{font-size:28px;margin:0 2px}.phrow{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:var(--mute);margin-top:6px;flex-wrap:wrap}.phdiff{font-size:13px;font-weight:700;margin-top:4px}
 .stcards{display:flex;flex-direction:column;gap:8px}.stcard{padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.025)}.stcard.total{background:linear-gradient(120deg,rgba(34,228,255,.08),rgba(164,107,255,.08))}
 .sthead{display:flex;align-items:center;gap:8px;font-size:14px}.sthead .dot{flex:none}.sthead .note{font-size:11px;white-space:nowrap}
+.stcols.three{grid-template-columns:repeat(3,minmax(0,1fr))}.subnums.two{grid-template-columns:1fr 1fr !important}.subnums.three{grid-template-columns:1fr 1fr 1.3fr !important}.subnums select{padding:7px 6px;min-width:0;width:100%}
 .stcols{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.stc{display:flex;flex-direction:column;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.25);min-width:0}.stc.off{opacity:.45}
 .stc small{font-size:10.5px;color:var(--mute);letter-spacing:.04em}.stc b{font-family:var(--f-disp);font-size:20px;line-height:1.2}.stc b i{font-style:normal;font-size:11px;margin-left:2px;color:var(--mute)}.stc span{font-size:11.5px;color:var(--mute)}.stc .lt{color:#bfefff}
 .mkkind{margin-bottom:2px}
@@ -2137,8 +2138,7 @@ async function flush(name){
       res = await writePub();
       if (res && !res.error && UI.refreshAfterPub) { UI.refreshAfterPub = false; setTimeout(() => refreshPub(true), 300); }
     } else {
-      const body = docData(name);
-      if (body) res = await SB.from('user_docs').upsert({user_id: UID, name, data: clone(body), updated_at: now});
+      res = await writeDoc(name);
     }
     if (res && res.error) throw res.error;
   } catch (e) { writeFailed(e, name); }
@@ -2147,6 +2147,99 @@ async function flush(name){
   if (!p.timer) pending.delete(name);
   if (!pending.size && MODE === 'cloud' && SYNC !== 'err') setSync('ok');
 }
+/* ================= 端末どうしの同期（スマホとパソコンなど）=================
+   これまで：保存のたびに「データ全体」を上書きしていたので、古い画面を開いたままの端末が何かを保存すると、
+            別の端末で変えた部屋や記録が古いもので上書きされることがあった。
+   いまは：① サーバーの更新時刻を覚えておき、「自分が知っている時刻のときだけ」上書きする（ほかの端末が先に書いていたら上書きしない）
+          ② そのときは、サーバーの内容と自分の変更を「項目ごと・家具1つごと」に合わせてから保存し直す（3方向マージ）
+          ③ 画面を開いている間も30秒ごとに、ほかの端末の変更がないか確認して取りこむ */
+const BASE = {};   // 文書の名前 → {data: 最後にサーバーと一致していた内容, at: そのときのサーバーの更新時刻}
+const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+function deq(a, b){
+  if (a === b) return true; if (a == null || b == null) return a == b;
+  if (typeof a !== 'object' || typeof b !== 'object') return a === b;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  if (Array.isArray(a)) { if (a.length !== b.length) return false; for (let i = 0; i < a.length; i++) if (!deq(a[i], b[i])) return false; return true; }
+  const ka = Object.keys(a).filter(k => a[k] !== undefined), kb = Object.keys(b).filter(k => b[k] !== undefined); if (ka.length !== kb.length) return false;
+  for (const k of ka) if (!deq(a[k], b[k])) return false; return true;
+}
+const idOf = x => isObj(x) ? (x.id ?? x.c ?? null) : null;
+const COUNT_KEYS = new Set(['bonus', 'spent']);
+function merge3(B, L, R, key, depth = 0){
+  if (deq(L, B)) return R;              // 自分は変えていない → サーバーの内容
+  if (deq(R, B) || deq(L, R)) return L; // サーバーは変わっていない → 自分の内容
+  // 両方で変わった
+  if (typeof L === 'number' && typeof R === 'number' && (COUNT_KEYS.has(key) || key === '#count')) return typeof B === 'number' ? R + (L - B) : Math.max(L, R);   // コイン・持ち物の数は「増えた分」を足し合わせる
+  if (depth > 8) return L;
+  if (isObj(L) && isObj(R)) { const b = isObj(B) ? B : {}, out = {};
+    for (const k of new Set([...Object.keys(L), ...Object.keys(R), ...Object.keys(b)])) { const v = merge3(b[k], L[k], R[k], key === 'owned' ? '#count' : k, depth + 1); if (v !== undefined) out[k] = v; }
+    return out; }
+  if (Array.isArray(L) && Array.isArray(R)) { const b = Array.isArray(B) ? B : [], all = [...L, ...R, ...b];
+    if (all.every(x => x === null || typeof x !== 'object')) {   // 文字や数の集まり（フレンドのコードなど）：足したもの・消したものを反映
+      const added = L.filter(x => !b.includes(x)), removed = b.filter(x => !L.includes(x)), out = R.filter(x => !removed.includes(x));
+      for (const x of added) if (!out.includes(x)) out.push(x); return out; }
+    if (all.every(x => idOf(x) != null)) {   // 家具・記録など、id があるもの：1つずつ合わせる
+      const bm = new Map(b.map(x => [idOf(x), x])), lm = new Map(L.map(x => [idOf(x), x])), rm = new Map(R.map(x => [idOf(x), x])), out = [];
+      for (const r of R) { const id = idOf(r); if (bm.has(id) && !lm.has(id)) { if (deq(bm.get(id), r)) continue; } out.push(lm.has(id) ? merge3(bm.get(id), lm.get(id), r, key, depth + 1) : r); }
+      for (const l of L) { const id = idOf(l); if (!rm.has(id) && !bm.has(id)) out.push(l); }
+      return out; }
+  }
+  return L;
+}
+const normDoc = (name, d) => name === 'state' ? normState(clone(d)) : normMonth(clone(d));
+function setDoc(name, v){ if (name === 'state') data.state = v; else data.months[name.slice(2)] = v; }
+// サーバーの内容を取りこむ（自分の変更があれば合わせる）。中身が変わったら true
+function adoptRemote(name, row){
+  const remote = normDoc(name, row.data), local = docData(name), base = BASE[name] && BASE[name].data;
+  const merged = !local ? remote : merge3(base || {}, local, remote, name);
+  const changed = !local || !deq(merged, local);
+  setDoc(name, name === 'state' ? normState(merged) : normMonth(merged)); BASE[name] = {data: clone(remote), at: row.updated_at}; saveBase();
+  if (changed) { dataV++; cacheLocal(); scheduleRender(); }
+  return changed;
+}
+// 上書き防止つきの保存
+async function writeDoc(name){
+  for (let tries = 0; tries < 4; tries++) {
+    const local = docData(name); if (!local) return null; const sent = clone(local), now = new Date().toISOString(), base = BASE[name];
+    if (!base || !base.at) {
+      const ex = await SB.from('user_docs').select('data,updated_at').eq('user_id', UID).eq('name', name).limit(1); if (ex.error) return ex;
+      if (ex.data && ex.data[0]) { adoptRemote(name, ex.data[0]); continue; }
+      const ins = await SB.from('user_docs').insert({user_id: UID, name, data: sent, updated_at: now}).select('updated_at');
+      if (ins.error) { if (/duplicate|23505|conflict/i.test(ins.error.message || ins.error.code || '')) continue; return ins; }
+      BASE[name] = {data: sent, at: ins.data && ins.data[0] ? ins.data[0].updated_at : now}; saveBase(); return ins;
+    }
+    const up = await SB.from('user_docs').update({data: sent, updated_at: now}).eq('user_id', UID).eq('name', name).eq('updated_at', base.at).select('updated_at');
+    if (up.error) return up;
+    if (up.data && up.data.length) { BASE[name] = {data: sent, at: up.data[0].updated_at}; saveBase(); return up; }
+    // ほかの端末が先に保存していた → 取りこんで、合わせてから保存し直す
+    const r2 = await SB.from('user_docs').select('data,updated_at').eq('user_id', UID).eq('name', name).limit(1); if (r2.error) return r2;
+    if (!r2.data || !r2.data.length) { BASE[name] = null; continue; }
+    adoptRemote(name, r2.data[0]); SYNCLOG.merged++;
+  }
+  return {error: {message: 'sync_conflict'}};
+}
+const SYNCLOG = {merged: 0, pulled: 0, lastCheck: 0};
+// 「最後にサーバーと一致していた内容」も端末に残す → アプリを閉じる直前の変更が保存しきれていなくても、次に開いたとき取りこめる
+let baseSaveT = null, CBASE = null;
+function saveBase(){ clearTimeout(baseSaveT); baseSaveT = setTimeout(() => { if (MODE === 'cloud' && UID) LS.set('sh-base', {uid: UID, base: BASE}); }, 400); }
+let syncBusy = false;
+// ほかの端末の変更を確認して取りこむ
+async function syncCheck(){
+  if (MODE !== 'cloud' || !S() || syncBusy || !SB) return; syncBusy = true; SYNCLOG.lastCheck = Date.now();
+  try {
+    const {data: rows, error} = await SB.from('user_docs').select('name,updated_at').eq('user_id', UID); if (error || !rows) return;
+    for (const r of rows) {
+      if (BASE[r.name] && BASE[r.name].at === r.updated_at) continue;
+      const p = pending.get(r.name); if (p && p.writing) continue;
+      const {data: full} = await SB.from('user_docs').select('name,data,updated_at').eq('user_id', UID).eq('name', r.name).limit(1); if (!full || !full[0]) continue;
+      const local = docData(r.name), hadLocal = !!(local && (!BASE[r.name] || !deq(local, BASE[r.name].data)));
+      adoptRemote(r.name, full[0]); SYNCLOG.pulled++;
+      if (hadLocal) queueWrite(r.name, 300);   // 自分の変更もあったら、合わせた内容を保存
+    }
+  } catch {} finally { syncBusy = false; }
+}
+setInterval(() => { if (!document.hidden) syncCheck(); }, 30000);
+window.addEventListener('focus', () => syncCheck());
 function writeFailed(e, name){
   const msg = String((e && (e.message || e.code)) || '');
   setSync('err');
@@ -2217,11 +2310,13 @@ function renderSetup(){
 function showAuth(){ MODE = 'auth'; setSync('boot'); $('#synctxt').textContent = '未ログイン'; render(); }
 function signedOut(){
   UID = null; EMAIL = ''; data.state = null; data.months = {}; pubDocs = []; myPubDoc = null; lastPubSig = null; STATS_OK = null; pending.clear();
-  LS.del('sh-cache'); UI.authTab = 'login'; UI.authMsg = null; showAuth();
+  LS.del('sh-cache'); LS.del('sh-base'); UI.authTab = 'login'; UI.authMsg = null; showAuth();
 }
 async function startCloud(user){
   UID = user.id; EMAIL = user.email || ''; MODE = 'cloud'; setSync('boot');
   const cache = LS.get('sh-cache');
+  for (const k in BASE) delete BASE[k];
+  const cb = LS.get('sh-base'); CBASE = (cb && cb.uid === UID && cb.base && typeof cb.base === 'object') ? cb.base : null;
   if (cache && cache.uid === UID && cache.state) {
     data.state = normState(cache.state); data.months = {};
     for (const k in (cache.months || {})) data.months[k] = normMonth(cache.months[k]);
@@ -2233,19 +2328,30 @@ async function startCloud(user){
 }
 async function pullCloud(first){
   if (MODE !== 'cloud') return false;
-  const {data: rows, error} = await SB.from('user_docs').select('name,data').eq('user_id', UID);
+  const {data: rows, error} = await SB.from('user_docs').select('name,data,updated_at').eq('user_id', UID);
   if (error) {
     setSync('err'); toast('データを読み込めませんでした。通信状態を確認してください。', 'x');
     if (!data.state) data.state = normState(defaultState(false));
     dataV++; scheduleRender(); return false;
   }
   let sawState = false; const months = {};
+  const unsynced = [];
   for (const r of rows) {
-    if (pending.has(r.name)) { if (r.name === 'state') sawState = true; continue; }
-    if (r.name === 'state') { data.state = normState(clone(r.data)); sawState = true; }
-    else if (r.name.startsWith('m-')) months[r.name.slice(2)] = normMonth(clone(r.data));
+    if (pending.has(r.name)) { if (r.name === 'state') sawState = true; if (r.name.startsWith('m-')) months[r.name.slice(2)] = data.months[r.name.slice(2)] || normMonth(clone(r.data)); continue; }
+    if (r.name !== 'state' && !r.name.startsWith('m-')) continue;
+    const remote = normDoc(r.name, r.data), local = docData(r.name), cb = first && CBASE && CBASE[r.name];
+    let v = remote;
+    // 前回、保存しきれずに閉じた変更がこの端末に残っていたら、サーバーの内容と合わせる
+    if (cb && cb.data && local && !deq(local, cb.data)) { try { v = normDoc(r.name, merge3(cb.data, clone(local), remote, r.name)); if (!deq(v, remote)) unsynced.push(r.name); } catch { v = remote; } }
+    if (r.name === 'state') { data.state = v; sawState = true; } else months[r.name.slice(2)] = v;
+    BASE[r.name] = {data: clone(remote), at: r.updated_at};
   }
-  for (const k in data.months) if (pending.has('m-' + k) || (!rows.length && first)) months[k] = data.months[k];
+  for (const k in data.months) {
+    if (months[k]) continue;
+    // サーバーにまだない月の記録：この端末でしか保存されていない分は残して保存する
+    if (pending.has('m-' + k) || (!rows.length && first)) months[k] = data.months[k];
+    else if (first && CBASE && !CBASE['m-' + k] && (data.months[k].sessions.length || Object.keys(data.months[k].reviews).length)) { months[k] = data.months[k]; unsynced.push('m-' + k); }
+  }
   data.months = months;
   if (!sawState && first) {
     const loc = LS.get('sh-local');
@@ -2260,6 +2366,7 @@ async function pullCloud(first){
     queueWrite('state', 0);
   }
   if (!data.state) data.state = normState(defaultState(false));
+  if (first) { CBASE = null; saveBase(); for (const n of unsynced) queueWrite(n, 0); }
   if (!pending.size) setSync('ok');
   dataV++; cacheLocal(); scheduleRender();
   return true;
@@ -2484,7 +2591,7 @@ function burst(){
 function badgeToast(b){ toast(`実績解除「${b.n}」 ${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'medal', 5000); notify(`🏅 実績解除「${b.n}」`, `${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'badge'); }
 
 /* ================= router & render ================= */
-const APP_VERSION = '2026.11.02.2';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
+const APP_VERSION = '2026.11.02.3';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
 const HIDDEN_ROUTES = ['dev'];
 const ROUTES = {
   home:['ホーム','home'], timer:['タイマー','timer'], stats:['記録・分析','chart'], room:['勉強部屋','room'],
@@ -4148,11 +4255,12 @@ VIEWS.help = () => {
 };
 /* ================= 合格プラン：志望校を決めて、配点・模試・逆算で「何をどれだけやるか」をはっきりさせる ================= */
 // テンプレート：[科目名, タイマーの科目, 共通テストの配点, 二次の配点]（あくまで例）
+// テンプレート：共通テスト（k）と二次試験（n）それぞれの [科目名, タイマーの科目, 配点]（あくまで例）
 const PLAN_TPL = {
-  kokubun: ['国公立・文系の例', [['英語', 'en', 200, 150], ['国語', 'ja', 200, 150], ['数学ⅠA', 'ma', 100, 0], ['数学ⅡBC', 'ma', 100, 100], ['日本史', 'jh', 100, 0], ['世界史', 'wh', 100, 0], ['理科基礎', 'bi', 100, 0], ['情報Ⅰ', 'it', 100, 0]]],
-  kokuri: ['国公立・理系の例', [['英語', 'en', 200, 150], ['国語', 'ja', 200, 0], ['数学ⅠA', 'ma', 100, 0], ['数学ⅡBC', 'ma', 100, 0], ['数学（二次）', 'ma', 0, 200], ['物理', 'ph', 100, 100], ['化学', 'ch', 100, 100], ['地理', 'ge', 100, 0], ['情報Ⅰ', 'it', 100, 0]]],
-  shibun: ['私立・文系3教科の例', [['英語', 'en', 0, 150], ['国語', 'ja', 0, 100], ['日本史', 'jh', 0, 100]]],
-  shiri: ['私立・理系3教科の例', [['英語', 'en', 0, 100], ['数学', 'ma', 0, 150], ['化学', 'ch', 0, 150]]]
+  kokubun: ['国公立・文系の例', {k: [['英語（リーディング）', 'en', 100], ['英語（リスニング）', 'en', 100], ['国語', 'ja', 200], ['数学ⅠA', 'ma', 100], ['数学ⅡBC', 'ma', 100], ['日本史', 'jh', 100], ['世界史', 'wh', 100], ['理科基礎', 'bi', 100], ['情報Ⅰ', 'it', 100]], n: [['英語', 'en', 150], ['国語', 'ja', 150], ['数学', 'ma', 100]]}],
+  kokuri: ['国公立・理系の例', {k: [['英語（リーディング）', 'en', 100], ['英語（リスニング）', 'en', 100], ['国語', 'ja', 200], ['数学ⅠA', 'ma', 100], ['数学ⅡBC', 'ma', 100], ['物理', 'ph', 100], ['化学', 'ch', 100], ['地理', 'ge', 100], ['情報Ⅰ', 'it', 100]], n: [['英語', 'en', 150], ['数学', 'ma', 200], ['物理', 'ph', 100], ['化学', 'ch', 100]]}],
+  shibun: ['私立・文系3教科の例', {k: [], n: [['英語', 'en', 150], ['国語', 'ja', 100], ['日本史', 'jh', 100]]}],
+  shiri: ['私立・理系3教科の例', {k: [], n: [['英語', 'en', 100], ['数学', 'ma', 150], ['化学', 'ch', 150]]}]
 };
 const PLAN_CHECK = [
   ['基礎（〜夏）', ['英単語帳を1周する', '英文法の問題集を1周する', '数学の教科書・基本例題を全部解けるようにする', '古文単語・古典文法を覚える', '理科・社会の教科書を1回通して読む']],
@@ -4169,13 +4277,18 @@ function PL(){ const st = S(); if (!st.plan || typeof st.plan !== 'object') st.p
   for (const m of p.mocks) if (!Array.isArray(m.rows)) { m.rows = Object.entries(m.sc || {}).map(([sid, [g, mx]]) => ({sid, n: subjOf(sid).name, g, m: mx, dev: null})); delete m.sc; }
   if (!st.targets.some(t => t.id === p.main)) p.main = st.targets[0] ? st.targets[0].id : null;
   return p; }
-function planInfo(id){ const p = PL(); if (!p.info[id]) p.info[id] = {exam: '', date: '', goalK: 75, goalN: 65, goalDev: null, subs: [], mode: 'gap'}; const inf = p.info[id];
-  if (!Array.isArray(inf.subs)) { inf.subs = Object.entries(inf.pts || {}).map(([sid, [k, n]], i) => ({id: sid, name: subjOf(sid).name, color: subjOf(sid).color, tsid: sid, k, n, gk: null, gn: null, pref: 1, fix: null})); delete inf.pts; }
+function planInfo(id){ const p = PL(); if (!p.info[id]) p.info[id] = {exam: '', date: '', goalK: 75, goalN: 65, goalDev: null, sets: {k: [], n: []}, mode: 'gap'}; const inf = p.info[id];
+  if (!inf.sets && !Array.isArray(inf.subs)) { inf.subs = Object.entries(inf.pts || {}).map(([sid, [k, n]], i) => ({id: sid, name: subjOf(sid).name, color: subjOf(sid).color, tsid: sid, k, n, gk: null, gn: null, pref: 1, fix: null})); delete inf.pts; }
   if (inf.examK === undefined) { const ex = S().exams; inf.examK = ex.some(e => e.id === 'kyotsu') ? 'kyotsu' : ''; inf.dateK = ''; inf.examN = inf.exam && inf.exam !== 'kyotsu' ? inf.exam : (ex.some(e => e.id === 'zenki') && !inf.date ? 'zenki' : ''); inf.dateN = inf.date || ''; if (inf.exam === 'kyotsu') inf.examK = 'kyotsu'; delete inf.exam; delete inf.date; }
+  // 共通テストと二次試験で、科目・配点・目標点を別々に持つ（前の形から移しかえ）
+  if (!inf.sets) { inf.sets = {k: [], n: []}; for (const x of inf.subs || []) { const base = {name: x.name, color: x.color, tsid: x.tsid, pref: x.pref ?? 1, fix: x.fix ?? null};
+      if (+x.k > 0 || !(+x.n > 0)) inf.sets.k.push({id: x.id, ...base, pts: numOr(x.k), goal: numOr(x.gk)}); if (+x.n > 0) inf.sets.n.push({id: x.id, ...base, pts: numOr(x.n), goal: numOr(x.gn)}); } delete inf.subs; }
+  if (!Array.isArray(inf.sets.k)) inf.sets.k = []; if (!Array.isArray(inf.sets.n)) inf.sets.n = [];
   inf.mode = inf.mode || 'gap'; inf.phase = inf.phase || 'auto'; return inf; }
+const phSubs = (inf, ph) => (inf.sets[ph] || []).filter(x => x.name);
 // 共通テストと二次試験は、日付・目標・模試をそれぞれ別に
 function planDate(inf, ph){ const id = ph === 'k' ? inf.examK : inf.examN, d = ph === 'k' ? inf.dateK : inf.dateN; if (d) return d; const ex = S().exams.find(e => e.id === id); return ex ? ex.date : ''; }
-function curPhase(inf){ if (inf.phase === 'k' || inf.phase === 'n') return inf.phase; const subs = inf.subs.filter(x => x.name); if (subs.length && !subs.some(x => +x.k > 0)) return 'n'; if (subs.length && !subs.some(x => +x.n > 0)) return 'k';
+function curPhase(inf){ if (inf.phase === 'k' || inf.phase === 'n') return inf.phase; const K = phSubs(inf, 'k').length, N = phSubs(inf, 'n').length; if (!K && N) return 'n'; if (K && !N) return 'k';
   const dk = planDate(inf, 'k'); return dk && dkey() <= dk ? 'k' : (dk ? 'n' : 'k'); }
 const PH = {k: '共通テスト', n: '二次試験'};
 const rowRate = r => r && +r.m > 0 && r.g !== '' && r.g != null ? clamp(+r.g / +r.m, 0, 1) : null;
@@ -4183,17 +4296,17 @@ const mockRow = (m, sub) => m.rows.find(r => r.sid && r.sid === sub.id) || m.row
 const mockTotal = m => { let g = 0, mx = 0; for (const r of m.rows) if (rowRate(r) != null) { g += +r.g; mx += +r.m; } return mx ? g / mx : null; };
 const mocksAsc = kind => PL().mocks.filter(m => !kind || kind === 'all' || (m.kind || 'k') === kind).sort((a, b) => a.date.localeCompare(b.date));
 function latestOf(sub, kind){ for (const pass of kind ? [kind, null] : [null]) for (const m of mocksAsc(pass).reverse()) { const r = mockRow(m, sub), rate = rowRate(r); if (rate != null) return {rate, dev: numOr(r.dev), g: +r.g, m: +r.m, date: m.date, kind: m.kind || 'k'}; } return null; }
-const subPts = sub => (+sub.k || 0) + (+sub.n || 0);
-const phPts = (sub, ph) => ph === 'k' ? (+sub.k || 0) : ph === 'n' ? (+sub.n || 0) : subPts(sub);
-const phGoal = (sub, ph) => ph === 'k' ? (+sub.gk || 0) : ph === 'n' ? (+sub.gn || 0) : (+sub.gk || 0) + (+sub.gn || 0);
-function subGoalRate(inf, sub, ph){ const pts = phPts(sub, ph), gp = phGoal(sub, ph); return gp > 0 && pts > 0 ? clamp(gp / pts, 0, 1) : ((ph === 'n' ? inf.goalN : inf.goalK) || 70) / 100; }
-function planGoalRate(inf, ph){ const subs = inf.subs.filter(x => x.name && phPts(x, ph) > 0); if (subs.length && subs.every(x => phGoal(x, ph) > 0)) return subs.reduce((a, x) => a + phGoal(x, ph), 0) / subs.reduce((a, x) => a + phPts(x, ph), 0); return ((ph === 'n' ? inf.goalN : inf.goalK) || 70) / 100; }
+const subPts = sub => +sub.pts || 0;
+const phPts = sub => +sub.pts || 0;
+const phGoal = sub => +sub.goal || 0;
+function subGoalRate(inf, sub, ph){ const pts = +sub.pts || 0, gp = +sub.goal || 0; return gp > 0 && pts > 0 ? clamp(gp / pts, 0, 1) : ((ph === 'n' ? inf.goalN : inf.goalK) || 70) / 100; }
+function planGoalRate(inf, ph){ const subs = phSubs(inf, ph).filter(x => +x.pts > 0); if (subs.length && subs.every(x => +x.goal > 0)) return subs.reduce((a, x) => a + +x.goal, 0) / subs.reduce((a, x) => a + +x.pts, 0); return ((ph === 'n' ? inf.goalN : inf.goalK) || 70) / 100; }
 // おすすめ配分：自分で決めた分（固定）を先にとって、残りを「配点 × 必要度 × 希望」で分ける
 function planAlloc(inf, goal){
-  const subs = inf.subs.filter(x => x.name); if (!subs.length) return [];
+  const ph = curPhase(inf), subs = phSubs(inf, ph); if (!subs.length) return [];
   const since = addDays(dkey(), -6), done = {}; for (const ss of stats().sessions) if (ss.d >= since) done[ss.s] = (done[ss.s] || 0) + ss.m;
-  const ph = curPhase(inf), anyPh = subs.some(x => phPts(x, ph) > 0);
-  const rows = subs.map(sub => { const L = latestOf(sub, ph), rate = L ? L.rate : null, pts = anyPh ? phPts(sub, ph) : (subPts(sub) || 100), gr = subGoalRate(inf, sub, ph), pref = pts > 0 ? (sub.pref ?? 1) : 0;
+  const anyPh = subs.some(x => +x.pts > 0);
+  const rows = subs.map(sub => { const L = latestOf(sub, ph), rate = L ? L.rate : null, pts = anyPh ? (+sub.pts || 0) : 100, gr = subGoalRate(inf, sub, ph), pref = pts > 0 ? (sub.pref ?? 1) : 0;
     const need = inf.mode === 'pts' ? 1 : inf.mode === 'weak' ? Math.pow(1 - (rate ?? .5), 1.5) + .1 : Math.max(0, gr - (rate ?? gr - .15)) + .2;
     return {sub, L, rate, pts, gr, pref, w: pts * need * pref, fixed: numOr(sub.fix) != null}; });
   const fixedSum = rows.filter(r => r.fixed).reduce((a, r) => a + numOr(r.sub.fix, 0), 0), rest = Math.max(0, goal - fixedSum), wsum = rows.filter(r => !r.fixed).reduce((a, r) => a + r.w, 0) || 1;
@@ -4203,8 +4316,8 @@ function planAlloc(inf, goal){
     return {...r, min, share: goal ? min / goal : 0, did7: done[r.sub.tsid] || 0, didShare: all7 ? (done[r.sub.tsid] || 0) / all7 : 0, shared: sameT[r.sub.tsid] > 1}; }).sort((a, b) => b.min - a.min);
 }
 function mockChart(inf){
-  const metric = UI.mockMetric || 'rate', sid = UI.mockSub || 'total', sub = inf.subs.find(x => x.id === sid), dev = metric === 'dev';
-  const kind = UI.mockKind || 'all', gph = kind === 'n' ? 'n' : kind === 'k' ? 'k' : curPhase(inf);
+  const metric = UI.mockMetric || 'rate', sid = UI.mockSub || 'total', dev = metric === 'dev';
+  const kind = UI.mockKind || 'all', gph = kind === 'n' ? 'n' : kind === 'k' ? 'k' : curPhase(inf), sub = phSubs(inf, gph).find(x => x.id === sid) || phSubs(inf, gph === 'k' ? 'n' : 'k').find(x => x.id === sid);
   const pts = []; for (const m of mocksAsc(kind)) { let v = null; if (sid === 'total') v = dev ? numOr(m.dev) : (mockTotal(m) != null ? mockTotal(m) * 100 : null); else if (sub) { const r = mockRow(m, sub); v = dev ? numOr(r && r.dev) : (rowRate(r) != null ? rowRate(r) * 100 : null); } if (v != null) pts.push([m, v]); }
   if (pts.length < 1) return `<div class="empty" style="padding:14px">${dev ? '偏差値' : '点数'}が入った模試がまだありません。</div>`;
   const lo = dev ? 30 : 0, hi = dev ? 80 : 100, goal = dev ? numOr(inf.goalDev) : Math.round((sub ? subGoalRate(inf, sub, gph) : planGoalRate(inf, gph)) * 100);
@@ -4219,12 +4332,11 @@ const tsOpts = sel => S().subjects.filter(sj => !sj.hidden).map(sj => `<option v
 const guessTs = name => { const sj = S().subjects.find(x => !x.hidden && name && (name.includes(x.name) || x.name.includes(name.slice(0, 2)))); return sj ? sj.id : 'ot'; };
 function subsEditor(){
   const D = UI.subsDraft;
-  return `<div class="subed">${D.map((x, i) => `<div class="subrow"><div class="row" style="gap:6px"><span class="dot" style="--c:${x.color};flex:none"></span><input type="text" maxlength="16" value="${esc(x.name)}" data-sf="${i}:name" placeholder="科目名（例：英語リスニング）" aria-label="科目名" style="flex:1;min-width:0">
-      <select data-sf="${i}:tsid" aria-label="タイマーの科目" title="タイマーで記録するときの科目">${tsOpts(x.tsid)}</select><button type="button" class="btn sm ghost" data-act="sub-del" data-v="${i}" aria-label="この科目を消す">${icon('x')}</button></div>
-    <div class="subnums"><label>共通配点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.k ?? ''}" data-sf="${i}:k" placeholder="0"></label><label>共通目標点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.gk ?? ''}" data-sf="${i}:gk" placeholder="—"></label>
-      <label>二次配点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.n ?? ''}" data-sf="${i}:n" placeholder="0"></label><label>二次目標点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.gn ?? ''}" data-sf="${i}:gn" placeholder="—"></label></div></div>`).join('')}</div>
+  return `<p class="note" style="margin:0 0 8px"><b style="color:var(--cyan)">${PH[UI.subsPh || 'k']}</b>の科目を編集しています。</p><div class="subed">${D.map((x, i) => `<div class="subrow"><div class="row" style="gap:6px"><span class="dot" style="--c:${x.color};flex:none"></span><input type="text" maxlength="16" value="${esc(x.name)}" data-sf="${i}:name" placeholder="科目名（例：英語リスニング）" aria-label="科目名" style="flex:1;min-width:0">
+<button type="button" class="btn sm ghost" data-act="sub-del" data-v="${i}" aria-label="この科目を消す">${icon('x')}</button></div>
+    <div class="subnums three"><label>配点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.pts ?? ''}" data-sf="${i}:pts" placeholder="0"></label><label>目標点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.goal ?? ''}" data-sf="${i}:goal" placeholder="—"></label><label>⏱ タイマー科目<select data-sf="${i}:tsid" aria-label="タイマーの科目">${tsOpts(x.tsid)}</select></label></div></div>`).join('')}</div>
     <div class="row wrap" style="gap:8px;margin-top:10px"><button type="button" class="btn sm" data-act="sub-add">${icon('plus')}科目を追加</button><span class="sp"></span><button type="button" class="btn sm ghost" data-act="sub-cancel">やめる</button><button type="button" class="btn sm primary" data-act="sub-save">${icon('check')}保存</button></div>
-    <p class="note" style="margin:8px 0 0">右の選択は「タイマーで記録するときの科目」です（勉強時間を数えるのに使います）。数学ⅠAと数学ⅡBCのように、同じ科目に2つ以上つないでもOK。</p>`;
+    <p class="note" style="margin:8px 0 0">「⏱ タイマー科目」は、タイマーで記録するときの科目です（勉強時間を数えるのに使います）。数学ⅠAと数学ⅡBCのように、同じ科目に2つ以上つないでもOK。</p>`;
 }
 function mockEditor(inf){
   const D = UI.mockDraft, judges = ['', 'A', 'B', 'C', 'D', 'E'];
@@ -4241,10 +4353,10 @@ VIEWS.plan = () => {
   const st = S(), p = PL(), today = dkey();
   if (!st.targets.length) return `<div class="pagehead"><div><span class="eyebrow">ROAD TO 合格</span><h1>合格プラン</h1></div></div><section class="panel"><div class="empty">まず志望校を登録しよう。<br><a class="btn primary" href="#exams" style="margin-top:12px">${icon('plus')}志望大学を登録する</a></div></section>`;
   const t = st.targets.find(x => x.id === p.main) || st.targets[0], inf = planInfo(t.id), ph = curPhase(inf);
-  const goal = goalFor(today), alloc = planAlloc(inf, goal), subs = inf.subs.filter(x => x.name);
+  const goal = goalFor(today), alloc = planAlloc(inf, goal), subs = phSubs(inf, ph);
   const ms = mocksAsc(UI.mockKind || 'all'), phInfo = k => { const date = planDate(inf, k), left = date ? daysBetween(today, date) : null, list = mocksAsc(k), last = list[list.length - 1], rate = last ? mockTotal(last) : null, g = planGoalRate(inf, k); return {date, left, last, rate, g}; };
   const PK = phInfo('k'), PN = phInfo('n'), cur = ph === 'k' ? PK : PN, left = cur.left;
-  const sumK = subs.reduce((a, x) => a + (+x.k || 0), 0), sumN = subs.reduce((a, x) => a + (+x.n || 0), 0), sumGK = subs.reduce((a, x) => a + (+x.gk || 0), 0), sumGN = subs.reduce((a, x) => a + (+x.gn || 0), 0);
+  const sumP = subs.reduce((a, x) => a + (+x.pts || 0), 0), sumG = subs.reduce((a, x) => a + (+x.goal || 0), 0), other = ph === 'k' ? 'n' : 'k', otherN = phSubs(inf, other).length;
   const doneN = p.check.filter(c => c.done).length, allocSum = alloc.reduce((a, r) => a + r.min, 0);
   const judgeC = j => ({A: '#3ee6a0', B: '#22e4ff', C: '#ffc24d', D: '#ff9350', E: '#ff5c7a'})[j] || 'var(--mute)';
   return `<div class="pagehead"><div><span class="eyebrow">ROAD TO 合格</span><h1>合格プラン</h1></div><a class="btn sm ghost" href="#exams">${icon('pen')}志望校を編集</a></div>
@@ -4272,20 +4384,22 @@ VIEWS.plan = () => {
     <div class="seg" style="margin-bottom:10px">${[['gap', '目標との差'], ['weak', '苦手を重視'], ['pts', '配点どおり']].map(([k, n]) => `<button data-act="alloc-mode" data-v="${k}" class="${inf.mode === k ? 'on' : ''}">${n}</button>`).join('')}</div>
     ${alloc.length ? `<div class="stack" style="gap:12px">${alloc.map(a => `<div class="allocrow"><div class="row" style="justify-content:space-between;font-size:13px;gap:6px"><span style="min-width:0"><span class="dot" style="--c:${a.sub.color};display:inline-block;margin-right:6px"></span><b>${esc(a.sub.name)}</b>${a.fixed ? ' <span class="pill" style="font-size:10px;padding:1px 6px">固定</span>' : ''}</span><b class="disp">${fmtHM(a.min)}</b></div>
       <div class="bar" style="margin-top:4px"><i style="width:${(clamp(a.share, 0, 1) * 100).toFixed(1)}%;background:${a.sub.color}"></i></div>
-      <div class="note" style="margin-top:2px">${phPts(a.sub, ph) ? `${PH[ph]}の配点${phPts(a.sub, ph)}` : `${PH[ph]}では使わない`}${phGoal(a.sub, ph) ? ` · 目標${phGoal(a.sub, ph)}点` : ''}${a.L ? ` · 最新 ${a.L.g}/${a.L.m}${a.L.dev ? `（偏差値${a.L.dev}）` : ''}` : ''} · 最近7日 ${fmtHM(a.did7)}${a.shared ? '（同じ科目の合計）' : ''}${!a.fixed && a.didShare + .08 < a.share ? ' <b style="color:#ffc24d">← もっと時間を</b>' : ''}</div>
+      <div class="note" style="margin-top:2px">${+a.sub.pts ? `配点${a.sub.pts}` : '配点なし'}${+a.sub.goal ? ` · 目標${a.sub.goal}点` : ''}${a.L ? ` · 最新 ${a.L.g}/${a.L.m}${a.L.dev ? `（偏差値${a.L.dev}）` : ''}` : ''} · 最近7日 ${fmtHM(a.did7)}${a.shared ? '（同じ科目の合計）' : ''}${!a.fixed && a.didShare + .08 < a.share ? ' <b style="color:#ffc24d">← もっと時間を</b>' : ''}</div>
       ${UI.allocEdit ? `<div class="row wrap" style="gap:6px;margin-top:6px;align-items:center"><div class="seg prefseg">${PREFS.map(([v, n]) => `<button data-act="alloc-pref" data-v="${a.sub.id}" data-p="${v}" class="${(a.sub.pref ?? 1) === v ? 'on' : ''}">${n}</button>`).join('')}</div>
         <label class="row fixlbl" style="gap:4px;font-size:12px;color:var(--mute)">時間を自分で決める<input type="number" min="0" max="600" step="5" inputmode="numeric" data-fix="${a.sub.id}" value="${numOr(a.sub.fix) ?? ''}" placeholder="自動" style="width:72px">分</label></div>` : ''}</div>`).join('')}</div>
       <p class="note" style="margin:10px 0 0">合計 ${fmtHM(allocSum)}${allocSum > goal + 4 ? `（1日の目標 ${fmtHM(goal)} をこえています）` : ` / 1日の目標 ${fmtHM(goal)}`}。${inf.mode === 'gap' ? '目標点との差が大きい科目ほど多めにしています。' : inf.mode === 'weak' ? '模試の点が低い科目ほど多めにしています。' : '配点の大きさどおりに分けています。'}「調整する」で、科目ごとに多め・少なめや、時間を自分で決められます。</p>
       <button class="btn sm primary" data-act="alloc-go" data-v="${esc(alloc[0].sub.tsid)}" style="margin-top:10px">${icon('play')}${esc(alloc[0].sub.name)}から始める</button>`
       : '<div class="empty">右の「科目・配点・目標点」を入れると、科目ごとのおすすめ時間が出ます。</div>'}</section>
 
-  <section class="panel"><div class="ph" style="margin-bottom:10px"><div><span class="eyebrow">SUBJECTS</span><h2>科目・配点・目標点</h2></div></div>
-    ${UI.subsDraft ? '' : `<div class="subtools"><button class="btn sm primary" data-act="sub-edit">${icon('pen')}編集する</button><button class="btn sm ghost" data-act="sub-reset" ${subs.length || inf.goalDev != null || inf.goalK !== 75 || inf.goalN !== 65 ? '' : 'disabled'}>${icon('rotate')}リセット</button></div>`}
-    <div class="tplbox"><span class="note">テンプレート（例）から入れる</span><div class="tplgrid">${Object.entries(PLAN_TPL).map(([k, [n]]) => `<button class="tplbtn" data-act="pl-tpl" data-v="${k}">${esc(n.replace('の例', ''))}</button>`).join('')}</div></div>
-    ${UI.subsDraft ? subsEditor() : subs.length ? `<div class="stcards">${subs.map(x => { const LK = latestOf(x, 'k'), LN = latestOf(x, 'n'), col = (k, L) => { const pts = phPts(x, k), g = phGoal(x, k), mine = L && L.kind === k ? L : null;
-        return `<div class="stc ${pts ? '' : 'off'}"><small>${PH[k]}</small><b>${pts ? pts + '<i>点</i>' : '—'}</b><span>${g ? `目標 ${g}` : pts ? '目標 未設定' : 'なし'}</span>${mine ? `<span class="lt">最新 ${mine.g}/${mine.m}${mine.dev ? `<br>偏差値 ${mine.dev}` : ''}</span>` : ''}</div>`; };
-      return `<div class="stcard"><div class="sthead"><span class="dot" style="--c:${x.color}"></span><b>${esc(x.name)}</b><span class="note" style="margin-left:auto">⏱ ${esc(subjOf(x.tsid).name)}</span></div><div class="stcols">${col('k', LK)}${col('n', LN)}</div></div>`; }).join('')}
-      <div class="stcard total"><div class="sthead"><b>合計</b></div><div class="stcols"><div class="stc"><small>共通テスト</small><b>${sumK}<i>点</i></b><span>${sumGK ? `目標 ${sumGK}（${sumK ? Math.round(sumGK / sumK * 100) : 0}%）` : '目標 未設定'}</span></div><div class="stc"><small>二次試験</small><b>${sumN}<i>点</i></b><span>${sumGN ? `目標 ${sumGN}（${sumN ? Math.round(sumGN / sumN * 100) : 0}%）` : '目標 未設定'}</span></div></div></div></div>` : `<div class="empty" style="padding:14px">科目がまだありません。上のテンプレートを使うか「編集」から追加してね。</div>`}
+  <section class="panel"><div class="ph" style="margin-bottom:6px"><div><span class="eyebrow">SUBJECTS · ${ph === 'k' ? 'KYOTSU' : 'NIJI'}</span><h2>${PH[ph]}の科目・配点・目標点</h2></div></div>
+    <p class="note" style="margin:0 0 10px">上の大きなマスで共通テスト／二次試験を切りかえると、ここも切りかわります。${otherN ? `（${PH[other]}には${otherN}科目）` : ''}</p>
+    ${UI.subsDraft ? '' : `<div class="subtools"><button class="btn sm primary" data-act="sub-edit">${icon('pen')}編集する</button><button class="btn sm ghost" data-act="sub-reset" ${subs.length || (ph === 'k' ? inf.goalK !== 75 : inf.goalN !== 65) ? '' : 'disabled'}>${icon('rotate')}リセット</button></div>`}
+    <div class="tplbox"><span class="note">テンプレート（例）から入れる（共通テスト・二次試験の両方に入ります）</span><div class="tplgrid">${Object.entries(PLAN_TPL).map(([k, [n]]) => `<button class="tplbtn" data-act="pl-tpl" data-v="${k}">${esc(n.replace('の例', ''))}</button>`).join('')}</div></div>
+    ${UI.subsDraft ? subsEditor() : subs.length ? `<div class="stcards">${subs.map(x => { const L = latestOf(x, ph), mine = L && L.kind === ph ? L : null;
+      return `<div class="stcard"><div class="sthead"><span class="dot" style="--c:${x.color}"></span><b>${esc(x.name)}</b><span class="note" style="margin-left:auto">⏱ ${esc(subjOf(x.tsid).name)}</span></div>
+        <div class="stcols three"><div class="stc"><small>配点</small><b>${+x.pts ? x.pts + '<i>点</i>' : '—'}</b></div><div class="stc"><small>目標点</small><b>${+x.goal ? x.goal + '<i>点</i>' : '—'}</b>${+x.goal && +x.pts ? `<span>${Math.round(x.goal / x.pts * 100)}%</span>` : ''}</div><div class="stc"><small>最新の模試</small><b>${mine ? mine.g + '<i>/' + mine.m + '</i>' : '—'}</b>${mine && mine.dev ? `<span class="lt">偏差値 ${mine.dev}</span>` : ''}</div></div></div>`; }).join('')}
+      <div class="stcard total"><div class="sthead"><b>${PH[ph]}の合計</b></div><div class="stcols three"><div class="stc"><small>配点</small><b>${sumP}<i>点</i></b></div><div class="stc"><small>目標点</small><b>${sumG ? sumG + '<i>点</i>' : '—'}</b>${sumG && sumP ? `<span>${Math.round(sumG / sumP * 100)}%</span>` : ''}</div><div class="stc"><small>目標%</small><b>${Math.round(planGoalRate(inf, ph) * 100)}<i>%</i></b></div></div></div></div>`
+      : `<div class="empty" style="padding:14px">${PH[ph]}の科目がまだありません。上のテンプレートを使うか「編集する」から追加してね。${ph === 'n' ? '<br>（私立の個別試験も、こちらの「二次試験」に入れてね）' : ''}</div>`}
     <p class="note" style="margin:8px 0 0">テンプレートはあくまで例です。正しい配点は、${esc(t.univ)}の募集要項（学部ごと）で確認して入れてね。</p></section>
   </div>
 
@@ -4293,7 +4407,7 @@ VIEWS.plan = () => {
     ${UI.mockDraft ? mockEditor(inf) : ''}
     ${PL().mocks.length ? `<div class="seg" style="margin-bottom:8px">${[['all', 'すべて'], ['k', '共通テスト模試'], ['n', '二次・記述模試']].map(([k, n]) => `<button data-act="mk-kind" data-v="${k}" class="${(UI.mockKind || 'all') === k ? 'on' : ''}">${n}</button>`).join('')}</div>` : ''}
     ${ms.length ? `<div class="row wrap" style="gap:8px;margin-bottom:8px"><div class="seg">${[['rate', '得点率'], ['dev', '偏差値']].map(([k, n]) => `<button data-act="mk-metric" data-v="${k}" class="${(UI.mockMetric || 'rate') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
-      <div class="chips">${[['total', '総合', '#22e4ff'], ...subs.map(x => [x.id, x.name, x.color])].map(([k, n, c]) => `<button class="chip ${(UI.mockSub || 'total') === k ? 'on' : ''}" style="--c:${c}" data-act="mk-sub" data-v="${esc(k)}"><i></i>${esc(n)}</button>`).join('')}</div></div>
+      <div class="chips">${[['total', '総合', '#22e4ff'], ...phSubs(inf, (UI.mockKind && UI.mockKind !== 'all') ? UI.mockKind : ph).map(x => [x.id, x.name, x.color])].map(([k, n, c]) => `<button class="chip ${(UI.mockSub || 'total') === k ? 'on' : ''}" style="--c:${c}" data-act="mk-sub" data-v="${esc(k)}"><i></i>${esc(n)}</button>`).join('')}</div></div>
       ${mockChart(inf)}
       <div class="list">${ms.slice().reverse().map(m => { const r = mockTotal(m); return `<div class="li" style="align-items:flex-start"><div class="t"><b><span class="pill" style="font-size:10.5px;padding:1px 7px;margin-right:4px">${(m.kind || 'k') === 'k' ? '共通' : '二次'}</span>${esc(m.name || '模試')}${m.judge ? ` <span class="pill" style="color:${judgeC(m.judge)};border-color:${judgeC(m.judge)}">${m.judge}判定</span>` : ''}</b>
         <span>${fmtDate(m.date)} · ${r != null ? Math.round(r * 100) + '%' : '—'}${m.dev ? ` · 偏差値 ${m.dev}` : ''}</span>
@@ -4811,36 +4925,36 @@ const ACT = {
   'spin-auto'(b){ UI.spinAuto = !UI.spinAuto; b.classList.toggle('primary', UI.spinAuto); b.classList.toggle('ghost', !UI.spinAuto); b.textContent = UI.spinAuto ? '止める' : '回す'; spinStart(); },
   'spin-pose'(b){ UI.spinPose = b.dataset.v; b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); spinPaint(); spinStart(); },
   'pl-main'(b){ PL().main = b.dataset.v; queueWrite('state'); render(); },
-  'pl-tpl'(b){ const [n, list] = PLAN_TPL[b.dataset.v]; confirmBox(`「${n}」を入れますか？`, '今の科目と配点は入れかわります（模試の記録は消えません）。あとで大学の募集要項を見て、正しい数字に直してね。', '入れる', () => {
-    const inf = planInfo(PL().main); inf.subs = list.map(([name, tsid, k, nn], i) => ({id: 'p' + uid6(), name, tsid: S().subjects.some(x => x.id === tsid) ? tsid : 'ot', color: SUB_COLORS[i % SUB_COLORS.length], k, n: nn, gk: null, gn: null, pref: 1, fix: null})); UI.subsDraft = null; queueWrite('state'); render(); }); },
-  'sub-reset'(){ const t = S().targets.find(x => x.id === PL().main);
-    confirmBox(`${t ? t.univ + 'の' : ''}科目・配点・目標をリセットしますか？`, '科目・配点・科目ごとの目標点、共通テスト・二次の目標%（75%・65%にもどります）、目標偏差値、おすすめ配分の調整（多め・少なめ・自分で決めた時間）がすべて消えます。模試の記録・試験日・チェックリストはそのまま残ります。', 'リセットする', () => {
-      const inf = planInfo(PL().main); inf.subs = []; inf.goalK = 75; inf.goalN = 65; inf.goalDev = null; inf.mode = 'gap';
-      UI.subsDraft = null; UI.allocEdit = false; UI.mockSub = 'total'; queueWrite('state'); render(); toast('科目・配点・目標をリセットしました。テンプレートか「編集」から入れ直してね。', 'rotate', 5000); }, true); },
-  'sub-edit'(){ UI.subsDraft = JSON.parse(JSON.stringify(planInfo(PL().main).subs)); render(); },
-  'sub-add'(){ const D = UI.subsDraft; if (!D) return; D.push({id: 'p' + uid6(), name: '', tsid: 'ot', color: SUB_COLORS[D.length % SUB_COLORS.length], k: null, n: null, gk: null, gn: null, pref: 1, fix: null}); render(); setTimeout(() => { const el = $(`[data-sf="${D.length - 1}:name"]`); if (el) el.focus(); }, 30); },
+  'pl-tpl'(b){ const [n, tpl] = PLAN_TPL[b.dataset.v]; confirmBox(`「${n}」を入れますか？`, '共通テストと二次試験、両方の科目と配点が入れかわります（模試の記録は消えません）。あとで大学の募集要項を見て、正しい数字に直してね。', '入れる', () => {
+    const inf = planInfo(PL().main), mk = list => list.map(([name, tsid, pts], i) => ({id: 'p' + uid6(), name, tsid: S().subjects.some(x => x.id === tsid) ? tsid : 'ot', color: SUB_COLORS[i % SUB_COLORS.length], pts, goal: null, pref: 1, fix: null}));
+    inf.sets = {k: mk(tpl.k), n: mk(tpl.n)}; UI.subsDraft = null; queueWrite('state'); render(); }); },
+  'sub-reset'(){ const inf = planInfo(PL().main), ph = curPhase(inf), t = S().targets.find(x => x.id === PL().main);
+    confirmBox(`${t ? t.univ + 'の' : ''}${PH[ph]}の科目・配点・目標をリセットしますか？`, `${PH[ph]}の科目・配点・目標点と目標%（${ph === 'k' ? '75' : '65'}%にもどります）、おすすめ配分の調整が消えます。${PH[ph === 'k' ? 'n' : 'k']}の科目、模試の記録、試験日はそのまま残ります。`, 'リセットする', () => {
+      inf.sets[ph] = []; if (ph === 'k') inf.goalK = 75; else inf.goalN = 65; UI.subsDraft = null; UI.allocEdit = false; UI.mockSub = 'total'; queueWrite('state'); render(); toast(`${PH[ph]}の科目・配点・目標をリセットしました。`, 'rotate', 4000); }, true); },
+  'sub-edit'(){ const inf = planInfo(PL().main); UI.subsPh = curPhase(inf); UI.subsDraft = JSON.parse(JSON.stringify(inf.sets[UI.subsPh])); render(); },
+  'sub-add'(){ const D = UI.subsDraft; if (!D) return; D.push({id: 'p' + uid6(), name: '', tsid: 'ot', color: SUB_COLORS[D.length % SUB_COLORS.length], pts: null, goal: null, pref: 1, fix: null}); render(); setTimeout(() => { const el = $(`[data-sf="${D.length - 1}:name"]`); if (el) el.focus(); }, 30); },
   'sub-del'(b){ const D = UI.subsDraft; if (!D) return; D.splice(+b.dataset.v, 1); render(); },
   'sub-cancel'(){ UI.subsDraft = null; render(); },
-  'sub-save'(){ const D = UI.subsDraft; if (!D) return; const inf = planInfo(PL().main);
-    inf.subs = D.filter(x => (x.name || '').trim()).map(x => ({...x, name: x.name.trim().slice(0, 16), k: numOr(x.k), n: numOr(x.n), gk: numOr(x.gk), gn: numOr(x.gn)}));
-    UI.subsDraft = null; queueWrite('state'); render(); toast('科目・配点・目標点を保存しました。おすすめ配分に反映されます。', 'check'); },
+  'sub-save'(){ const D = UI.subsDraft; if (!D) return; const inf = planInfo(PL().main), ph = UI.subsPh || curPhase(inf);
+    inf.sets[ph] = D.filter(x => (x.name || '').trim()).map(x => ({...x, name: x.name.trim().slice(0, 16), pts: numOr(x.pts), goal: numOr(x.goal)}));
+    UI.subsDraft = null; queueWrite('state'); render(); toast(`${PH[ph]}の科目・配点・目標点を保存しました。おすすめ配分に反映されます。`, 'check'); },
   'alloc-edit'(){ UI.allocEdit = !UI.allocEdit; render(); },
   'ph-pick'(b){ const inf = planInfo(PL().main), v = b.dataset.v; inf.phase = v === 'auto' ? 'auto' : v; queueWrite('state'); render(); if (v !== 'auto') toast(`おすすめ配分を${PH[v]}向けにしました。`, 'check', 2500); },
   'alloc-phase'(b){ planInfo(PL().main).phase = b.dataset.v; queueWrite('state'); render(); },
-  'mk-dkind'(b){ if (!UI.mockDraft) return; UI.mockDraft.kind = b.dataset.v; const inf = planInfo(PL().main), k = b.dataset.v;
-    if (!UI.mockDraft.id && UI.mockDraft.rows.every(r => r.g === '' || r.g == null)) UI.mockDraft.rows = inf.subs.filter(x => x.name && phPts(x, k) > 0).map(x => ({sid: x.id, n: x.name, g: '', m: phPts(x, k), dev: ''})).concat(inf.subs.some(x => x.name && phPts(x, k) > 0) ? [] : [{sid: '', n: '', g: '', m: 100, dev: ''}]);
+  'mk-dkind'(b){ if (!UI.mockDraft) return; UI.mockDraft.kind = b.dataset.v; const inf = planInfo(PL().main), k = b.dataset.v, list = phSubs(inf, k);
+    if (!UI.mockDraft.id && UI.mockDraft.rows.every(r => r.g === '' || r.g == null)) UI.mockDraft.rows = list.length ? list.map(x => ({sid: x.id, n: x.name, g: '', m: +x.pts || 100, dev: ''})) : [{sid: '', n: '', g: '', m: 100, dev: ''}];
     render(); },
   'mk-kind'(b){ UI.mockKind = b.dataset.v; render(); },
   'alloc-mode'(b){ planInfo(PL().main).mode = b.dataset.v; queueWrite('state'); render(); },
-  'alloc-pref'(b){ const sub = planInfo(PL().main).subs.find(x => x.id === b.dataset.v); if (sub) { sub.pref = +b.dataset.p; queueWrite('state'); render(); } },
+  'alloc-pref'(b){ const inf = planInfo(PL().main), sub = phSubs(inf, curPhase(inf)).find(x => x.id === b.dataset.v); if (sub) { sub.pref = +b.dataset.p; queueWrite('state'); render(); } },
   'alloc-go'(b){ T.subj = b.dataset.v; saveTimer(); location.hash = '#timer'; },
-  'mock-new'(){ const inf = planInfo(PL().main), k = curPhase(inf), list = inf.subs.filter(x => x.name && phPts(x, k) > 0); UI.mockDraft = {kind: k, date: dkey(), name: '', judge: '', dev: '', memo: '', rows: (list.length ? list : inf.subs.filter(x => x.name)).map(x => ({sid: x.id, n: x.name, g: '', m: phPts(x, k) || +x.k || +x.n || 100, dev: ''}))}; if (!UI.mockDraft.rows.length) UI.mockDraft.rows.push({sid: '', n: '', g: '', m: 100, dev: ''}); render(); },
+  'mock-new'(){ const inf = planInfo(PL().main), k = curPhase(inf), list = phSubs(inf, k); UI.mockDraft = {kind: k, date: dkey(), name: '', judge: '', dev: '', memo: '', rows: list.map(x => ({sid: x.id, n: x.name, g: '', m: +x.pts || 100, dev: ''}))}; if (!UI.mockDraft.rows.length) UI.mockDraft.rows.push({sid: '', n: '', g: '', m: 100, dev: ''}); render(); },
   'mock-edit'(b){ const m = PL().mocks.find(x => x.id === b.dataset.v); if (!m) return; UI.mockDraft = JSON.parse(JSON.stringify({...m, dev: m.dev ?? '', memo: m.memo || ''})); render(); setTimeout(() => $('.mockform')?.scrollIntoView({behavior: 'smooth', block: 'center'}), 50); },
   'mrow-add'(){ const D = UI.mockDraft; if (!D) return; D.rows.push({sid: '', n: '', g: '', m: 100, dev: ''}); render(); setTimeout(() => { const el = $(`[data-mf="${D.rows.length - 1}:n"]`); if (el) el.focus(); }, 30); },
   'mrow-del'(b){ const D = UI.mockDraft; if (!D) return; D.rows.splice(+b.dataset.v, 1); render(); },
   'mock-cancel'(){ UI.mockDraft = null; render(); },
   'mock-save'(){ const D = UI.mockDraft, p = PL(), inf = planInfo(p.main); if (!D) return;
-    const rows = D.rows.filter(r => (r.n || '').trim() && r.g !== '' && r.g != null && +r.m > 0).map(r => { const sub = inf.subs.find(x => x.id === r.sid) || inf.subs.find(x => x.name === r.n.trim()); return {sid: sub ? sub.id : '', n: r.n.trim().slice(0, 16), g: clamp(+r.g, 0, +r.m), m: +r.m, dev: numOr(r.dev) != null ? Math.round(+r.dev * 10) / 10 : null}; });
+    const rows = D.rows.filter(r => (r.n || '').trim() && r.g !== '' && r.g != null && +r.m > 0).map(r => { const L2 = phSubs(inf, D.kind === 'n' ? 'n' : 'k'), sub = L2.find(x => x.id === r.sid) || L2.find(x => x.name === r.n.trim()); return {sid: sub ? sub.id : '', n: r.n.trim().slice(0, 16), g: clamp(+r.g, 0, +r.m), m: +r.m, dev: numOr(r.dev) != null ? Math.round(+r.dev * 10) / 10 : null}; });
     if (!rows.length) { toast('1科目以上、科目名・点・満点を入れてください。', 'x'); return; }
     const rec = {id: D.id || uid6(), kind: D.kind === 'n' ? 'n' : 'k', date: D.date || dkey(), name: (D.name || '').trim().slice(0, 30), judge: D.judge || '', dev: numOr(D.dev) != null ? Math.round(+D.dev * 10) / 10 : null, memo: (D.memo || '').trim().slice(0, 300), rows};
     const k = p.mocks.findIndex(m => m.id === rec.id); if (k >= 0) p.mocks[k] = rec; else p.mocks.push(rec); p.mocks = p.mocks.slice(-60);
@@ -5114,7 +5228,7 @@ async function wipeAll(){
   if (MODE === 'cloud') {
     const {error} = await SB.rpc('delete_me');
     if (error) { toast('退会できませんでした：' + (error.message || '通信エラー'), 'x', 6000); return; }
-    LS.del('sh-cache'); LS.del('sh-local'); LS.del('sh-timer');
+    LS.del('sh-cache'); LS.del('sh-base'); LS.del('sh-local'); LS.del('sh-timer');
     try { await SB.auth.signOut(); } catch {}
     signedOut(); toast('退会しました。いままでおつかれさまでした。', 'check', 5000); return;
   }
@@ -5413,7 +5527,7 @@ document.addEventListener('input', e => {
   if (t.dataset && t.dataset.sf && UI.subsDraft) { const [i, f] = t.dataset.sf.split(':'), x = UI.subsDraft[+i]; if (x) x[f] = t.value; }
   if (t.dataset && t.dataset.mf && UI.mockDraft) { const [i, f] = t.dataset.mf.split(':'), r = UI.mockDraft.rows[+i]; if (r) r[f] = t.value; }
   if (t.dataset && t.dataset.mh && UI.mockDraft) UI.mockDraft[t.dataset.mh] = t.value;
-  if (t.dataset && t.dataset.fix) { const sub = planInfo(PL().main).subs.find(x => x.id === t.dataset.fix); if (sub) { sub.fix = t.value === '' ? null : clamp(Math.round(+t.value || 0), 0, 600); queueWrite('state', 1500); } }
+  if (t.dataset && t.dataset.fix) { const inf = planInfo(PL().main), sub = phSubs(inf, curPhase(inf)).find(x => x.id === t.dataset.fix); if (sub) { sub.fix = t.value === '' ? null : clamp(Math.round(+t.value || 0), 0, 600); queueWrite('state', 1500); } }
   if (t.dataset && t.dataset.nf && UI.newsDraft) { UI.newsDraft[t.dataset.nf] = t.type === 'checkbox' ? t.checked : t.value; }
   if (t.id === 'pl-dream') { PL().dream = t.value.slice(0, 400); queueWrite('state', 2000); }
   if (t.id === 'help-q') { UI.helpQ = t.value; clearTimeout(UI.helpT); UI.helpT = setTimeout(() => { render(); const i = $('#help-q'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 250); }
@@ -5542,7 +5656,7 @@ render = function(){
   if (route() === 'rank' || route() === 'groups') refreshPub();
   if (route() === 'chat') { if (CHAT.room) paintLog(true); else { refreshPub(); loadPreviews(); } }
   const rs = $('#roomstage'); if (rs) { wireRoom(rs); requestAnimationFrame(placeBubble); } startSim(); };
-document.addEventListener('visibilitychange', () => { if (!document.hidden && MODE === 'cloud' && !pending.size) { pullCloud(false); refreshPub(true); } });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && MODE === 'cloud') { syncCheck(); refreshPub(true); } });
 setInterval(() => { if (MODE === 'cloud' && S() && !document.hidden && ['rank', 'groups', 'chat'].includes(route()) && !modalOpen) refreshPub(); }, 20000);
 // unread chats / friend requests → badges on the menu, even when you're on another page
 async function pollNotifs(){ if (MODE !== 'cloud' || !S() || (document.hidden && !(S().prefs.notify && notifSupported() && Notification.permission === 'granted'))) return; try { await refreshPub(); await loadPreviews(true); } catch {} renderNav(); }
@@ -5550,6 +5664,7 @@ setInterval(pollNotifs, 30000); setTimeout(pollNotifs, 4000);
 setInterval(() => { if (MODE === 'cloud' && S() && T.state === 'run' && T.phase === 'study') publishPub(0); }, 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(pollNotifs, 500); });
 window.addEventListener('pagehide', () => { if (MODE === 'cloud' && pending.size) flushAll(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && MODE === 'cloud' && pending.size) flushAll(); });   // スマホでアプリを切りかえたとき、すぐ保存
 
 window.addEventListener('error', e => { try { toast('エラーが起きました：' + (e.message || '不明') + '（ページを開き直してください）', 'x', 6000); } catch {} });
 loadCustom();
