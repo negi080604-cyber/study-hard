@@ -1033,6 +1033,13 @@ function personParts(L, pose = 'stand', o = {}){
   const sit = pose === 'sit', seatZ = o.seatZ || .78, dz = sit ? seatZ - .7 : 0, hb = 1.15 + dz;
   const head = headParts(L).map(([x, y, z, w, d, h, c]) => [.5 + (x - .5) * hk, .5 + (y - .5) * hk, hb + (z + dz - hb) * hk, w * hk, d * hk, h * hk, c]);
   let body = bodyParts(L, pose, seatZ, o.hold, o.mo);
+  // 首をふる（見渡す）：頭だけを横に90度向ける。長い髪のうち、頭より下にたれている部分はそのまま
+  let headT = head;
+  if (o.turn) { const top = head.filter(p => p[2] >= hb - 1e-6); if (top.length) {
+      let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (const p of top) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0] + p[3]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1] + p[4]); }
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      headT = head.map(p => { if (p[2] < hb - 1e-6) return p; const [x, y, z, w, d, h, c] = p;
+        return o.turn > 0 ? [cx - (y + d - cy), cy + (x - cx), z, d, w, h, c] : [cx + (y - cy), cy - (x + w - cx), z, d, w, h, c]; }); } }
   if (o.walk != null && !sit) {   // gait cycle: the swinging foot lifts, lower legs/forearms swing further than thighs/upper arms
     const ph = o.walk * Math.PI / 3, sw = .046 * Math.sin(ph), lift = [Math.max(0, Math.cos(ph)) * .055, Math.max(0, -Math.cos(ph)) * .055], KNEE = .37, e = 1e-6;   // 歩幅は控えめに（大きいと、片足がもう片方の足に完全にかくれて「足がない」ように見える）
     body = body.map(p => { const [x, y, z, w, d, h, c] = p, left = x + w / 2 < .5, sg = left ? 1 : -1, L = lift[left ? 0 : 1];
@@ -1043,7 +1050,7 @@ function personParts(L, pose = 'stand', o = {}){
         return [x, y + sg * sw, z + L, w, d, h, c]; }                                              // くつ・くつ底
       if (!o.hold && (x + w <= .35 || x >= .65) && z >= .5 && z < 1.16) return [x, y - sg * sw * (z < .89 ? 1.2 : .55), z, w, d, h, c];
       return p; }); }
-  const all = deIntersect(scaleParts([...body, ...head], s));
+  const all = deIntersect(scaleParts([...body, ...headT], s));
   return sit ? all.map(([x, y, z, w, d, h, c]) => [x, Math.min(1 - d, 1 - y - d + .1), z, w, d, h, c]) : all;
 }
 function sleepParts(L, sd, cx, blanket, small){
@@ -1468,7 +1475,9 @@ function simTick(){
       s.act = null; s.wait = now + 1500 + Math.random() * 4000; redraw = redraw || visible; houseChange = true; continue;
     }
     if (visible && s.greetUntil && now < s.greetUntil + 200) redraw = true;
-    if (now < s.wait) { if (visible && !s.target && Math.random() < .012) { s.r = (s.r + (Math.random() < .5 ? 1 : 3)) % 4; redraw = true; } continue; }   // glance around
+    if (s.lookAt && visible) { const lk = now - s.lookAt, ph2 = lk < 1300 ? 1 : lk < 2600 ? 2 : 3; if (ph2 !== s.lookPh) { s.lookPh = ph2; redraw = true; } if (ph2 === 3) s.lookAt = 0; }
+    if (now < s.wait) { if (visible && !s.target && !s.lookAt && Math.random() < .012) {   // 見渡す：たいていは首をふる。ときどき体ごと向きを変える
+        if (Math.random() < .7 && !(s.act && s.act.kind === 'sleep')) { s.lookAt = now; s.lookDir = Math.random() < .5 ? 1 : -1; s.lookPh = 1; } else s.r = (s.r + (Math.random() < .5 ? 1 : 3)) % 4; redraw = true; } continue; }
     const plan = choosePlan(it, s, info, now);
     if (!plan) { s.wait = now + 5000; continue; }
     s.target = plan; s.wait = now + 1000;
@@ -1632,7 +1641,7 @@ const PET_FORMS = {
 function petModelParts(k, stage, ph, pose, t){
   const K = PK[k]; if (!K) return [];
   let P = K.f ? PET_FORMS[K.f](K, ph, pose, t) : quadParts(K, ph, pose, t);
-  const s = [.5, .72, 1][stage || 0] * (K.size || 1) * 1.4, fly = K.fly && pose !== 'sleep' && pose !== 'lie' ? .26 + Math.sin(t * 2.2) * .04 : 0;
+  const s = [.5, .72, 1][stage || 0] * (K.size || 1) * 1.25, fly = K.fly && pose !== 'sleep' && pose !== 'lie' ? .26 + Math.sin(t * 2.2) * .04 : 0;
   let Q = P.map(([x, y, z, w, d, h, col]) => [.5 + (x - .5) * s, .5 + (y - .5) * s, z * s + fly, w * s, d * s, h * s, col]);
   // 自分のマスからはみ出さないように（となりにいる人や家具にめりこむと、足などが消えて見えるため）
   let lo = 1e9, hi = -1e9; for (const q of Q) { lo = Math.min(lo, q[0], q[1]); hi = Math.max(hi, q[0] + q[3], q[1] + q[4]); }
@@ -1710,10 +1719,12 @@ function psimOf(p){
     s = PSIM[p.id] = {room: rid, x: spot ? spot[0] : 0, y: spot ? spot[1] : 0, r: Math.floor(Math.random() * 4), path: [], act: null, until: 0, wait: Date.now() + 800 + Math.random() * 2500, step: 0}; }
   return s;
 }
+// 人のすぐ手前（画面で人の足の前）のマス。ペットがここにいると人の足がかくれてしまう
+function frontOfPeople(rid){ const out = new Set(); for (const q of Object.values(SIM.p)) { if (q.room !== rid) continue; const px = Math.round(q.x), py = Math.round(q.y); for (const [dx, dy] of [[1, 0], [0, 1], [1, 1]]) out.add((px + dx) + ',' + (py + dy)); if (q.target && q.target.rid === rid) for (const [dx, dy] of [[1, 0], [0, 1], [1, 1]]) out.add((q.target.x + dx) + ',' + (q.target.y + dy)); } return out; }
 function petFreeTile(rec, pid, near, range){
-  const solids = solidsOf(rec), busy = busyTiles(rec.rid, pid), c = [];
-  for (let x = 0; x < rec.N; x++) for (let y = 0; y < rec.N; y++) { if (near && (Math.abs(x - near[0]) + Math.abs(y - near[1]) > range || (x === Math.round(near[0]) && y === Math.round(near[1])))) continue; if (tileFree(rec, solids, busy, x, y)) c.push([x, y]); }
-  return c.length ? pickR(c) : null;
+  const solids = solidsOf(rec), busy = busyTiles(rec.rid, pid), front = frontOfPeople(rec.rid), c = [], c2 = [];
+  for (let x = 0; x < rec.N; x++) for (let y = 0; y < rec.N; y++) { if (near && (Math.abs(x - near[0]) + Math.abs(y - near[1]) > range || (x === Math.round(near[0]) && y === Math.round(near[1])))) continue; if (tileFree(rec, solids, busy, x, y)) (front.has(x + ',' + y) ? c2 : c).push([x, y]); }
+  return c.length ? pickR(c) : null;   // 人の手前のマスには行かない
 }
 function petTick(now, viewRid, frozen, reduced){
   let redraw = false; const live = petsLive(), ids = new Set(live.map(p => p.id)), h = new Date().getHours();
@@ -1726,14 +1737,16 @@ function petTick(now, viewRid, frozen, reduced){
         if (r != null) s.r = r; s.x = nx; s.y = ny; s.step++; s.moving = true; redraw = true; continue; }
       const l = s.path[s.path.length - 1]; s.x = l[0]; s.y = l[1]; s.path = []; }
     if (s.moving) { s.moving = false; redraw = redraw || visible; }
+    // 人が来て、ペットがその人の足の前になってしまったら、どいてあげる
+    if (s.act !== 'eat' && !(s.dodge > now) && frontOfPeople(s.room).has(Math.round(s.x) + ',' + Math.round(s.y))) { s.act = null; s.next = null; s.wait = 0; s.dodge = now + 2500; s.forceMove = true; }
     if (s.next) { s.act = s.next; s.until = now + 5000 + Math.random() * 6000; s.next = null; if (s.face) { const dx = s.face[0] - s.x, dy = s.face[1] - s.y; s.r = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 3 : 1) : (dy > 0 ? 0 : 2); } if (s.act === 'play') petEmo(p.id, pickR(['❤️', '🎵', '✨']), 2500); redraw = redraw || visible; continue; }
     if (s.act && now < s.until) { if (visible && ['play', 'eat', 'beg'].includes(s.act) && now - (s.anim || 0) > 260) { s.anim = now; s.step++; redraw = true; } continue; }
     if (s.act) { s.act = null; redraw = redraw || visible; s.wait = now + 600 + Math.random() * 1500; }
     if (now < s.wait) continue;
     const rec = roomRec(s.room); if (!rec) continue; const n = petNow(p, now), lightOn = rec.room.light === 'on', night = (h >= 23 || h < 6) && !lightOn;
-    if (night || (K.lazy && Math.random() < .25)) { s.act = night ? 'sleep' : 'lie'; s.until = now + (night ? 60000 : 8000 + Math.random() * 14000); redraw = redraw || visible; continue; }
-    if (n.sat < 25 && Math.random() < .5) { s.act = 'beg'; s.until = now + 4000; petEmo(p.id, n.starve ? '😵' : '🍖', 4000); redraw = redraw || visible; continue; }
-    const roll = Math.random();
+    if (!s.forceMove && (night || (K.lazy && Math.random() < .25))) { s.act = night ? 'sleep' : 'lie'; s.until = now + (night ? 60000 : 8000 + Math.random() * 14000); redraw = redraw || visible; continue; }
+    if (!s.forceMove && n.sat < 25 && Math.random() < .5) { s.act = 'beg'; s.until = now + 4000; petEmo(p.id, n.starve ? '😵' : '🍖', 4000); redraw = redraw || visible; continue; }
+    const roll = s.forceMove ? 0 : Math.random(); s.forceMove = false;
     if (roll < .5) {   // うろうろ
       const tgt = petFreeTile(rec, p.id, [s.x, s.y], K.sp >= 9 ? 2 : 3);
       if (tgt) { const path = visible ? pathTo(rec, s, tgt[0], tgt[1], p.id, K.sp || 5) : null; if (path && path.length) s.path = path; else if (!visible) { s.x = tgt[0]; s.y = tgt[1]; } }
@@ -1848,7 +1861,8 @@ function simPose(it, items){
   const MO = {cook: 'cook', music: 'music', game: 'music', lift: 'lift', brush: 'brush', board: 'write', plant: 'water', drink: 'drink', hang: 'cook', wash: 'cook', chat: 'talk'};
   const now = Date.now(), ph = Math.floor(now / 380);
   if (s.greetUntil && now < s.greetUntil) return {pose: 'stand', mo: {type: 'wave', ph}};
-  return {pose: 'stand', hold: a && a.kind === 'use' ? a.hold : null, walk: s.moving ? s.step : null, mo: a && MO[a.id] && !s.moving ? {type: MO[a.id], ph} : null};
+  const lk = s.lookAt && !s.moving ? now - s.lookAt : 1e9, turn = lk < 1300 ? s.lookDir : lk < 2600 ? -s.lookDir : 0;   // 見渡す：右→左→正面
+  return {pose: 'stand', hold: a && a.kind === 'use' ? a.hold : null, walk: s.moving ? s.step : null, turn, mo: a && MO[a.id] && !s.moving ? {type: MO[a.id], ph} : null};
 }
 
 function personBoxes(it, items, room, poses){
@@ -1878,7 +1892,7 @@ function personBoxes(it, items, room, poses){
     return parts.map(p => rotPart(p, W, D, tm.r || 0)).map(q => box(q, tm.x, tm.y, 'pw'));
   }
   const walking = ps.walk != null;
-  return personParts(info.look, 'stand', {stage: info.stage, walk: ps.walk, hold: ps.hold, mo: ps.mo}).map(p => rotPart(p, 1, 1, it.r || 0)).map(q => box(q, it.x, it.y, walking ? 'pw' : 'pp'));
+  return personParts(info.look, 'stand', {stage: info.stage, walk: ps.walk, hold: ps.hold, mo: ps.mo, turn: ps.turn}).map(p => rotPart(p, 1, 1, it.r || 0)).map(q => box(q, it.x, it.y, walking ? 'pw' : 'pp'));
 }
 function personThumb(look, stage){
   const boxes = personParts(look, 'stand', {stage}).map(p => ({x: p[0], y: p[1], z: p[2], w: p[3], d: p[4], h: p[5], ...resolveCol(p[6], F.buddy, 0)}));
@@ -3083,7 +3097,7 @@ function burst(){
 function badgeToast(b){ toast(`実績解除「${b.n}」 ${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'medal', 5000); notify(`🏅 実績解除「${b.n}」`, `${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'badge'); }
 
 /* ================= router & render ================= */
-const APP_VERSION = '2026.11.02.7';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
+const APP_VERSION = '2026.11.02.8';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
 const HIDDEN_ROUTES = ['dev'];
 const ROUTES = {
   home:['ホーム','home'], timer:['タイマー','timer'], stats:['記録・分析','chart'], room:['勉強部屋','room'],
