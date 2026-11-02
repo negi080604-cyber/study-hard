@@ -341,7 +341,22 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .tgl i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#c9cfe3;transition:transform .2s}
 .tgl.on{background:linear-gradient(100deg,#22e4ff,#a46bff);border-color:transparent}.tgl.on i{transform:translateX(20px);background:#fff}
 .subed{display:flex;flex-direction:column;gap:10px}.subrow{padding:10px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.02)}
-.subrow select{max-width:110px}.subnums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin-top:8px}
+.nbppl{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:6px 0}.nbppl .pill{font-size:12px}.nbppl small{color:var(--mute);font-size:10.5px}
+.nbroom{max-height:210px;margin:4px auto 2px}.nbroom svg{max-height:210px}
+.nbpick{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr))}.nbitem{font:inherit;color:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 6px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.04);cursor:pointer}
+.nbitem:hover:not(:disabled){border-color:var(--cyan);background:rgba(34,228,255,.08)}.nbitem:disabled{opacity:.45;cursor:not-allowed}.nbitem{overflow:hidden;min-width:0}.nbitem .thumb{width:76px;height:58px;display:grid;place-items:center;overflow:hidden;border-radius:10px;background:radial-gradient(70% 70% at 50% 50%,rgba(61,123,255,.16),transparent 70%)}.nbitem .thumb svg,.celebrate .thumb svg{max-width:100%;max-height:100%;width:100%;height:100%}.celebrate .thumb{display:grid;place-items:center;overflow:hidden}.nbitem b{font-size:13px}.nbitem small{font-size:10.5px;color:var(--mute);line-height:1.3}
+.nbpick .btn{grid-column:1/-1}
+.petcard{padding:12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03)}.petcard.warn{border-color:rgba(255,194,77,.55)}.petcard.bad{border-color:rgba(255,92,122,.75);background:rgba(255,92,122,.07)}
+.pethead{display:flex;gap:10px;align-items:center}.pethead .thumb{width:74px;height:60px;flex:none;display:grid;place-items:center;border-radius:12px;background:radial-gradient(70% 70% at 50% 50%,rgba(61,123,255,.16),transparent 70%)}.pethead .thumb svg{max-width:100%;max-height:100%}
+.pethead .t{display:flex;flex-direction:column;gap:2px;min-width:0}.pethead b small{font-weight:400;color:var(--mute);font-size:12px}.petmood{font-size:13px}
+.petstats{display:grid;gap:3px;margin-top:8px}.petstats label{font-size:12px;color:var(--mute)}.petbar{height:7px;margin-bottom:3px}
+.petfeed{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.dollshop{padding:12px;border-radius:14px;border:1px dashed rgba(255,194,77,.45);margin-bottom:14px}.dollrow{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.dollcard{flex:none;width:104px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)}.dollcard .thumb{width:60px;height:66px}.dollcard .thumb svg{max-width:100%;max-height:100%}.dollcard b{font-size:12px;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fam-av svg{max-width:100%;max-height:100%}
+.subrow select{max-width:110px}.tspick{margin-top:8px}.tspick small{display:block;font-size:11.5px;color:var(--mute);margin-bottom:5px}.tschips{display:flex;flex-wrap:wrap;gap:6px}
+.tschip{font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--mute);cursor:pointer;line-height:1.2}
+.tschip.on{color:#fff;border-color:var(--c);background:color-mix(in srgb,var(--c) 26%,transparent);font-weight:700}.tsn{max-width:48%;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subnums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin-top:8px}
 .subnums label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--mute)}.subnums input{padding:7px 8px;min-width:0}
 @media (min-width:700px){.subnums{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .phbox{font:inherit;color:inherit;text-align:left;cursor:pointer;display:block;width:100%;transition:border-color .2s,box-shadow .2s,transform .1s}.phbox:active{transform:scale(.98)}
@@ -1167,6 +1182,7 @@ function computePoses(items, room){
 }
 /* ================= LIFE SIM: everyone has something to do, and walks between rooms ================= */
 const SIM = {p: {}, timer: null, dirty: false, savedAt: 0, lastDraw: 0, lastHouse: 0};
+const PSIM = {};   // ペットの今いる場所・動き（この端末だけ）
 try { const o = JSON.parse(localStorage.getItem('sh-sim') || 'null'); if (o && o.p) SIM.p = o.p; } catch {}
 // where you can sit: height, seat positions (local), which way you face (-1: toward -y like a chair, 1: toward +y like a sofa)
 const SEATS = {chair_basic: {z: .78}, chair_gaming: {z: .73}, dchair: {z: .72}, gchair: {z: .51}, readchair: {z: .45, slots: [[.5, .45]]},
@@ -1287,6 +1303,7 @@ const solidsOf = rec => rec.room.items.filter(i => F[i.t] && !F[i.t].person);
 function busyTiles(rid, exceptId){
   const out = new Set();
   for (const [id, s] of Object.entries(SIM.p)) { if (id === exceptId || s.room !== rid) continue; out.add(Math.round(s.x) + ',' + Math.round(s.y)); if (s.target && s.target.rid === rid) out.add(s.target.x + ',' + s.target.y); }
+  for (const [id, q] of Object.entries(PSIM)) { if (id === exceptId || q.room !== rid) continue; out.add(Math.round(q.x) + ',' + Math.round(q.y)); if (q.path && q.path.length) { const l = q.path[q.path.length - 1]; out.add(Math.round(l[0]) + ',' + Math.round(l[1])); } }
   return out;
 }
 const tileFree = (rec, solids, busy, x, y) => x >= 0 && y >= 0 && x < rec.N && y < rec.N && !busy.has(x + ',' + y) && canPlace(solids, rec.N, 'buddy', x, y, 0);
@@ -1358,7 +1375,7 @@ function choosePlan(it, s, who, now){
   if (!opts.length) return null;
   let r = Math.random() * opts.reduce((a, o) => a + o.w, 0); for (const o of opts) { r -= o.w; if (r <= 0) return o.p; } return opts[0].p;
 }
-function pathTo(rec, s, tx, ty, pid){
+function pathTo(rec, s, tx, ty, pid, fr = 6){
   const solids = solidsOf(rec), busy = busyTiles(rec.rid, pid), sx = Math.round(s.x), sy = Math.round(s.y), prev = {[sx + ',' + sy]: null}, q = [[sx, sy]];
   busy.delete(tx + ',' + ty);
   while (q.length) { const [cx, cy] = q.shift(); if (cx === tx && cy === ty) break;
@@ -1366,7 +1383,7 @@ function pathTo(rec, s, tx, ty, pid){
   if (!((tx + ',' + ty) in prev)) return null;
   const tiles = []; for (let k = tx + ',' + ty; k; k = prev[k]) tiles.unshift(k.split(',').map(Number));
   const out = []; let cur = [s.x, s.y];
-  for (const t of tiles.slice(1)) { for (let f = 1; f <= 6; f++) out.push([cur[0] + (t[0] - cur[0]) * f / 6, cur[1] + (t[1] - cur[1]) * f / 6]); cur = t; }
+  for (const t of tiles.slice(1)) { for (let f = 1; f <= fr; f++) out.push([cur[0] + (t[0] - cur[0]) * f / fr, cur[1] + (t[1] - cur[1]) * f / fr]); cur = t; }
   return out;
 }
 function simTick(){
@@ -1435,6 +1452,7 @@ function simTick(){
     s.target = plan; s.wait = now + 1000;
   }
   for (const id of Object.keys(SIM.p)) if (!live.has(id)) delete SIM.p[id];
+  try { if (petTick(now, viewRid, frozen, reduced)) redraw = true; } catch (e) { console.warn(e); }
   if (woken.length) toast(`電気がついて、${woken.join('と')}が起きました。${woken.length > 1 ? 'みんな' : ''}電気を消すか「自動」にすると、また眠ります。`, 'bulb', 5000);
   if (redraw && viewRid && now - SIM.lastDraw > 120) { SIM.lastDraw = now; drawRoomOnly(); }
   if (houseChange && route() === 'room' && UI.roomId === 'house' && now - SIM.lastHouse > 1500) { SIM.lastHouse = now; const hs = $('.housestage'); if (hs) hs.innerHTML = UI.houseFloor === 'ext' ? houseExteriorSVG() : houseSVG(Math.min(+UI.houseFloor || 0, (S().house.floors || 1) - 1)); const wl = $('#whereabouts'); if (wl) wl.innerHTML = whereaboutsHTML(); }
@@ -1445,6 +1463,346 @@ function drawRoomOnly(){
   const tmp = document.createElement('div'); tmp.innerHTML = roomSVG(CR(), roomN(), {sel: UI.sel, place: UI.place, rid: ridOf(curEntry())});
   const n = tmp.firstElementChild; if (n) { svg.replaceWith(n); placeBubble(); }
 }
+/* ================= ペット：種類・見た目（箱を組み合わせた3D）=================
+   どの動物も「1マスの中で +y 方向（画面の左手前）を向いている」形で作り、向き(r)に合わせて回します。 */
+const PET_FOOD = {
+  kibble: {n: 'なんでもフード', e: '🥣', cost: 10, v: 35, d: 'どの動物も食べる、ふつうのごはん。'},
+  meat: {n: 'お肉', e: '🍖', cost: 25, v: 50, d: 'いぬ・ライオン・ワニ・ツチノコの大好物。'},
+  fish: {n: 'お魚', e: '🐟', cost: 25, v: 50, d: 'ねこ・ペンギン・招きねこの大好物。'},
+  veg: {n: '野菜', e: '🥬', cost: 15, v: 45, d: 'うさぎ・カメ・キリン・ニワトリの大好物。'},
+  fruit: {n: 'くだもの', e: '🍎', cost: 20, v: 45, d: 'ブタ・ゾウ・イエティ・ハムスターの大好物。'},
+  bamboo: {n: '竹', e: '🎋', cost: 20, v: 50, d: 'パンダの大好物。'},
+  kyuri: {n: 'きゅうり', e: '🥒', cost: 15, v: 50, d: 'カッパの大好物。'},
+  magic: {n: '魔法のエサ', e: '✨', cost: 60, v: 70, d: 'ドラゴン・ユニコーン・空飛ぶブタ・おばけの大好物。'},
+  cake: {n: 'ごちそうケーキ', e: '🎂', cost: 80, v: 100, love: 15, d: 'だれでも大よろこび。なかよし度がぐんと上がる。'}
+};
+const PET_TIER = ['ふつう', 'めずらしい', '奇想天外'];
+// H: 満腹から腹ぺこになるまでの時間  grace: 腹ぺこのまま耐えられる時間  sp: 1マス歩くのにかかるコマ数（大きいほどゆっくり）
+const PK = {
+  inu: {n: 'いぬ', e: '🐕', tier: 0, cost: 300, lv: 1, like: 'meat', H: 24, grace: 48, sp: 4, c: '#c98a4b', c2: '#f3dcc0', q: {bw: .26, bl: .4, bh: .19, leg: .16, hw: .22, hl: .17, hh: .2, snout: .08, ear: 'flop', tail: 'wag'}, lines: ['ワン！', 'しっぽブンブン！', 'お散歩いこ？']},
+  neko: {n: 'ねこ', e: '🐈', tier: 0, cost: 300, lv: 1, like: 'fish', H: 26, grace: 48, sp: 5, c: '#e0a05a', c2: '#fff1dc', q: {bw: .22, bl: .38, bh: .16, leg: .14, hw: .2, hl: .16, hh: .18, snout: .03, ear: 'point', tail: 'up'}, lazy: true, lines: ['ニャー。', 'ゴロゴロ…', '（毛づくろい中）']},
+  usagi: {n: 'うさぎ', e: '🐇', tier: 0, cost: 250, lv: 1, like: 'veg', H: 20, grace: 40, sp: 4, c: '#f4f1ec', c2: '#ffc7d6', q: {bw: .24, bl: .3, bh: .2, leg: .05, hw: .19, hl: .16, hh: .17, snout: .02, ear: 'tall', tail: 'ball', hop: true}, lines: ['ぴょん！', 'もぐもぐ…', '（鼻ひくひく）']},
+  hamu: {n: 'ハムスター', e: '🐹', tier: 0, cost: 150, lv: 1, like: 'fruit', H: 18, grace: 36, sp: 3, size: .55, c: '#e8b06a', c2: '#fff6e6', q: {bw: .22, bl: .24, bh: .15, leg: .03, hw: .2, hl: .12, hh: .14, snout: .02, ear: 'round', tail: 'none'}, lines: ['ほっぺパンパン！', 'カラカラ回したい！']},
+  kame: {n: 'カメ', e: '🐢', tier: 0, cost: 200, lv: 1, like: 'veg', H: 48, grace: 120, sp: 14, size: .85, f: 'kame', c: '#6f9a45', c2: '#a8c97a', lines: ['……のそのそ。', '（首をのばした）']},
+  tori: {n: 'ニワトリ', e: '🐔', tier: 0, cost: 220, lv: 2, like: 'veg', H: 22, grace: 40, sp: 4, f: 'tori', c: '#f6f4ee', c2: '#e2383f', lines: ['コケコッコー！', 'コッコッ…']},
+  pen: {n: 'ペンギン', e: '🐧', tier: 0, cost: 600, lv: 5, like: 'fish', H: 26, grace: 48, sp: 7, f: 'pen', c: '#1f2433', c2: '#f4f6fb', lines: ['ペタペタ…', '氷がほしい！']},
+  buta: {n: 'ブタ', e: '🐖', tier: 1, cost: 500, lv: 3, like: 'fruit', H: 20, grace: 48, sp: 6, c: '#f3a3b6', c2: '#e37f98', q: {bw: .3, bl: .4, bh: .22, leg: .1, hw: .24, hl: .15, hh: .2, snout: .05, snoutFlat: true, ear: 'point', tail: 'curl'}, lines: ['ブヒッ！', 'おなかすいたブー。', 'どろんこしたい！']},
+  panda: {n: 'パンダ', e: '🐼', tier: 1, cost: 1200, lv: 8, like: 'bamboo', H: 22, grace: 48, sp: 8, c: '#f5f5f2', c2: '#1c2133', q: {bw: .34, bl: .42, bh: .26, leg: .11, lc: '#1c2133', hw: .28, hl: .2, hh: .24, snout: .04, ear: 'round', ec: '#1c2133', tail: 'none', patch: true}, lazy: true, lines: ['ササ、ササ…', 'ごろーん。']},
+  raion: {n: 'ライオン', e: '🦁', tier: 1, cost: 1500, lv: 10, like: 'meat', H: 30, grace: 60, sp: 5, c: '#d9a441', c2: '#f3dca8', q: {bw: .28, bl: .44, bh: .22, leg: .2, hw: .22, hl: .17, hh: .2, snout: .07, ear: 'round', ec: '#a8742a', tail: 'tuft', mane: '#7a4a1e'}, lazy: true, lines: ['ガオー！', '（あくび）ふわぁ…', '百獣の王だぞ。']},
+  zou: {n: 'ゾウ', e: '🐘', tier: 1, cost: 2000, lv: 12, like: 'fruit', H: 30, grace: 72, sp: 9, size: .8, c: '#9aa0ad', c2: '#f4f0e6', q: {bw: .42, bl: .48, bh: .36, leg: .26, lw: .13, hw: .3, hl: .18, hh: .3, hz: .35, snout: 0, ear: 'big', tail: 'thin', trunk: true}, lines: ['パオーン！', '（鼻で水あび）', 'ドシン、ドシン。']},
+  kirin: {n: 'キリン', e: '🦒', tier: 1, cost: 1800, lv: 12, like: 'veg', H: 26, grace: 60, sp: 6, size: .82, c: '#e8b85c', c2: '#8a5a2a', q: {bw: .24, bl: .38, bh: .18, leg: .46, hw: .12, hl: .2, hh: .1, snout: 0, ear: 'none', tail: 'thin', neck: .52, spots: true, horn: '#8a5a2a'}, lines: ['（高いところの葉っぱを見てる）', 'モグモグ…']},
+  wani: {n: 'ワニ', e: '🐊', tier: 1, cost: 1400, lv: 10, like: 'meat', H: 40, grace: 96, sp: 9, c: '#4f7a3a', c2: '#d8d4a0', q: {bw: .24, bl: .42, bh: .11, leg: .05, lw: .06, hw: .18, hl: .1, hh: .08, hz: 0, snout: .16, snoutLow: true, ear: 'none', tail: 'long', tl: .2, bumps: true}, lines: ['（じっとしている）', 'ガブッ！', '……ニヤリ。']},
+  tsuchi: {n: 'ツチノコ', e: '🐍', tier: 2, cost: 900, lv: 6, like: 'meat', H: 48, grace: 120, sp: 10, f: 'snake', c: '#b08a52', c2: '#6e5230', lines: ['（ぴょーんと跳ねた！）', 'シャー…', '幻の生き物だよ。']},
+  kappa: {n: 'カッパ', e: '🥒', tier: 2, cost: 1600, lv: 8, like: 'kyuri', H: 18, grace: 30, sp: 5, f: 'kappa', c: '#6fbf5a', c2: '#8a6230', lines: ['きゅうり、ちょうだい！', '頭のお皿がかわいちゃう〜', 'すもう、とろうよ！']},
+  obake: {n: 'おばけ', e: '👻', tier: 2, cost: 1000, lv: 5, like: 'magic', H: 30, grace: 72, sp: 6, f: 'ghost', fly: true, ghost: true, c: '#eef2ff', c2: '#a46bff', lines: ['うらめしや〜', 'ヒュ〜ドロドロ…', 'こわくないよ〜。']},
+  tonbuta: {n: '空飛ぶブタ', e: '🐷', tier: 2, cost: 2200, lv: 15, like: 'magic', H: 24, grace: 60, sp: 5, fly: true, c: '#ffb3c6', c2: '#e37f98', q: {bw: .28, bl: .36, bh: .2, leg: .08, hw: .22, hl: .14, hh: .18, snout: .05, snoutFlat: true, ear: 'point', tail: 'curl', wings: '#ffffff'}, lines: ['ブヒ〜ン（飛んでる）', '空からの景色、最高！']},
+  maneki: {n: '招きねこ', e: '🐱', tier: 2, cost: 2500, lv: 14, like: 'fish', H: 36, grace: 96, sp: 12, f: 'maneki', lucky: true, lazy: true, c: '#fbfaf5', c2: '#e2383f', lines: ['おいでおいで〜', '小判、拾ってきたよ！', '千客万来！']},
+  yeti: {n: 'イエティ', e: '❄', tier: 2, cost: 3000, lv: 16, like: 'fruit', H: 30, grace: 72, sp: 7, size: .85, f: 'yeti', c: '#f1f5fb', c2: '#8ea3c4', lines: ['ウホッ。', '（雪がほしいみたい）', 'さむいの大好き！']},
+  uni: {n: 'ユニコーン', e: '🦄', tier: 2, cost: 3500, lv: 18, like: 'magic', H: 30, grace: 72, sp: 4, c: '#fbf7ff', c2: '#ffd166', q: {bw: .24, bl: .42, bh: .2, leg: .3, hw: .13, hl: .2, hh: .13, snout: .06, ear: 'point', tail: 'rainbow', neck: .2, horn: '#ffd166', maneR: true}, lines: ['ヒヒーン✨', '（虹色のたてがみがキラキラ）', '願いごと、ある？']},
+  dragon: {n: 'ミニドラゴン', e: '🐉', tier: 2, cost: 4000, lv: 20, like: 'magic', H: 40, grace: 96, sp: 5, fly: true, c: '#c4304a', c2: '#ffd166', q: {bw: .24, bl: .38, bh: .18, leg: .12, hw: .2, hl: .16, hh: .16, snout: .07, ear: 'none', tail: 'long', tl: .18, wings: '#7a1a2c', horns: '#f4e3b0', spikes: '#ffd166'}, lines: ['ボッ！（小さな火）', 'ギャオ〜ン！', '宝物を守るのが仕事。']}
+};
+const PK_ORDER = Object.keys(PK).sort((a, b) => PK[a].tier - PK[b].tier || PK[a].lv - PK[b].lv || PK[a].cost - PK[b].cost);
+const PET_NAMES = ['ポチ', 'タマ', 'モモ', 'ココ', 'マル', 'チビ', 'ゴン', 'プー', 'ムギ', 'コタロウ', 'きなこ', 'あんこ', 'ソラ', 'ハナ', 'レオ', 'ラッキー', 'だいふく', 'ジロー'];
+const EYE = '#1c2133';
+// 4本足の動物（いぬ・ブタ・ゾウなど）
+function quadParts(K, ph, pose, t){
+  const o = K.q, c = K.c, c2 = K.c2 || mix(c, '#ffffff', .4), dk = mix(c, '#000000', .3), P = [];
+  const lie = pose === 'lie' || pose === 'sleep', walking = ph != null && !lie, sleep = pose === 'sleep';
+  const leg = lie ? 0 : o.leg, lw = o.lw || Math.max(.05, o.bw * .26), tl = o.tail === 'none' ? 0 : (o.tl ?? .09);
+  const neckOn = !!o.neck, front = neckOn ? Math.max(0, o.hl - .1) : o.hl + (o.snout || 0) + (o.mane ? .05 : 0);
+  const total = tl + o.bl + front, by = .5 - total / 2 + tl, bx = .5 - o.bw / 2;
+  const hop = o.hop && walking ? Math.abs(Math.sin(ph)) * .07 : 0, bz = leg + hop;
+  P.push([bx, by, bz, o.bw, o.bl, o.bh, c]);
+  if (!lie) { const xs = [bx + .012, bx + o.bw - lw - .012], ys = [by + .02, by + o.bl - lw - .02]; let i = 0;
+    for (const yy of ys) for (const xx of xs) { const sg = (i === 0 || i === 3) ? 1 : -1; i++;
+      const sw = walking && !o.hop ? Math.sin(ph) * .045 * sg : 0, lift = walking && !o.hop ? Math.max(0, Math.sin(ph) * sg) * .025 : 0;
+      P.push([xx, yy + sw, hop + lift, lw, lw, Math.max(.01, leg - lift), o.lc || c]); } }
+  // 首と頭
+  let hx = .5 - o.hw / 2, hy, hz;
+  if (neckOn) { const nw = Math.min(.1, o.bw * .45), ny = by + o.bl - nw - .01, nh = sleep ? o.neck * .35 : o.neck;
+    P.push([.5 - nw / 2, ny, bz + o.bh, nw, nw, nh, c]);
+    if (o.maneR) { const cols = ['#ff6fb0', '#ffc24d', '#3ee6a0', '#3fb8ff', '#a46bff']; for (let k = 0; k < 5; k++) P.push([.5 - .025, ny - .03, bz + o.bh + nh * k / 5, .05, .03, nh / 5, cols[k]]); }
+    hy = ny - .02; hz = bz + o.bh + nh; }
+  else { hy = by + o.bl + (o.mane ? .05 : 0); hz = Math.max(0, bz + o.bh * (o.hz ?? .5) - (sleep ? o.bh * .45 : 0)); }
+  if (o.mane) P.push([bx - .04, by + o.bl, Math.max(0, hz - .06), o.bw + .08, .05, o.hh + .12, o.mane]);
+  P.push([hx, hy, hz, o.hw, o.hl, o.hh, o.hc || c]);
+  const fy = hy + o.hl;   // 顔の前の面
+  if (o.snout) { const sw = o.hw * (o.snoutFlat ? .62 : .5), sh = o.snoutLow ? o.hh * .7 : o.hh * .45, sz = o.snoutLow ? hz : hz + o.hh * .05;
+    P.push([.5 - sw / 2, fy, sz, sw, o.snout, sh, o.snoutFlat ? c2 : (o.sc || c2)]);
+    if (o.snoutFlat) { P.push([.5 - sw * .32, fy + o.snout, sz + sh * .35, .025, .006, .03, dk], [.5 + sw * .32 - .025, fy + o.snout, sz + sh * .35, .025, .006, .03, dk]); }
+    else P.push([.5 - .02, fy + o.snout, sz + sh * .5, .04, .008, .03, EYE]); }
+  // 目（寝ているときは閉じる）
+  const eh = sleep ? .008 : .04, ez = hz + o.hh * .58;
+  if (o.patch) for (const ex of [hx + o.hw * .1, hx + o.hw * .9 - .07]) { P.push([ex, fy, ez - .02, .07, .008, .07, EYE]); if (!sleep) P.push([ex + .025, fy + .008, ez + .01, .022, .004, .022, '#ffffff']); }
+  else for (const ex of [hx + o.hw * .12, hx + o.hw * .88 - .035]) P.push([ex, fy, ez, .035, .008, eh, EYE]);
+  // 耳
+  const ec = o.ec || dk;
+  if (o.ear === 'flop') for (const ex of [hx - .025, hx + o.hw]) P.push([ex, hy + o.hl * .3, hz + o.hh * .3, .025, o.hl * .4, o.hh * .62, ec]);
+  if (o.ear === 'point') for (const ex of [hx + .015, hx + o.hw - .065]) P.push([ex, hy + o.hl * .35, hz + o.hh, .05, .05, .06, o.ec || c]);
+  if (o.ear === 'tall') for (const ex of [hx + .025, hx + o.hw - .07]) { P.push([ex, hy + o.hl * .4, hz + o.hh, .045, .04, sleep ? .08 : .2, c]); P.push([ex + .01, hy + o.hl * .4 + .04, hz + o.hh + .02, .025, .004, sleep ? .05 : .15, c2]); }
+  if (o.ear === 'round') for (const ex of [hx - .005, hx + o.hw - .055]) P.push([ex, hy + o.hl * .4, hz + o.hh, .06, .04, .05, ec]);
+  if (o.ear === 'big') { const fl = Math.sin(t * 3) * .015; for (const ex of [hx - .09, hx + o.hw]) P.push([ex, hy + .02 + fl, hz + o.hh * .1, .09, .03, o.hh * .85, dk]); }
+  if (o.horn) { if (neckOn && o.maneR) P.push([.5 - .015, hy + o.hl * .55, hz + o.hh, .03, .03, .13, o.horn]); else for (const ex of [hx + .02, hx + o.hw - .045]) P.push([ex, hy + .03, hz + o.hh, .025, .025, .06, o.horn]); }
+  if (o.horns) for (const ex of [hx + .02, hx + o.hw - .05]) P.push([ex, hy + .02, hz + o.hh, .03, .03, .07, o.horns]);
+  if (o.trunk) { const sw2 = Math.sin(t * 2) * .02; P.push([.5 - .04 + sw2, fy, Math.max(0, hz - .14), .08, .07, .14 + o.hh * .35, c]); P.push([hx + .02, fy, hz + .02, .025, .08, .025, c2], [hx + o.hw - .045, fy, hz + .02, .025, .08, .025, c2]); }
+  // しっぽ
+  const wag = Math.sin(t * 12) * .03;
+  if (o.tail === 'wag') P.push([.5 - .025 + wag, by - tl, bz + o.bh * .65, .05, tl, .05, c]);
+  if (o.tail === 'up') P.push([.5 - .025 + wag * .4, by - .05, bz + o.bh * .6, .05, .05, sleep ? .06 : .22, c]);
+  if (o.tail === 'curl') P.push([.5 - .02, by - .04, bz + o.bh * .6, .04, .04, .06, c2]);
+  if (o.tail === 'ball') P.push([.5 - .04, by - .06, bz + o.bh * .35, .08, .06, .08, '#ffffff']);
+  if (o.tail === 'thin') P.push([.5 - .015 + wag * .3, by - .04, bz + o.bh * .2, .03, .04, o.bh * .6, c]);
+  if (o.tail === 'tuft') { P.push([.5 - .015, by - .11, bz + o.bh * .55, .03, .11, .03, c]); P.push([.5 - .03 + wag * .5, by - tl, bz + o.bh * .5, .06, .03, .06, o.mane || dk]); }
+  if (o.tail === 'long') { P.push([.5 - .06, by - tl * .55, bz, .12, tl * .55, o.bh * .7, c]); P.push([.5 - .035 + wag * .5, by - tl, bz, .07, tl * .45, o.bh * .45, c]); }
+  if (o.tail === 'rainbow') { const cols = ['#ff6fb0', '#ffc24d', '#3fb8ff']; for (let k = 0; k < 3; k++) P.push([.5 - .03 + wag * .4, by - tl, bz + o.bh * .2 + k * o.bh * .25, .06, tl, o.bh * .25, cols[k]]); }
+  // 模様・つばさ・とげ
+  if (o.spots) for (const [sy, sz] of [[.08, .05], [.2, .1], [.3, .03]]) P.push([bx + o.bw, by + sy, bz + sz, .005, .06, .06, c2]);
+  if (o.bumps) for (let k = 0; k < 3; k++) P.push([.5 - .05, by + .06 + k * .12, bz + o.bh, .1, .06, .025, mix(c, '#000000', .2)]);
+  if (o.spikes) for (let k = 0; k < 3; k++) P.push([.5 - .015, by + .05 + k * .1, bz + o.bh, .03, .05, .05, o.spikes]);
+  if (o.wings) { const fl = Math.sin(t * (K.fly ? 9 : 2)) * .06; for (const ex of [bx - .2, bx + o.bw]) P.push([ex, by + o.bl * .25, bz + o.bh - .02 + fl, .2, o.bl * .4, .025, o.wings]); }
+  return P;
+}
+// 2本足・そのほかの形の動物
+const PET_FORMS = {
+  kame(K, ph, pose, t){ const c = K.c, c2 = K.c2, wk = ph != null, nk = pose === 'sleep' ? 0 : .04 + (wk ? Math.abs(Math.sin(ph)) * .02 : 0), P = [];
+    P.push([.5 - .17, .5 - .2, .05, .34, .4, .07, mix(c, '#000000', .2)], [.5 - .13, .5 - .16, .12, .26, .32, .07, c], [.5 - .07, .5 - .09, .19, .14, .18, .03, mix(c, '#ffffff', .15)]);
+    for (const [x, y] of [[.5 - .16, .5 - .17], [.5 + .1, .5 - .17], [.5 - .16, .5 + .1], [.5 + .1, .5 + .1]]) P.push([x, y + (wk ? Math.sin(ph) * .02 : 0), 0, .06, .07, .05, c2]);
+    P.push([.5 - .055, .5 + .2, .04, .11, .08 + nk, .09, c2], [.5 - .045, .5 + .28 + nk, .09, .025, .006, .02, EYE], [.5 + .02, .5 + .28 + nk, .09, .025, .006, .02, EYE], [.5 - .02, .5 - .26, .04, .04, .06, .03, c2]); return P; },
+  tori(K, ph, pose, t){ const w = ph != null, sw = w ? Math.sin(ph) * .04 : 0, lie = pose === 'lie' || pose === 'sleep', lz = lie ? 0 : .14, P = [];
+    if (!lie) P.push([.5 - .06, .5 - .02 + sw, 0, .025, .025, lz, '#f2b233'], [.5 + .035, .5 - .02 - sw, 0, .025, .025, lz, '#f2b233']);
+    P.push([.5 - .1, .5 - .13, lz, .2, .26, .17, K.c], [.5 - .06, .5 - .19, lz + .08, .12, .06, .14, mix(K.c, '#000000', .08)]);
+    const hz = lz + .17, k = w || lie ? 0 : Math.max(0, Math.sin(t * 4)) * .04;
+    P.push([.5 - .06, .5 + .03 + k, hz, .12, .1, .12, K.c], [.5 - .015, .5 + .04 + k, hz + .12, .03, .08, .05, K.c2], [.5 - .02, .5 + .13 + k, hz + .03, .04, .04, .03, '#f2b233'], [.5 - .015, .5 + .13 + k, hz - .02 + .02, .03, .01, .02, K.c2]);
+    if (pose !== 'sleep') P.push([.5 - .05, .5 + .13 + k, hz + .07, .02, .005, .025, EYE], [.5 + .03, .5 + .13 + k, hz + .07, .02, .005, .025, EYE]); return P; },
+  pen(K, ph, pose, t){ const w = ph != null, wad = w ? Math.sin(ph) * .025 : 0, lie = pose === 'lie' || pose === 'sleep', P = [];
+    if (lie) { P.push([.5 - .12, .5 - .2, 0, .24, .36, .16, K.c], [.5 - .08, .5 + .16, .02, .16, .005, .12, K.c2], [.5 - .09, .5 + .16, .14, .18, .16, .14, K.c], [.5 - .025, .5 + .32, .17, .05, .05, .03, '#f2a033']); return P; }
+    P.push([.5 - .1 + wad, .5 - .02, 0, .08, .1, .03, '#f2a033'], [.5 + .02 + wad, .5 - .02, 0, .08, .1, .03, '#f2a033']);
+    P.push([.5 - .12 + wad, .5 - .1, .03, .24, .2, .36, K.c], [.5 - .08 + wad, .5 + .1, .05, .16, .006, .3, K.c2]);
+    P.push([.5 - .155 + wad, .5 - .05, .14 + (w ? Math.abs(Math.sin(ph)) * .03 : 0), .035, .1, .18, K.c], [.5 + .12 + wad, .5 - .05, .14 + (w ? Math.abs(Math.cos(ph)) * .03 : 0), .035, .1, .18, K.c]);
+    P.push([.5 - .1 + wad, .5 - .09, .39, .2, .18, .15, K.c], [.5 - .025 + wad, .5 + .09, .43, .05, .06, .03, '#f2a033'], [.5 - .07 + wad, .5 + .09, .48, .03, .006, .03, '#ffffff'], [.5 + .04 + wad, .5 + .09, .48, .03, .006, .03, '#ffffff']); return P; },
+  kappa(K, ph, pose, t){ const w = ph != null, sw = w ? Math.sin(ph) * .05 : 0, lie = pose === 'lie' || pose === 'sleep', P = [], c = K.c;
+    const lz = lie ? 0 : .26, bz = lz;
+    if (!lie) P.push([.5 - .1, .5 - .04 + sw, 0, .08, .08, lz, c], [.5 + .02, .5 - .04 - sw, 0, .08, .08, lz, c]);
+    P.push([.5 - .12, .5 - .08, bz, .24, .16, .3, c], [.5 - .11, .5 - .14, bz + .02, .22, .06, .27, K.c2], [.5 - .08, .5 + .08, bz + .05, .16, .006, .2, '#e8e2a0']);
+    P.push([.5 - .16, .5 - .04 - sw * .6, bz + .06, .04, .07, .22, c], [.5 + .12, .5 - .04 + sw * .6, bz + .06, .04, .07, .22, c]);
+    const hz = bz + .3; P.push([.5 - .11, .5 - .1, hz, .22, .2, .15, c], [.5 - .12, .5 - .11, hz + .15, .24, .22, .03, '#2a4a7a'], [.5 - .08, .5 - .08, hz + .18, .16, .16, .02, '#e9f2f5']);
+    P.push([.5 - .05, .5 + .1, hz + .03, .1, .06, .05, '#f2c233'], [.5 - .07, .5 + .1, hz + .1, .03, .006, pose === 'sleep' ? .008 : .035, EYE], [.5 + .04, .5 + .1, hz + .1, .03, .006, pose === 'sleep' ? .008 : .035, EYE]); return P; },
+  yeti(K, ph, pose, t){ const w = ph != null, sw = w ? Math.sin(ph) * .05 : 0, lie = pose === 'lie' || pose === 'sleep', P = [], c = K.c, lz = lie ? 0 : .26;
+    if (!lie) P.push([.5 - .13, .5 - .06 + sw, 0, .11, .11, lz, c], [.5 + .02, .5 - .06 - sw, 0, .11, .11, lz, c]);
+    P.push([.5 - .16, .5 - .12, lz, .32, .24, .4, c]);
+    P.push([.5 - .22, .5 - .06 - sw * .7, lz + .06, .06, .1, .32, c], [.5 + .16, .5 - .06 + sw * .7, lz + .06, .06, .1, .32, c]);
+    const hz = lz + .4; P.push([.5 - .13, .5 - .1, hz, .26, .22, .22, c], [.5 - .08, .5 + .12, hz + .03, .16, .006, .14, K.c2], [.5 - .06, .5 + .126, hz + .09, .03, .004, pose === 'sleep' ? .008 : .035, EYE], [.5 + .03, .5 + .126, hz + .09, .03, .004, pose === 'sleep' ? .008 : .035, EYE], [.5 - .03, .5 + .126, hz + .04, .06, .004, .015, '#3a4560']); return P; },
+  ghost(K, ph, pose, t){ const P = [], c = K.c, sway = Math.sin(t * 2) * .02;
+    P.push([.5 - .14 + sway, .5 - .12, .12, .28, .24, .3, c], [.5 - .11 + sway, .5 - .09, .42, .22, .18, .08, c]);
+    for (let k = 0; k < 3; k++) P.push([.5 - .14 + sway + k * .1, .5 - .1, .04 + (k % 2) * .03, .08, .2, .08 - (k % 2) * .03, c]);
+    P.push([.5 - .2 + sway, .5 - .02, .22 + Math.sin(t * 3) * .02, .06, .06, .05, c], [.5 + .14 + sway, .5 - .02, .26 - Math.sin(t * 3) * .02, .06, .06, .05, c]);
+    const sl = pose === 'sleep'; P.push([.5 - .08 + sway, .5 + .12, .32, .04, .006, sl ? .008 : .05, EYE], [.5 + .04 + sway, .5 + .12, .32, .04, .006, sl ? .008 : .05, EYE], [.5 - .025 + sway, .5 + .12, .24, .05, .006, .04, K.c2]); return P; },
+  maneki(K, ph, pose, t){ const P = [], c = K.c, wave = pose === 'sleep' ? 0 : Math.max(0, Math.sin(t * 4)) * .07;
+    P.push([.5 - .13, .5 - .12, 0, .26, .24, .28, c], [.5 + .13, .5 - .04, .16, .005, .1, .06, '#e8913a'], [.5 - .05, .5 + .12, .2, .1, .006, .03, K.c2], [.5 - .02, .5 + .126, .17, .04, .004, .04, '#ffd166']);
+    P.push([.5 - .14, .5 - .12, .28, .28, .23, .22, c], [.5 - .12, .5 - .06, .5, .06, .06, .06, '#e8913a'], [.5 + .06, .5 - .06, .5, .06, .06, .06, c]);
+    P.push([.5 + .14, .5 + .01, .28 + wave, .07, .07, .16, c], [.5 - .2, .5 + .02, .1, .07, .08, .1, c], [.5 - .09, .5 + .12, .03, .07, .006, .05, '#ffd166']);
+    const sl = pose === 'sleep'; P.push([.5 - .09, .5 + .11, .4, .05, .006, sl ? .008 : .015, EYE], [.5 + .04, .5 + .11, .4, .05, .006, sl ? .008 : .015, EYE], [.5 - .015, .5 + .11, .35, .03, .006, .02, '#ff8fa8']); return P; },
+  snake(K, ph, pose, t){ const P = [], c = K.c, d = K.c2, wv = k => (ph != null ? Math.sin(ph + k * 1.4) : Math.sin(t * 1.5 + k)) * .04;
+    P.push([.5 - .035 + wv(0), .5 - .38, 0, .07, .14, .06, c], [.5 - .12 + wv(1), .5 - .24, 0, .24, .36, .17, c], [.5 - .12 + wv(1), .5 - .2, .17, .24, .06, .005, d], [.5 - .12 + wv(1), .5 - .06, .17, .24, .06, .005, d]);
+    const hx = .5 - .09 + wv(2); P.push([hx, .5 + .12, 0, .18, .17, .11, c], [hx + .025, .5 + .29, .06, .03, .006, pose === 'sleep' ? .008 : .03, EYE], [hx + .125, .5 + .29, .06, .03, .006, pose === 'sleep' ? .008 : .03, EYE]);
+    if (pose !== 'sleep' && Math.sin(t * 3) > .6) P.push([hx + .08, .5 + .29, .015, .02, .05, .006, '#e2383f']); return P; }
+};
+function petModelParts(k, stage, ph, pose, t){
+  const K = PK[k]; if (!K) return [];
+  let P = K.f ? PET_FORMS[K.f](K, ph, pose, t) : quadParts(K, ph, pose, t);
+  const s = [.5, .72, 1][stage || 0] * (K.size || 1) * 1.4, fly = K.fly && pose !== 'sleep' && pose !== 'lie' ? .26 + Math.sin(t * 2.2) * .04 : 0;
+  return P.map(([x, y, z, w, d, h, col]) => [.5 + (x - .5) * s, .5 + (y - .5) * s, z * s + fly, w * s, d * s, h * s, col]);
+}
+function petThumb(k, stage = 2){
+  const boxes = petModelParts(k, stage, null, 'stand', 0).map(p => rotPart(p, 1, 1, 0)).map(p => ({x: p[0], y: p[1], z: p[2], w: p[3], d: p[4], h: p[5], c: p[6], emi: false, tr: false}));
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+  for (const b of boxes) for (const pt of [P(b.x, b.y, b.z), P(b.x + b.w, b.y, b.z + b.h), P(b.x, b.y + b.d, b.z), P(b.x + b.w, b.y + b.d, b.z), P(b.x, b.y, b.z + b.h), P(b.x + b.w, b.y + b.d, b.z + b.h)]) { minX = Math.min(minX, pt[0]); maxX = Math.max(maxX, pt[0]); minY = Math.min(minY, pt[1]); maxY = Math.max(maxY, pt[1]); }
+  return `<svg viewBox="${(minX - 5).toFixed(0)} ${(minY - 5).toFixed(0)} ${(maxX - minX + 10).toFixed(0)} ${(maxY - minY + 10).toFixed(0)}">${sortBoxes(boxes).map(boxSVG).join('')}</svg>`;
+}
+
+/* ================= ペット：おなか・成長・なかよし度・お別れ ================= */
+const PET_MAX = 6;
+const petsAll = () => { const st = S(); if (!st) return []; if (!Array.isArray(st.pets)) st.pets = []; return st.pets; };
+const petFood = () => { const st = S(); if (!st.petFood || typeof st.petFood !== 'object') st.petFood = {}; return st.petFood; };
+const petsAlive = () => petsAll().filter(p => !p.dead && PK[p.k]);
+const petsLive = () => petsAlive().filter(p => !p.hotel);
+const petById = id => petsAll().find(p => p.id === id);
+const PET_STAGE = ['赤ちゃん', '子ども', 'おとな'];
+// 今のおなか（0〜100）と、腹ぺこになってからの時間
+function petNow(p, now = Date.now()){
+  const K = PK[p.k]; if (!K || p.dead) return {sat: 0, starve: 0, left: 0};
+  if (p.hotel) return {sat: clamp(+p.sat || 0, 0, 100), starve: 0, left: null};
+  const rate = 100 / K.H, raw = (+p.sat || 0) - (now - (p.satAt || now)) / 3600e3 * rate;
+  return {sat: clamp(raw, 0, 100), starve: raw < 0 ? -raw / rate : 0, left: raw < 0 ? Math.max(0, K.grace + raw / rate) : (raw / rate + K.grace)};
+}
+function petStageNow(p, now = Date.now()){ const ageH = (now - (p.born || now)) / 3600e3, g = p.g || 0;
+  return Math.max(p.stage || 0, g >= 20 && ageH >= 72 ? 2 : g >= 6 && ageH >= 12 ? 1 : 0); }
+const petAgeText = p => { const h = Math.floor((Date.now() - (p.born || Date.now())) / 3600e3); return h < 24 ? `${h}時間` : `${Math.floor(h / 24)}日`; };
+const petMood = (p, n) => n.starve > 0 ? ['😵', 'ふらふら…すぐにえさを！', 'bad'] : n.sat < 25 ? ['🍖', 'おなかペコペコ', 'warn'] : n.sat < 55 ? ['🙂', 'ちょっと小腹がすいた', ''] : (p.love || 0) >= 70 ? ['😍', 'ごきげん！ 大好き！', 'good'] : ['😊', 'まんぞく', 'good'];
+function petCheck(){
+  const st = S(); if (!st || !st.onboarded || !Array.isArray(st.pets)) return; const now = Date.now(); let ch = false;
+  for (const p of st.pets) { const K = PK[p.k]; if (!K || p.dead) continue;
+    if (!p.hotel) { const n = petNow(p, now);
+      if (n.starve >= K.grace) {   // 長いあいだ、えさをもらえなかった…
+        const rate = 100 / K.H; p.dead = {at: Math.min(now, Math.round((p.satAt || now) + ((+p.sat || 0) / rate + K.grace) * 3600e3)), cause: K.ghost ? 'jobutsu' : 'starve'};
+        if (!K.ghost) st.owned.grave = (st.owned.grave || 0) + 1; delete PSIM[p.id]; ch = true; queueOverlay(() => petDeathModal(p.id)); continue; }
+      if (n.starve > 0 && p.ns !== p.satAt) { p.ns = p.satAt; ch = true; notify(`😵 ${p.name}がふらふら…`, `このままだと、あと${Math.max(1, Math.round(n.left))}時間くらいで…。すぐにえさをあげてね。`, 'pet'); toast(`😵 ${p.name}がおなかをすかせてふらふら！ えさをあげてね。`, 'x', 6000); }
+      else if (n.sat < 25 && !n.starve && p.nh !== p.satAt) { p.nh = p.satAt; ch = true; notify(`🍖 ${p.name}がおなかをすかせています`, 'えさをあげよう！', 'pet'); } }
+    const sg = petStageNow(p, now); if (sg > (p.stage || 0)) { p.stage = sg; ch = true; queueOverlay(() => petGrowModal(p.id)); }
+    // なかよしのおとなは、ときどきおみやげを持ってくる（1日1回まで）
+    if (!p.hotel && (p.stage || 0) === 2 && (p.love || 0) >= 50 && p.gd !== dkey() && Math.random() < (K.lucky ? .6 : .2)) { p.gd = dkey(); const r = K.lucky ? rint(40, 90) : rint(10, 30); addCoins(r); ch = true; toast(`${K.e} ${p.name}が${K.lucky ? '小判' : pickR(['キラキラの石', '落とし物のコイン', 'きれいな貝がら', '四つ葉のクローバー'])}を持ってきてくれた！ +${r}コイン`, 'coin', 6000); }
+  }
+  if (ch) { queueWrite('state'); dataV++; scheduleRender(); }
+}
+setInterval(() => { try { petCheck(); } catch (e) { console.warn(e); } }, 60000);
+function newPet(k, rid){ const K = PK[k]; return {id: 'pt' + uid6(), k, name: pickR(PET_NAMES), rid: rid || 'study', born: Date.now(), sat: 70, satAt: Date.now(), g: 0, love: 10, stage: 0}; }
+function feedPet(id, fid){
+  const st = S(), p = petById(id), f = PET_FOOD[fid]; if (!p || p.dead || !f) return;
+  const K = PK[p.k], fd = petFood();
+  if ((fd[fid] || 0) < 1) { toast(`${f.n}を持っていません。下の「えさを買う」で買えます。`, 'x'); return; }
+  if (p.hotel) { toast('ペットホテルでは、ホテルの人がごはんをあげています。', 'x'); return; }
+  const n = petNow(p); if (n.sat >= 92) { toast(`${p.name}は、おなかいっぱいみたい。`, 'x', 2500); petEmo(p.id, '😌', 2500); return; }
+  fd[fid]--; const liked = K.like === fid || fid === 'cake';
+  p.sat = Math.min(100, n.sat + f.v * (liked ? 1.25 : 1)); p.satAt = Date.now(); p.ns = null; p.nh = null;
+  p.g = (p.g || 0) + (liked ? 3 : fid === 'kibble' ? 1 : 2); p.love = Math.min(100, (p.love || 0) + (f.love || (liked ? 6 : 2))); p.fedN = (p.fedN || 0) + 1;
+  const s = PSIM[p.id]; if (s) { s.act = 'eat'; s.until = Date.now() + 4000; s.path = []; s.next = null; } petEmo(p.id, liked ? '😍' : '😋', 4000);
+  queueWrite('state'); toast(liked ? `${p.name}は${f.n}が大好物！ ぱくぱく食べた！` : `${p.name}が${f.n}を食べた。`, 'check', 3000); petCheck(); dataV++;
+}
+function petEmo(id, e, ms){ const s = PSIM[id]; if (s) s.emo = {e, until: Date.now() + ms}; }
+function petPat(id){
+  const p = petById(id); if (!p || p.dead) return; const today = dkey(); if (p.pd !== today) { p.pd = today; p.pc = 0; }
+  if ((p.pc || 0) >= 5) { toast(`${p.name}は、もうまんぞくしたみたい。また明日なでてね。`, 'heart', 2500); petEmo(p.id, '😌', 2500); return; }
+  p.pc = (p.pc || 0) + 1; p.love = Math.min(100, (p.love || 0) + 4); p.g = (p.g || 0) + .5;
+  petEmo(p.id, '❤️', 3000); const s = PSIM[p.id]; if (s) { s.act = 'play'; s.until = Date.now() + 3000; s.path = []; s.next = null; }
+  queueWrite('state'); toast(`${PK[p.k].e} ${p.name}「${pickR(PK[p.k].lines)}」 なかよし度アップ！`, 'heart', 3000); petCheck(); dataV++;
+}
+/* ---- ペットの動き（部屋の中をうろうろ・人のところへ行く・寝る・ごろごろ）---- */
+function psimOf(p){
+  let s = PSIM[p.id]; const rid = roomRec(p.rid) ? p.rid : 'study';
+  if (!s || s.room !== rid) { const rec = roomRec(rid), spot = rec ? petFreeTile(rec, p.id) : null;
+    s = PSIM[p.id] = {room: rid, x: spot ? spot[0] : 0, y: spot ? spot[1] : 0, r: Math.floor(Math.random() * 4), path: [], act: null, until: 0, wait: Date.now() + 800 + Math.random() * 2500, step: 0}; }
+  return s;
+}
+function petFreeTile(rec, pid, near, range){
+  const solids = solidsOf(rec), busy = busyTiles(rec.rid, pid), c = [];
+  for (let x = 0; x < rec.N; x++) for (let y = 0; y < rec.N; y++) { if (near && (Math.abs(x - near[0]) + Math.abs(y - near[1]) > range || (x === Math.round(near[0]) && y === Math.round(near[1])))) continue; if (tileFree(rec, solids, busy, x, y)) c.push([x, y]); }
+  return c.length ? pickR(c) : null;
+}
+function petTick(now, viewRid, frozen, reduced){
+  let redraw = false; const live = petsLive(), ids = new Set(live.map(p => p.id)), h = new Date().getHours();
+  for (const id of Object.keys(PSIM)) if (!ids.has(id)) { if (PSIM[id].room === viewRid) redraw = true; delete PSIM[id]; }
+  for (const p of live) {
+    const K = PK[p.k], s = psimOf(p), visible = s.room === viewRid; if (!visible && s.room !== viewRid && Math.random() < .7) continue;   // 見ていない部屋のペットは、ときどきだけ動かす
+    if (visible && (frozen || reduced)) continue;
+    if (visible && (K.fly || (s.emo && s.emo.until > now - 300)) && now - (s.bob || 0) > 240) { s.bob = now; redraw = true; }
+    if (s.path.length) { if (visible) { const [nx, ny] = s.path.shift(), dx = Math.sign(Math.round((nx - s.x) * 8)), dy = Math.sign(Math.round((ny - s.y) * 8)), r = {'0,1': 0, '-1,0': 1, '0,-1': 2, '1,0': 3}[dx + ',' + dy];
+        if (r != null) s.r = r; s.x = nx; s.y = ny; s.step++; s.moving = true; redraw = true; continue; }
+      const l = s.path[s.path.length - 1]; s.x = l[0]; s.y = l[1]; s.path = []; }
+    if (s.moving) { s.moving = false; redraw = redraw || visible; }
+    if (s.next) { s.act = s.next; s.until = now + 5000 + Math.random() * 6000; s.next = null; if (s.face) { const dx = s.face[0] - s.x, dy = s.face[1] - s.y; s.r = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 3 : 1) : (dy > 0 ? 0 : 2); } if (s.act === 'play') petEmo(p.id, pickR(['❤️', '🎵', '✨']), 2500); redraw = redraw || visible; continue; }
+    if (s.act && now < s.until) { if (visible && ['play', 'eat', 'beg'].includes(s.act) && now - (s.anim || 0) > 260) { s.anim = now; s.step++; redraw = true; } continue; }
+    if (s.act) { s.act = null; redraw = redraw || visible; s.wait = now + 600 + Math.random() * 1500; }
+    if (now < s.wait) continue;
+    const rec = roomRec(s.room); if (!rec) continue; const n = petNow(p, now), lightOn = rec.room.light === 'on', night = (h >= 23 || h < 6) && !lightOn;
+    if (night || (K.lazy && Math.random() < .25)) { s.act = night ? 'sleep' : 'lie'; s.until = now + (night ? 60000 : 8000 + Math.random() * 14000); redraw = redraw || visible; continue; }
+    if (n.sat < 25 && Math.random() < .5) { s.act = 'beg'; s.until = now + 4000; petEmo(p.id, n.starve ? '😵' : '🍖', 4000); redraw = redraw || visible; continue; }
+    const roll = Math.random();
+    if (roll < .5) {   // うろうろ
+      const tgt = petFreeTile(rec, p.id, [s.x, s.y], K.sp >= 9 ? 2 : 3);
+      if (tgt) { const path = visible ? pathTo(rec, s, tgt[0], tgt[1], p.id, K.sp || 5) : null; if (path && path.length) s.path = path; else if (!visible) { s.x = tgt[0]; s.y = tgt[1]; } }
+      s.wait = now + 700 + Math.random() * 2600; continue; }
+    if (roll < .65) {  // 人のところへ遊びに行く
+      const mate = Object.values(SIM.p).find(q => q.room === rec.rid && !q.path.length && !(q.act && q.act.kind === 'sleep'));
+      if (mate) { const tgt = petFreeTile(rec, p.id, [mate.x, mate.y], 1); if (tgt) { const path = visible ? pathTo(rec, s, tgt[0], tgt[1], p.id, K.sp || 5) : null; if (path && path.length) s.path = path; else { s.x = tgt[0]; s.y = tgt[1]; } s.next = 'play'; s.face = [Math.round(mate.x), Math.round(mate.y)]; continue; } } }
+    if (roll < .85) { s.act = Math.random() < .55 ? 'idle' : 'lie'; s.until = now + 3500 + Math.random() * 9000; redraw = redraw || visible; continue; }
+    s.r = (s.r + (Math.random() < .5 ? 1 : 3)) % 4; s.wait = now + 1200 + Math.random() * 2500; redraw = redraw || visible;   // きょろきょろ
+  }
+  return redraw;
+}
+// 部屋の絵に入れるペットの箱
+function petBoxesFor(k, stage, s, iid, t){
+  const pose = s.act === 'sleep' ? 'sleep' : s.act === 'lie' ? 'lie' : 'stand', walking = s.moving || (s.path && s.path.length), ph = walking ? s.step * Math.PI / 3 : (s.act === 'play' || s.act === 'beg') ? s.step * Math.PI / 2 : null;
+  const hop = (s.act === 'play' || s.act === 'beg') && !walking ? Math.abs(Math.sin(s.step * Math.PI / 2)) * .05 : 0;
+  return petModelParts(k, stage, walking ? ph : null, pose, t).map(q => rotPart(q, 1, 1, s.r || 0)).map(q => ({x: s.x + q[0], y: s.y + q[1], z: q[2] + hop, w: q[3], d: q[4], h: q[5], c: q[6], emi: false, tr: false, iid}));
+}
+// ほかの人の部屋に公開するペット（勉強部屋にいる子）
+const petsPub = () => petsLive().filter(p => p.rid === 'study').slice(0, 6).map(p => ({k: p.k, n: String(p.name).slice(0, 12), s: p.stage || 0}));
+// ほかの人の部屋：空いているマスに、名前から決まる場所で置く
+function pubPetSpots(room, N){ const solids = (room.items || []).filter(i => F[i.t] && !F[i.t].person), used = new Set(), out = [];
+  for (const it of room.items || []) if (F[it.t] && F[it.t].person) used.add(it.x + ',' + it.y);
+  for (const p of room.pets || []) { if (!PK[p.k]) continue; const c = []; for (let x = 0; x < N; x++) for (let y = 0; y < N; y++) if (!used.has(x + ',' + y) && canPlace(solids, N, 'buddy', x, y, 0)) c.push([x, y]); if (!c.length) break;
+    const [x, y] = c[hashStr(p.n + p.k) % c.length]; used.add(x + ',' + y); out.push({p, s: {x, y, r: hashStr(p.n) % 4, act: (new Date().getHours() >= 23 || new Date().getHours() < 6) ? 'sleep' : null}}); }
+  return out; }
+/* ---- 画面 ---- */
+function petDeathModal(id){
+  const p = petById(id); if (!p || !p.dead) return; const K = PK[p.k], days = Math.max(1, Math.round((p.dead.at - (p.born || p.dead.at)) / 86400e3));
+  showModal(`<div class="celebrate"><div class="eyebrow">GOODBYE</div><div style="font-size:48px;margin-top:6px">${p.dead.cause === 'jobutsu' ? '✨' : '🌈'}</div>
+    <h3 style="margin:6px 0">${esc(p.name)}が${p.dead.cause === 'jobutsu' ? '成仏しました…' : '天国へ旅立ちました…'}</h3>
+    <p class="mute" style="margin:0 0 10px;font-size:14px">${p.dead.cause === 'jobutsu' ? 'おなかがすきすぎて、おばけの' + esc(p.name) + 'は空へ帰っていきました。' : `長いあいだ、えさをもらえなかったみたい…。いっしょにすごした${days}日間、ありがとう。`}</p>
+    <div class="thumb" style="width:110px;height:84px;margin:0 auto;opacity:.75;filter:grayscale(.5)">${petThumb(p.k, p.stage || 0)}</div>
+    ${p.dead.cause === 'jobutsu' ? '' : '<p class="note" style="margin:8px 0 0">持ち物に「ペットのお墓」が入りました。部屋に置いてあげてね。</p>'}
+    <p class="note" style="margin:6px 0 0">3日以内なら「ペット」タブの思い出から、復活の羽（${PET_REVIVE}c）で生き返らせることができます。</p>
+    <div class="acts" style="justify-content:center"><button class="btn primary" data-act="modal-close">${esc(p.name)}、ありがとう</button></div></div>`);
+  notify(`🌈 ${p.name}が…`, 'えさをもらえないまま、旅立ってしまいました。', 'pet');
+}
+const PET_REVIVE = 800;
+function petGrowModal(id){ const p = petById(id); if (!p) return;
+  showModal(`<div class="celebrate">${burst()}<div class="eyebrow">GROWN UP!</div><div class="thumb" style="width:120px;height:92px;margin:6px auto 0">${petThumb(p.k, p.stage)}</div>
+    <h3 style="margin:6px 0">${esc(p.name)}が${PET_STAGE[p.stage]}になった！</h3><p class="mute" style="margin:0 0 12px;font-size:14px">${p.stage === 2 ? 'すっかり大きくなったね。なかよし度が高いと、ときどきおみやげを持ってきてくれるよ。' : 'ちょっと大きくなったね。このまま毎日ごはんをあげよう！'}</p>
+    <div class="acts" style="justify-content:center"><button class="btn primary" data-act="modal-close">やったね！</button></div></div>`); }
+const barHTML = (v, col) => `<div class="bar petbar"><i style="width:${clamp(v, 0, 100).toFixed(0)}%;background:${col}"></i></div>`;
+function petCardHTML(p, rid, inModal){
+  const K = PK[p.k], n = petNow(p), [me, mt, mc] = petMood(p, n), sg = p.stage || 0, gNext = sg === 0 ? 6 : sg === 1 ? 20 : null, here = (roomRec(p.rid) ? p.rid : 'study') === rid;
+  const foods = Object.entries(PET_FOOD).filter(([k]) => (petFood()[k] || 0) > 0);
+  return `<div class="petcard ${mc}"><div class="pethead"><div class="thumb">${petThumb(p.k, sg)}</div><div class="t"><b>${esc(p.name)} <small>${K.e} ${esc(K.n)}・${PET_STAGE[sg]}</small></b><span class="note">${p.hotel ? '🏨 ペットホテルにお泊まり中' : `${esc(roomRec(p.rid) ? roomRec(p.rid).name : '勉強部屋')}にいる`} · ${petAgeText(p)}目</span><span class="petmood">${me} ${esc(mt)}</span></div></div>
+    <div class="petstats"><label>おなか ${Math.round(n.sat)}%${n.starve ? ` <b style="color:#ff5c7a">あと${Math.max(1, Math.round(n.left))}時間くらいで命があぶない！</b>` : n.sat < 25 ? ' <b style="color:#ffc24d">はらぺこ</b>' : ''}</label>${barHTML(n.sat, n.starve ? '#ff5c7a' : n.sat < 25 ? '#ffc24d' : '#3ee6a0')}
+      <label>なかよし ${Math.round(p.love || 0)}</label>${barHTML(p.love || 0, '#ff6fb0')}
+      <label>成長 ${gNext ? `つぎの段階まで ${Math.max(0, Math.ceil(gNext - (p.g || 0)))}ポイント${sg === 0 ? '（生まれて半日たつと）' : '（生まれて3日たつと）'}` : 'おとな'}</label>${barHTML(gNext ? (p.g || 0) / gNext * 100 : 100, '#a46bff')}
+      <span class="note">大好物：${PET_FOOD[K.like].e} ${esc(PET_FOOD[K.like].n)}　・ 腹ぺこのまま約${Math.round(K.grace / 24 * 10) / 10}日で命があぶない</span></div>
+    ${p.hotel ? '' : `<div class="petfeed">${foods.length ? foods.map(([k, f]) => `<button class="btn sm ${k === K.like ? 'primary' : ''}" data-act="pet-feed" data-v="${p.id}" data-f="${k}" ${n.sat >= 92 ? 'disabled' : ''}>${f.e} ${esc(f.n)} ×${petFood()[k]}${k === K.like ? ' ★' : ''}</button>`).join('') : '<span class="note">えさを持っていません。下の「えさを買う」から買ってね。</span>'}</div>`}
+    <div class="row wrap" style="gap:6px;margin-top:8px">${p.hotel ? '' : `<button class="btn sm" data-act="pet-pat" data-v="${p.id}">✋ なでる</button>`}<button class="btn sm ghost" data-act="pet-name" data-v="${p.id}">${icon('pen')}名前</button>
+      ${!p.hotel && !here ? `<button class="btn sm ghost" data-act="pet-call" data-v="${p.id}">${icon('move')}この部屋に呼ぶ</button>` : ''}
+      <button class="btn sm ghost" data-act="pet-hotel" data-v="${p.id}">🏨 ${p.hotel ? 'ホテルから迎えに行く' : 'ホテルに預ける'}</button>${inModal ? '' : `<button class="btn sm ghost" data-act="pet-bye" data-v="${p.id}">里親に出す</button>`}</div></div>`;
+}
+function petPanel(rid){
+  const st = S(), x = stats(), alive = petsAlive(), dead = petsAll().filter(p => p.dead), fd = petFood();
+  const tab = UI.petTab || 'mine';
+  let h = `<div class="seg" style="margin-bottom:12px">${[['mine', `うちの子（${alive.length}）`], ['food', 'えさを買う'], ['shop', 'ペットショップ'], ['mem', `思い出（${dead.length}）`]].map(([k, n]) => `<button data-act="pet-tab" data-v="${k}" class="${tab === k ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+  if (tab === 'mine') h += alive.length ? `<div class="stack" style="gap:10px">${alive.map(p => petCardHTML(p, rid)).join('')}</div><p class="note" style="margin:10px 0 0">部屋のペットをタップしても、ごはんやなでなでができます。えさをあげないと、おなかがへって…最後には死んでしまいます。テスト期間などで開けないときは「ペットホテル」に預けてね（1日10コイン）。</p>`
+    : `<div class="empty">まだペットがいません。「ペットショップ」でお迎えしよう！<br>いぬ・ねこから、ゾウ・ライオン、カッパやドラゴンまでいるよ。</div>`;
+  if (tab === 'food') h += `<p class="note" style="margin:0 0 10px">所持コイン <b class="disp" style="color:var(--warn)">${Math.max(0, x.coins).toLocaleString()}</b>。大好物をあげると、成長もなかよし度も多めに上がります。</p><div class="shop">${Object.entries(PET_FOOD).map(([k, f]) => `<div class="item"><div class="thumb" style="font-size:40px">${f.e}</div><b>${esc(f.n)}</b><div class="meta"><span>持っている ${fd[k] || 0}</span><span class="disp">${f.cost}c</span></div><p class="note" style="margin:2px 0 6px;font-size:11px">${esc(f.d)}</p><div class="row" style="gap:6px"><button class="btn sm primary" data-act="food-buy" data-v="${k}" data-n="1" ${x.coins < f.cost ? 'disabled' : ''} style="flex:1">1つ買う</button><button class="btn sm" data-act="food-buy" data-v="${k}" data-n="5" ${x.coins < f.cost * 5 ? 'disabled' : ''}>5つ</button></div></div>`).join('')}</div>`;
+  if (tab === 'shop') h += `<p class="note" style="margin:0 0 10px">所持コイン <b class="disp" style="color:var(--warn)">${Math.max(0, x.coins).toLocaleString()}</b>。いま見ている部屋にやってきます（最大${PET_MAX}匹）。お迎えすると「なんでもフード」を3つプレゼント！</p>`
+    + [0, 1, 2].map(tier => `<h3 style="margin:12px 0 8px;font-size:14px">${['🐾', '🌍', '🌀'][tier]} ${PET_TIER[tier]}</h3><div class="shop">${PK_ORDER.filter(k => PK[k].tier === tier).map(k => { const K = PK[k], lock = x.level < K.lv, full = alive.length >= PET_MAX;
+      return `<div class="item ${lock ? 'locked' : ''}"><div class="thumb">${lock ? icon('lock') : petThumb(k, 2)}</div><b>${K.e} ${esc(K.n)}</b><div class="meta"><span>${lock ? `LV${K.lv}で解放` : `大好物 ${PET_FOOD[K.like].e}`}</span><span class="disp">${K.cost}c</span></div><p class="note" style="margin:2px 0 6px;font-size:11px">${K.fly ? '空を飛ぶ。' : ''}${K.lucky ? '小判を持ってくる！' : ''}${K.lazy ? 'のんびり屋。' : ''}腹ぺこで約${Math.round(K.grace / 24 * 10) / 10}日もつ</p>
+        <button class="btn sm ${lock ? '' : 'primary'}" data-act="pet-buy" data-v="${k}" ${lock || full || x.coins < K.cost ? 'disabled' : ''}>${lock ? 'ロック中' : full ? 'いっぱい' : x.coins < K.cost ? 'コイン不足' : 'お迎えする'}</button></div>`; }).join('')}</div>`).join('');
+  if (tab === 'mem') h += dead.length ? `<div class="list">${dead.map(p => { const can = Date.now() - p.dead.at < 3 * 86400e3;
+      return `<div class="li"><div class="fam-av" style="filter:grayscale(.6);opacity:.8">${petThumb(p.k, p.stage || 0)}</div><div class="t"><b>${esc(p.name)}（${esc(PK[p.k] ? PK[p.k].n : '')}）</b><span>${fmtDate(new Date(p.dead.at).toISOString().slice(0, 10))}に${p.dead.cause === 'jobutsu' ? '成仏' : '天国へ'} · ${PET_STAGE[p.stage || 0]}</span></div>${can ? `<button class="btn sm primary" data-act="pet-revive" data-v="${p.id}" ${x.coins < PET_REVIVE ? 'disabled' : ''}>🪶 復活（${PET_REVIVE}c）</button>` : ''}<button class="btn sm ghost" data-act="pet-forget" data-v="${p.id}" aria-label="思い出から消す">${icon('x')}</button></div>`; }).join('')}</div>`
+    : '<div class="empty">まだ思い出はありません。ずっと元気でいてね。</div>';
+  return h;
+}
+function dollShopHTML(x){
+  if ((UI.shopCat || 'all') !== 'all' && UI.shopCat !== 'small') return '';
+  const fr = (typeof pubDocs !== 'undefined' ? pubDocs : []).filter(d => d.uid !== UID && isMutualDoc(d)).slice(0, 30);
+  return `<div class="dollshop"><h3 style="margin:0 0 4px;font-size:14px">🧸 フレンド人形 <small class="mute" style="font-weight:400">${DOLL_COST}c</small></h3><p class="note" style="margin:0 0 8px">フレンドのキャラクターの小さなフィギュア。机や棚の上に飾れます（相手の今の見た目で作られます）。</p>
+    ${fr.length ? `<div class="dollrow">${fr.map(d => `<div class="dollcard"><div class="thumb">${personThumb(friendLook(d))}</div><b>${esc(d.nick)}</b><button class="btn sm primary" data-act="doll-buy" data-v="${esc(d.code)}" ${x.coins < DOLL_COST ? 'disabled' : ''}>${x.coins < DOLL_COST ? 'コイン不足' : '作る'}</button></div>`).join('')}</div>` : '<p class="note" style="margin:0">お互いにフォローしているフレンドができると、ここに並びます。</p>'}</div>`;
+}
+function petModal(id){ const p = petById(id); if (!p) return; UI.petModal = id;
+  showModal(`<div class="ph"><div><span class="eyebrow">MY PET</span><h3>${esc(p.name)}</h3></div><button class="btn sm ghost" data-act="modal-close" aria-label="閉じる">${icon('x')}</button></div>${petCardHTML(p, ridOf(curEntry()), true)}`); }
+function refreshPetModal(){ if (modalOpen && UI.petModal && $('.modal .petcard')) { const p = petById(UI.petModal); if (p && !p.dead) petModal(UI.petModal); else closeModal(); } }
+
+
+/* ================= フレンド人形：フレンドのキャラクターの小さなフィギュア ================= */
+const dollsAll = () => { const st = S(); if (!Array.isArray(st.dolls)) st.dolls = []; return st.dolls; };
+const unplacedDolls = () => { const used = new Set(allItems().filter(i => i.t === 'fdoll').map(i => i.doll)); return dollsAll().filter(d => !used.has(d.id)); };
+const DOLL_COST = 150;
+function friendLook(d){ const L = d && d.room && d.room.people && d.room.people.buddy && d.room.people.buddy.look; return L ? normLook(clone(L)) : randomLook(hashStr(d && d.code || 'x') % 2 ? 'girl' : 'boy', d && d.code || 'x'); }
+// 台座の上に、フレンドのキャラクターを小さくして立たせる
+function dollParts(it){
+  const look = normLook(it.dlook || defaultLook()), k = .3, base = F.fdoll.parts[0];
+  const fig = personParts(look, 'stand', {}).map(([x, y, z, w, d, h, c]) => [.5 + (x - .5) * k, .5 + (y - .5) * k, .05 + z * k, w * k, d * k, h * k, c]);
+  return [base, ...fig];
+}
+
 function startSim(){ if (!SIM.timer) SIM.timer = setInterval(() => { try { simTick(); } catch (e) { console.warn(e); } }, 150); }
 function whereaboutsHTML(){
   const ps = allPersons(); if (!ps.length) return '';
@@ -1592,6 +1950,106 @@ const EVENT_DEFS = [
     return {emoji: '🍙', t: `${nm}からの差し入れ`, d: pickR(['夜食のおにぎりを作ってくれた。「がんばってね！」', 'あったかいココアを持ってきてくれた。', '「いつも応援してるよ」と手紙をくれた。', '肩をもんでくれた。気持ちいい〜。']), reward: 20}; }},
   {id: 'stretch', w: 1, run: () => ({emoji: '🙆', t: 'ストレッチタイム', d: '肩と首をぐるっと回して、深呼吸。血のめぐりがよくなると、記憶力もアップ！', reward: 5})}
 ];
+
+/* ================= ご近所イベント：ほかの人の家とつながる（いいことも、わるいことも）=================
+   ランキングに出ている人（フレンドを多めに）の家が「ご近所」になります。ログインしていないときは架空のご近所さん。
+   ※泥棒イベントはゲームの中のお楽しみ。相手の部屋の家具が本当に減ることはありません。 */
+const NPC_NB = ['となりの山田さん', '向かいの佐藤さん', '裏の鈴木さん', '角の田中さん', '2軒となりの高橋さん', '近所のおばあちゃん', '坂の上の中村さん'];
+const sanN = n => /(さん|くん|君|ちゃん|様)$/.test(n) ? n : n + 'さん';
+function nbList(needRoom){ if (MODE !== 'cloud' || typeof pubDocs === 'undefined') return []; return pubDocs.filter(d => d.uid !== UID && d.nick && (!needRoom || (d.room && Array.isArray(d.room.items) && d.room.items.some(i => F[i.t])))); }
+function pickNb(needRoom){ const list = nbList(needRoom); if (!list.length) return needRoom ? null : {nick: pickR(NPC_NB), d: null};
+  const fr = list.filter(d => (S().friends || []).includes(d.code)); const d = pickR(fr.length && Math.random() < .6 ? fr : list); return {nick: sanN(d.nick), d}; }
+// その家に住んでいる人（相棒・パートナー・子ども）の名前
+function nbPeople(d){ const ppl = d && d.room && d.room.people; if (!ppl || typeof ppl !== 'object') return [];
+  return Object.entries(ppl).filter(([, p]) => p && p.name).map(([k, p]) => ({name: String(p.name).slice(0, 20), role: k === 'buddy' ? '住人' : k === 'partner' ? 'パートナー' : p.stage === 0 ? '赤ちゃん' : '子ども', emoji: k === 'buddy' ? '🧑' : k === 'partner' ? '💞' : p.stage === 0 ? '👶' : '🧒'})); }
+const pplChips = list => list.length ? `<div class="nbppl">${list.map(p => `<span class="pill">${p.emoji} <b>${esc(p.name)}</b><small>（${esc(p.role)}）</small></span>`).join('')}</div>` : '';
+const nbRoomHTML = (d, cls) => d && d.room ? `<div class="roomstage ${cls || 'nbroom'}">${roomSVG({...d.room, people: d.room.people || {}}, d.room.size || 5, {names: true})}</div>` : '';
+function loseCoins(n){ const have = Math.max(0, stats().coins), k = Math.max(0, Math.min(Math.round(n), have)); if (k) addCoins(-k); return k; }
+// 手元にある（置いていない）小物を1つ失う
+function loseSpare(){ const st = S(), list = F_ORDER.filter(t => !F[t].person && !F[t].buddy && !F[t].noshop && (st.owned[t] || 0) - placedCountG(t) > 0); if (!list.length) return null; const t = pickR(list); st.owned[t]--; queueWrite('state'); return t; }
+function giveItem(t){ const st = S(); st.owned[t] = (st.owned[t] || 0) + 1; queueWrite('state'); }
+const stealable = t => F[t] && !F[t].person && !F[t].buddy && !F[t].champ && !F[t].noshop;
+const valOf = t => F[t].cost || 40;   // 無料の家具も、ご近所イベントでは40コインくらいの価値
+// ガレージセールや泥棒で選べる家具（その人の部屋にあるもの、種類ちがいで最大3つ）
+function nbPicks(d, n){ const seen = new Set(), out = []; for (const it of [...d.room.items].sort(() => Math.random() - .5)) { if (!stealable(it.t) || seen.has(it.t)) continue; seen.add(it.t); out.push(it.t); if (out.length >= n) break; } return out; }
+const stealRate = t => { const d = F[t]; return clamp(.78 - valOf(t) / 1800 - (d.small ? 0 : .15) - (d.wall ? .05 : 0), .2, .8); };
+const stealFine = t => clamp(Math.round(valOf(t) * .35), 15, 150);
+const NB_FOOD = ['肉じゃが', 'カレー', '手作りクッキー', 'みかん', 'おはぎ', 'たこ焼き', 'ぎょうざ', 'おでん', 'ケーキ', '炊きこみごはん'];
+const NB_EVENTS = [
+  {id: 'nb-food', w: 2, run: () => { const n = pickNb(); return {emoji: '🍲', t: `${n.nick}からおすそわけ`, d: `${pickR(NB_FOOD)}をたくさん作ったからって、持ってきてくれた！ 夜食にしよう。`, reward: rint(15, 35)}; }},
+  {id: 'nb-window', w: 2, cond: (h, ev) => !ev.chal && nbList().some(d => d.dk === dkey() && d.dMin >= 30), run: ev => { const d = pickR(nbList().filter(x => x.dk === dkey() && x.dMin >= 30)), n = sanN(d.nick), need = pickR([30, 45, 60]);
+    ev.chal = {until: Date.now() + 2 * 3600e3, need, base: todayInfo().total, r: need * 2};
+    return {emoji: '🪟', t: `窓の向こうで${n}が勉強してる…！`, d: `${n}は今日もう${fmtHM(d.dMin)}も勉強しているみたい。負けてられない！ 2時間以内に${need}分勉強できたら${need * 2}コイン！`, go: 'timer'}; }},
+  {id: 'nb-studygroup', w: 1, cond: (h, ev) => !(ev.boost && ev.boost.until > Date.now()) && h >= 8 && h < 23, run: ev => { const n = pickNb(); ev.boost = {until: Date.now() + 3600e3, mult: 1.3};
+    return {emoji: '📚', t: `${n.nick}の家で合同勉強会！`, d: 'みんなでやると集中できる。これから1時間に終えた勉強は、コインが1.3倍！', go: 'timer'}; }},
+  {id: 'nb-mail', w: 2, run: () => { const n = pickNb(), t = pickR(giftable(false));
+    return {emoji: '📬', t: `${n.nick}あての荷物がまちがって届いた`, d: '箱には「こわれもの」のシール。どうする？', choices: [
+      {label: '📦 届けてあげる', cls: 'primary', run: () => { giveItem(t); return {emoji: '🙏', t: 'ありがとう！', d: `${n.nick}がすごく喜んで、お礼に「${F[t].n}」をくれた！ いいことをすると気持ちいいね。`, thumb: t, reward: 15}; }},
+      {label: '🤫 こっそり開けてみる', run: () => Math.random() < .5 ? (giveItem(t), {emoji: '😏', t: '中身をいただいた…', d: `中身は「${F[t].n}」だった。…ばれませんように。`, thumb: t}) : {emoji: '😱', t: 'ばれた！', d: `開けているところを${n.nick}に見られた…。弁償することに。`, loss: rint(25, 45)}}]}; }},
+  {id: 'nb-pet', w: 2, run: () => { const n = pickNb(), pet = pickR(['犬', 'ねこ', 'うさぎ', 'インコ', 'ハムスター']);
+    return {emoji: '🐾', t: `${n.nick}の家の${pet}が迷子に！`, d: `「うちの${pet}を見かけませんでしたか？」と${n.nick}がこまっている。`, choices: [
+      {label: '🔍 いっしょにさがす', cls: 'primary', run: () => Math.random() < .8 ? {emoji: '🎉', t: `${pet}が見つかった！`, d: `公園のベンチの下にいた。${n.nick}が泣いて喜んで、お礼をくれた。`, reward: rint(25, 50)} : {emoji: '😢', t: '見つからなかった…', d: `暗くなってきたので帰ってきた。でも、あとで${pet}は自分で帰ってきたらしい！ よかった。`, reward: 5}},
+      {label: '📖 勉強があるので…', run: () => ({emoji: '📖', t: '勉強に集中した', d: 'ちょっと気になるけど、今は自分の勉強！ あとで帰ってきたって聞いて安心した。'})}]}; }},
+  {id: 'nb-move', w: 1, run: () => { const n = pickNb(), t = pickR(giftable(false)); giveItem(t); return {emoji: '🎁', t: `${n.nick}が引っ越しのあいさつに来た`, d: `「これからよろしくお願いします」と「${F[t].n}」をくれた。持ち物に入れておいたよ。`, thumb: t}; }},
+  {id: 'nb-sale', w: 2, cond: () => nbList(true).length > 0, run: () => { const n = pickNb(true); if (!n) return null; const picks = nbPicks(n.d, 3); if (!picks.length) return null; const coins = Math.max(0, stats().coins);
+    return {emoji: '🏷', t: `${n.nick}の家でガレージセール！`, d: `${n.nick}の部屋にある家具を、半額でゆずってくれるって。どれにする？`, room: n.d, choices: [
+      ...picks.map(t => { const price = Math.ceil(valOf(t) / 2); return {label: `${F[t].n}`, sub: F[t].cost ? `${price}c（定価${F[t].cost}c）` : `${price}c`, thumb: t, disabled: coins < price, run: () => { if (stats().coins < price) return {emoji: '💸', t: 'コインが足りなかった', d: '勉強してコインをためよう！'}; S().spent = (S().spent || 0) + price; giveItem(t); return {emoji: '🛍', t: `「${F[t].n}」を買った！`, d: `${price}コインで手に入れた。持ち物に入っているよ。`, thumb: t}; }}; }),
+      {label: '👀 見るだけにしておく', cls: 'ghost', run: () => null}]}; }},
+  {id: 'nb-kid', w: 2, cond: () => nbList(true).some(d => nbPeople(d).length), run: () => { const d = pickR(nbList(true).filter(x => nbPeople(x).length)), who = pickR(nbPeople(d)), n = sanN(d.nick);
+    return {emoji: who.emoji, t: `${n}の家の${who.name}が遊びに来た`, d: pickR([`「${S().nickname || 'おにいさん'}、勉強がんばってるね！」と応援してくれた。`, 'お菓子を半分こして、ちょっとだけ休けい。', `${who.name}がしりとりを始めた。「受験」…「ん」で終わらないね。`, 'いっしょに窓から星を見た。元気が出た！']), reward: rint(10, 22), room: d, ppl: [who]}; }},
+  {id: 'nb-kairan', w: 1, quiz: true, label: '📋 回覧板'},
+  {id: 'nb-blackout', w: 1, cond: h => h >= 18 || h < 1, run: () => { const n = pickNb(); return {emoji: '🔦', t: `停電！ ${n.nick}の家に避難`, d: `${n.nick}の家は発電機があって明るかった。いっしょに単語帳を回したら、意外とはかどった！`, reward: 20}; }},
+  {id: 'nb-bbq', w: 1, cond: h => h >= 11 && h < 20, run: () => { const n = pickNb(); return {emoji: '🍖', t: `${n.nick}の家の庭でバーベキュー`, d: 'おなかいっぱい！ 糖分とたんぱく質で、脳のエネルギーも満タン。', reward: rint(20, 35)}; }},
+  {id: 'nb-letter', w: 1, run: () => { const n = pickNb(); return {emoji: '💌', t: `${n.nick}から手紙が届いた`, d: pickR(['「おたがい第一志望に受かろうね！」', '「この前はありがとう。今度いっしょに勉強しよう」', '「毎晩、窓から明かりが見えるよ。がんばってるね」']), reward: 10}; }},
+  {id: 'nb-tunnel', w: 1, cond: () => nbList(true).length > 0, run: () => { const n = pickNb(true); if (!n) return null;
+    return {emoji: '🚪', t: `${n.nick}の家との秘密の通路を発見！？`, d: `押し入れの奥の板をはずしたら、${n.nick}の部屋につながっていた！ ちょっとだけのぞいてみよう。`, room: n.d, ppl: nbPeople(n.d), reward: 10}; }},
+  // ---- わるいこと ----
+  {id: 'nb-noise', w: 2, run: ev => { const n = pickNb(), what = pickR(['リフォーム工事', 'カラオケ大会', 'ピアノの練習', '犬の大合唱', 'ドラムの練習']);
+    return {emoji: '📢', t: `${n.nick}の家が${what}でうるさい…`, d: 'これじゃ集中できない！ どうする？', choices: [
+      {label: '🎧 耳せんを買う（10c）', cls: 'primary', run: () => { const k = loseCoins(10); EVS().boost = {until: Date.now() + 3600e3, mult: 1.2}; return {emoji: '🎧', t: '静かになった！', d: `耳せん${k ? 'を買って' : 'をもらって'}つけたら、むしろいつもより集中できそう。1時間コイン1.2倍！`, go: 'timer'}; }},
+      {label: '🗣 注意しに行く', run: () => Math.random() < .6 ? {emoji: '🙇', t: 'あやまってくれた', d: `${n.nick}が「ごめんね」とお菓子を持ってきてくれた。`, reward: 15} : {emoji: '😤', t: '言い合いになってしまった…', d: 'イライラして勉強が手につかない。気分転換に、ストレッチでもしよう。', loss: 5}},
+      {label: '😑 がまんする', cls: 'ghost', run: () => ({emoji: '😑', t: 'がまんした', d: 'そのうち静かになった。えらい！ 本番の会場でも、まわりの音に負けない練習になったかも。', reward: 5})}]}; }},
+  {id: 'nb-ball', w: 1, run: () => { const n = pickNb(); return Math.random() < .35 ? {emoji: '⚾', t: `${n.nick}の家からボールが飛んできた！`, d: '窓ガラスに当たったけど、割れなかった。あやまりに来て、ジュースをくれた。', reward: 10} : {emoji: '💥', t: `${n.nick}の家に、こっちのボールが…！`, d: 'ベランダで気分転換にボールを投げていたら、となりの窓にコツン。おわびのお菓子代…。', loss: rint(15, 30)}; }},
+  {id: 'nb-thief', w: 1, run: () => { const n = pickNb();
+    return {emoji: '🦹', t: `${n.nick}の家に入った泥棒が、こっちにも！？`, d: '物音がする…。どうする？', choices: [
+      {label: '🏃 追いかける', cls: 'primary', run: () => { if (Math.random() < .55) return {emoji: '💪', t: 'つかまえた！', d: `泥棒をつかまえて、${n.nick}の盗まれた物もとり返した！ お礼をもらった。`, reward: rint(30, 60)}; const t = loseSpare(); return t ? {emoji: '😭', t: '逃げられた…', d: `持ち物の「${F[t].n}」を持っていかれてしまった…。`, thumb: t} : {emoji: '😭', t: '逃げられた…', d: 'コインを少し持っていかれた…。', loss: rint(15, 30)}; }},
+      {label: '📞 警察に電話する', run: () => ({emoji: '🚓', t: '警察が来てくれた', d: '泥棒はつかまった。でも、さいふから少し落としていたみたい…。', loss: 10})}]}; }},
+  {id: 'nb-gossip', w: 1, run: () => { const n = pickNb(); return Math.random() < .6 ? {emoji: '🗣', t: `${n.nick}の家で、あなたのうわさ話`, d: '「あの子、毎日がんばってるよね」とほめられていたらしい！ うれしい。', reward: 10} : {emoji: '🗣', t: `${n.nick}の家で、あなたのうわさ話…`, d: '「夜中までずっと電気がついてるよね」と言われていたらしい。睡眠も大事！ 今日は早めに寝よう。'}; }},
+  {id: 'nb-cat', w: 1, run: () => { const n = pickNb(); return {emoji: '🐈‍⬛', t: `${n.nick}の家のねこが部屋に入ってきた！`, d: 'ノートの上でまるくなって動かない…。', choices: [
+      {label: '😺 なでる', cls: 'primary', run: () => ({emoji: '😻', t: 'ゴロゴロ…', d: 'いやされた〜。ねこが帰ったあと、なぜか集中できた。', reward: 12})},
+      {label: '📒 ノートを取りかえす', run: () => Math.random() < .5 ? {emoji: '😾', t: 'ひっかかれた！', d: 'ばんそうこう代…。', loss: 5} : {emoji: '🐈', t: 'すんなりどいてくれた', d: 'ノートは無事。ねこは窓から帰っていった。', reward: 3}}]}; }},
+  // ---- 泥棒チャンス（ゲームの中だけ。相手の部屋からは消えません）----
+  {id: 'nb-steal', w: 2, cond: () => nbList(true).some(d => nbPicks(d, 1).length), run: ev => { const list = nbList(true).filter(d => nbPicks(d, 1).length); if (!list.length) return null; const fr = list.filter(d => (S().friends || []).includes(d.code)), d = pickR(fr.length && Math.random() < .6 ? fr : list), n = sanN(d.nick), picks = nbPicks(d, 3);
+    return {emoji: '🦝', t: `${n}の家が留守みたい…`, d: 'ドアのカギが開いている。こっそり1つだけ持って帰れるかも…？ 見つかったら罰金！', room: d, ppl: nbPeople(d), kind: 'steal',
+      note: '※ゲームの中のお楽しみです。相手の部屋の家具が本当に減ることはありません。',
+      choices: [...picks.map(t => ({label: F[t].n, sub: `成功率 ${Math.round(stealRate(t) * 100)}% · 失敗で罰金${stealFine(t)}c`, thumb: t, run: () => {
+        if (Math.random() < stealRate(t)) { giveItem(t); EVS().grudge = {nick: n, t, until: Date.now() + 3 * 86400e3}; queueWrite('state'); return {emoji: '🦝', t: '盗みに成功…！', d: `「${F[t].n}」をこっそり持って帰った。持ち物に入っているよ。…でも、いつかバレるかも？`, thumb: t}; }
+        const pp = nbPeople(d), who = pp.length ? pickR(pp).name : n; return {emoji: '🚨', t: '見つかった！', d: `${who}にばっちり見られてしまった…。罰金をはらって、平あやまり。`, loss: stealFine(t)}; }})),
+        {label: '😇 やっぱりやめておく', cls: 'ghost', run: () => ({emoji: '😇', t: '正直者ボーナス', d: 'カギが開いていたことを、あとで' + n + 'に教えてあげた。「ありがとう！」', reward: 15})}]}; }},
+  {id: 'nb-revenge', w: 3, cond: (h, ev) => !!(ev.grudge && ev.grudge.until > Date.now()), run: ev => { const g = ev.grudge; ev.grudge = null;
+    return {emoji: '😠', t: `${g.nick}にバレてた！`, d: `「この前、うちの${F[g.t] ? F[g.t].n : '家具'}を持っていったでしょ！」…どうする？`, choices: [
+      {label: '🙇 正直にあやまる', cls: 'primary', run: () => ({emoji: '🤝', t: '許してくれた', d: `おわびに${F[g.t] ? F[g.t].n + 'の代金の半分' : 'お菓子'}をわたしたら、仲なおりできた。`, loss: F[g.t] ? Math.ceil(valOf(g.t) / 2) : 20})},
+      {label: '🙄 しらばっくれる', run: () => { if (Math.random() < .5) return {emoji: '😅', t: 'なんとかごまかせた…', d: '「気のせいだったかも」…ドキドキした。もうやめておこう。'}; const t = loseSpare(); return {emoji: '😈', t: '仕返しされた！', d: t ? `留守のあいだに「${F[t].n}」を持っていかれた…。` : 'コインを持っていかれた…。', ...(t ? {thumb: t} : {loss: rint(30, 60)})}; }}]}; }}
+];
+EVENT_DEFS.push(...NB_EVENTS);
+// 選べるイベント
+function choiceModal(e){
+  UI.evChoice = e;
+  const log = EVS().log; log.unshift({at: Date.now(), emoji: e.emoji, t: e.t, r: 0}); if (log.length > 30) log.length = 30; queueWrite('state');
+  showModal(`<div class="celebrate evchoice"><div class="eyebrow">${e.kind === 'steal' ? 'SNEAK CHANCE' : 'NEIGHBOR EVENT'}</div><div style="font-size:42px;margin-top:4px;line-height:1.2">${e.emoji}</div>
+    <h3 style="margin:6px 0">${esc(e.t)}</h3><p class="mute" style="margin:0 0 10px;font-size:14px">${esc(e.d)}</p>${e.room ? nbRoomHTML(e.room) : ''}${pplChips(e.ppl || [])}
+    <div class="${e.choices.some(c => c.thumb) ? 'nbpick' : 'stack'}" style="gap:8px;margin-top:10px">${e.choices.map((c, i) => c.thumb
+      ? `<button class="nbitem" data-act="ev-choice" data-v="${i}" ${c.disabled ? 'disabled' : ''}><span class="thumb">${thumbSVG(c.thumb)}</span><b>${esc(c.label)}</b><small>${esc(c.sub || '')}</small></button>`
+      : `<button class="btn ${c.cls || ''}" data-act="ev-choice" data-v="${i}">${esc(c.label)}</button>`).join('')}</div>${e.note ? `<p class="note" style="margin:10px 0 0">${esc(e.note)}</p>` : ''}</div>`, {sticky: true});
+  notify(`${e.emoji} ${e.t}`, e.d, 'event');
+}
+function fireEvent(def, ev){
+  if (def.cond && !def.cond(new Date().getHours(), ev)) return false;
+  if (def.quiz) { queueOverlay(quizModal); return true; }
+  let e = null; try { e = def.run(ev); } catch (er) { console.warn(er); }
+  if (!e) return false;
+  queueOverlay(() => e.choices ? choiceModal(e) : eventModal(e)); return true;
+}
 // 毎年の行事（その日に1回だけ）
 const SEASON = {'01-01': ['🎍', 'あけましておめでとう！', 'お年玉が届いた！ 今年もいっしょにがんばろう。', 100], '02-03': ['👹', '節分', '鬼は外！ 福は内！ 苦手科目も追い出そう。', 30], '02-14': ['🍫', 'バレンタイン', 'チョコで脳にエネルギー補給！', 30],
   '03-03': ['🎎', 'ひなまつり', 'ひなあられで、ひと休み。', 20], '04-01': ['🌸', '新年度スタート', '新しい1年のはじまり。目標を立て直そう！', 30], '05-05': ['🎏', 'こどもの日', 'こいのぼりのように、ぐんぐん伸びよう！', 30],
@@ -1607,9 +2065,10 @@ function seasonEvent(ev){
 function eventModal(e){
   const st = S();
   if (e.reward) addCoins(e.reward);
-  const log = EVS().log; log.unshift({at: Date.now(), emoji: e.emoji, t: e.t, r: e.reward || 0}); if (log.length > 30) log.length = 30; queueWrite('state');
-  showModal(`<div class="celebrate">${e.reward ? burst() : ''}<div class="eyebrow">SURPRISE EVENT</div><div style="font-size:46px;margin-top:6px;line-height:1.2">${e.thumb ? `<div class="thumb" style="width:90px;height:72px;margin:0 auto">${thumbSVG(e.thumb)}</div>` : e.emoji}</div>
-    <h3 style="margin:6px 0">${esc(e.t)}</h3><p class="mute" style="margin:0 0 12px;font-size:14px">${esc(e.d)}</p>${e.reward ? `<div class="bigxp" style="font-size:30px">+${e.reward} コイン</div>` : ''}
+  const lost = e.loss ? loseCoins(e.loss) : 0; if (lost) queueWrite('state');
+  const log = EVS().log; log.unshift({at: Date.now(), emoji: e.emoji, t: e.t, r: (e.reward || 0) - lost}); if (log.length > 30) log.length = 30; queueWrite('state');
+  showModal(`<div class="celebrate">${e.reward ? burst() : ''}<div class="eyebrow">${e.after ? 'RESULT' : 'SURPRISE EVENT'}</div><div style="font-size:46px;margin-top:6px;line-height:1.2">${e.thumb ? `<div class="thumb" style="width:90px;height:72px;margin:0 auto">${thumbSVG(e.thumb)}</div>` : e.emoji}</div>
+    <h3 style="margin:6px 0">${esc(e.t)}</h3><p class="mute" style="margin:0 0 12px;font-size:14px">${esc(e.d)}</p>${e.room ? nbRoomHTML(e.room) : ''}${pplChips(e.ppl || [])}${e.reward ? `<div class="bigxp" style="font-size:30px">+${e.reward} コイン</div>` : ''}${lost ? `<div class="bigxp" style="font-size:30px;color:#ff5c7a">−${lost} コイン</div>` : ''}
     <div class="acts" style="justify-content:center">${e.rain ? `<button class="btn" data-act="ev-rain">☔ 雨音を流す</button>` : ''}${e.go === 'timer' ? '<a class="btn" href="#timer" data-act="modal-close">タイマーへ</a>' : e.go === 'shop' ? '<button class="btn" data-act="ev-shop">ショップへ</button>' : ''}<button class="btn primary" data-act="modal-close" autofocus>OK</button></div></div>`);
   notify(`${e.emoji} ${e.t}`, e.d, 'event');
 }
@@ -1634,14 +2093,15 @@ function eventTick(force){
   const h = new Date().getHours(), pool = EVENT_DEFS.filter(d => !d.cond || d.cond(h, ev)), tot = pool.reduce((a, d) => a + d.w, 0);
   let r = Math.random() * tot, def = pool[0]; for (const d of pool) { r -= d.w; if (r <= 0) { def = d; break; } }
   ev.n++; ev.last = now; queueWrite('state');
-  if (def.quiz) queueOverlay(quizModal); else { const e = def.run(ev); queueOverlay(() => eventModal(e)); }
+  if (!fireEvent(def, ev)) fireEvent(EVENT_DEFS[0], ev);
 }
 // 発動中のイベント（ホームに表示）
 function evStatusHTML(){
-  const st = S(), ev = st && st.ev; if (!ev) return ''; const now = Date.now(), out = [];
+  const st = S(); if (!st) return ''; const ev = st.ev || {}, now = Date.now(), out = [];
   if (ev.boost && ev.boost.until > now) out.push(`🍀 ラッキータイム中（コイン${ev.boost.mult}倍）あと${Math.ceil((ev.boost.until - now) / 60000)}分`);
   if (ev.chal && ev.chal.until > now) { const done = todayInfo().total - ev.chal.base; out.push(`🔥 集中チャレンジ ${Math.max(0, Math.min(done, ev.chal.need))}/${ev.chal.need}分（あと${Math.ceil((ev.chal.until - now) / 60000)}分）`); }
   if (ev.sale && ev.sale.until > now) out.push(`🏷 家具20%OFFセール中 あと${Math.ceil((ev.sale.until - now) / 60000)}分`);
+  for (const p of petsLive()) { const n = petNow(p, now); if (n.starve) out.push(`😵 ${p.name}が腹ぺこでふらふら！（あと${Math.max(1, Math.round(n.left))}時間くらい）`); else if (n.sat < 25) out.push(`🍖 ${p.name}がおなかをすかせています`); }
   return out.length ? `<div class="evchips">${out.map(t => `<span class="pill cy">${esc(t)}</span>`).join('')}</div>` : '';
 }
 function evAfterSession(sess){
@@ -2016,6 +2476,10 @@ const champOK = () => { const st = S(); return !!(st && st.r1 && st.r1.n > 0); }
 const roomUnlocked = t => { const d = F[t]; if (d.champ) return champOK(); return !d.room || (S() && allEntries().some(r => r.kind === d.room)); };
 
 const F_ORDER_OLD = ['desk_basic','chair_basic','lamp_small','poster','banner','carpet','desk_pro','chair_gaming','bookshelf','plant','window','desklight','pc','monitor','clock','sofa','bed','trophy','neon','aquarium','bigwindow','hologram','trophycase'];
+Object.assign(F, {
+  grave: {n: 'ペットのお墓', lv: 1, cost: 0, noshop: true, W: 1, D: 1, colors: ['#9aa0ad', '#c9ccd6', '#7d6b5a'], parts: [[.22, .26, 0, .56, .46, .06, '#6b7080'], [.3, .42, .06, .4, .16, .44, 'm'], [.34, .36, .06, .1, .06, .1, '#ff8fb8'], [.56, .36, .06, .1, .06, .1, '#ffd166']]},
+  fdoll: {n: 'フレンド人形', lv: 1, cost: 150, small: true, buddy: true, doll: true, W: 1, D: 1, colors: ['#ffc24d', '#3fb8ff', '#ff6fb0', '#eef0f6'], parts: [[.36, .36, 0, .28, .28, .05, 'm'], [.42, .44, .05, .16, .12, .44, '#e8c4a0']]}
+});
 const F_ORDER = Object.keys(F).filter(t => !F[t].buddy).sort((a, b) => F[a].lv - F[b].lv || F[a].cost - F[b].cost);
 const WALLS = {
   midnight:{n:'ミッドナイト', lv:1, c:'#151b30'}, slate:{n:'スレート', lv:1, c:'#2b303e'}, ivory:{n:'アイボリー', lv:3, c:'#d5d1c8'},
@@ -2093,6 +2557,7 @@ function normState(s){
   for (const r of o.house.rooms) { r.room = Object.assign({wall: 'ivory', floor: 'wood', items: [], light: 'auto'}, r.room || {}); if (!Array.isArray(r.room.items)) r.room.items = []; }
   if (!Array.isArray(o.room.items)) o.room.items = [];
   for (const k of ['subjects','exams','targets','friends','roomLog','groups']) if (!Array.isArray(o[k])) o[k] = d[k];
+  if (!Array.isArray(o.pets)) o.pets = []; o.pets = o.pets.filter(p => p && p.id && p.k); if (!o.petFood || typeof o.petFood !== 'object' || Array.isArray(o.petFood)) o.petFood = {}; if (!Array.isArray(o.dolls)) o.dolls = [];
   if (o.group && !o.groups.some(g => g.c === o.group)) o.groups.push({c: o.group, n: o.group}); o.group = '';
   for (const k of ['owned','badges','missions']) if (!o[k] || typeof o[k] !== 'object') o[k] = {};
   // add any new default subject that's missing
@@ -2405,7 +2870,7 @@ function ensureBuddy(){
 }
 function afterDataReady(){
   ensureBuddy();
-  render(); setTimeout(familyTick, 1800);
+  render(); setTimeout(familyTick, 1800); setTimeout(() => { try { petCheck(); } catch {} }, 2500);
   checkRoomStage(true); checkBadges(true); checkMissions(true);
   setTimeout(publishPub, 2500);
   if (!S().onboarded) setTimeout(showOnboarding, 300);
@@ -2430,7 +2895,7 @@ function buildStats(){
   return {
     lv: x.level, tot: x.total, dk: today, dMin: x.today, ls: x.lastDay,
     wk: weekStart(today), wMin: x.weekMin, mo: monthOf(today), mMin: x.monthMin, streak: x.streak,
-    room: st.privacy.room ? {wall: st.room.wall, floor: st.room.floor, light: st.room.light || 'auto', items: st.room.items, size: STAGES[stageFor(x.level)].size, stage: stageFor(x.level), people: pubPeople(st.room), rooms: st.house.rooms.length + 1} : null
+    room: st.privacy.room ? {wall: st.room.wall, floor: st.room.floor, light: st.room.light || 'auto', items: st.room.items, size: STAGES[stageFor(x.level)].size, stage: stageFor(x.level), people: pubPeople(st.room), rooms: st.house.rooms.length + 1, ...(petsPub().length ? {pets: petsPub()} : {})} : null
   };
 }
 function pubPeople(room){
@@ -2591,7 +3056,7 @@ function burst(){
 function badgeToast(b){ toast(`実績解除「${b.n}」 ${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'medal', 5000); notify(`🏅 実績解除「${b.n}」`, `${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'badge'); }
 
 /* ================= router & render ================= */
-const APP_VERSION = '2026.11.02.3';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
+const APP_VERSION = '2026.11.02.5';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
 const HIDDEN_ROUTES = ['dev'];
 const ROUTES = {
   home:['ホーム','home'], timer:['タイマー','timer'], stats:['記録・分析','chart'], room:['勉強部屋','room'],
@@ -2980,10 +3445,15 @@ function roomSVG(room, N, opts = {}){
   for (const it of items) {
     const d = F[it.t]; if (d.wall || d.rug) continue;
     if (d.person) { for (const b of personBoxes(it, items, room, poses)) boxes.push(b); continue; }
+    if (d.doll) { const z0 = itemZ(items, it); for (const p of dollParts(it)) { const q = rotPart(p, 1, 1, it.r || 0), col = resolveCol(q[6], d, it.c || 0); boxes.push({x: it.x + q[0], y: it.y + q[1], z: z0 + q[2], w: q[3], d: q[4], h: q[5], ...col, iid: it.id}); } continue; }
     const z0 = itemZ(items, it), r = it.r || 0;
     for (const p of (d.useParts && inUse.has(it.id) ? d.useParts : d.parts)) { const q = rotPart(p, d.W, d.D, r); const col = resolveCol(q[6], d, it.c || 0);
       boxes.push({x: it.x + q[0], y: it.y + q[1], z: z0 + q[2], w: q[3], d: q[4], h: q[5], ...col, iid: it.id}); }
   }
+  // ペット
+  const tNow = Date.now() / 1000, petMarks = [];
+  if (opts.rid && !place) for (const p of petsLive()) { const s = PSIM[p.id]; if (!s || s.room !== opts.rid) continue; const bx = petBoxesFor(p.k, p.stage || 0, s, 'pet:' + p.id, tNow + hashStr(p.id) % 7); boxes.push(...bx); petMarks.push({p, s, bx}); }
+  else if (room.pets && !place) for (const {p, s} of pubPetSpots(room, N)) { const bx = petBoxesFor(p.k, p.s || 0, s, 'pubpet', tNow + hashStr(p.n) % 7); boxes.push(...bx); petMarks.push({p: {name: p.n, k: p.k}, s, bx, pub: true}); }
   if (!LS0.lit) { const glowIds0 = new Set(items.filter(i => F[i.t].glow).map(i => i.id)); for (const b of boxes) if (b.emi && glowIds0.has(b.iid)) { b.emi = false; b.c = mix(b.c, '#8a8f9c', .55); } }
   const sorted = sortBoxes(boxes);
   const noPtr = place ? ' pointer-events="none"' : '';
@@ -2998,6 +3468,22 @@ function roomSVG(room, N, opts = {}){
       const [px, py0] = P(cx, cy, top + .25), txt = now < (a.lineUntil || 0) && !talking(it.id) ? `${a.emoji} ${a.line || a.label}` : a.emoji, w = 14 + [...txt].length * 11;
       let py = py0; for (let k = 0; k < 4; k++) { const hit = placed.find(r => Math.abs(r.x - px) < (r.w + w) / 2 + 2 && Math.abs(r.y - py) < 21); if (!hit) break; py = hit.y - 22; } placed.push({x: px, y: py, w});
       s += `<g class="emote" pointer-events="none"><rect x="${(px - w / 2).toFixed(1)}" y="${(py - 22).toFixed(1)}" width="${w}" height="19" rx="9.5" fill="rgba(6,9,20,.82)" stroke="rgba(255,255,255,.25)"/><text x="${px.toFixed(1)}" y="${(py - 8.5).toFixed(1)}" text-anchor="middle" font-size="11" fill="#fff" font-family="'Zen Kaku Gothic New',sans-serif">${esc(txt)}</text></g>`; } }
+  // ペットの頭の上の小さな吹き出し（おなかすいた・寝てる・うれしい）／ほかの人の部屋では名前
+  { const now2 = Date.now();
+    for (const m of petMarks) { const q = m.s; let txt = '';
+      if (m.pub) { if (!opts.names) continue; txt = String(m.p.name); }
+      else { const n = petNow(m.p, now2); txt = q.emo && q.emo.until > now2 ? q.emo.e : q.act === 'sleep' ? '💤' : n.starve ? '😵' : n.sat < 25 ? '🍖' : q.act === 'eat' ? '😋' : ''; }
+      if (!txt || !m.bx.length) continue; let top = 0; for (const b of m.bx) top = Math.max(top, b.z + b.h);
+      const [px, py] = P(q.x + .5, q.y + .5, top + .15), w = m.pub ? 14 + [...txt].length * 10.5 : 26;
+      s += `<g class="emote petemo" pointer-events="none"><rect x="${(px - w / 2).toFixed(1)}" y="${(py - 20).toFixed(1)}" width="${w.toFixed(1)}" height="18" rx="9" fill="rgba(6,9,20,.8)" stroke="${m.pub ? '#3ee6a0' : 'rgba(255,255,255,.25)'}"/><text x="${px.toFixed(1)}" y="${(py - 7).toFixed(1)}" text-anchor="middle" font-size="${m.pub ? 10.5 : 12}" fill="#fff" font-family="'Zen Kaku Gothic New',sans-serif">${esc(txt)}</text></g>`; } }
+  // 住んでいる人の名前（ほかの人の部屋を見るとき）
+  if (opts.names && !place) { const placed = [];
+    for (const it of items) { if (!F[it.t] || !F[it.t].person) continue; const nm = personInfo(it, room).name; if (!nm) continue; const mine = sorted.filter(b => b.iid === it.id); if (!mine.length) continue;
+      let top = 0, cx = 0, cy = 0; for (const b of mine) { top = Math.max(top, b.z + b.h); cx += b.x + b.w / 2; cy += b.y + b.d / 2; } cx /= mine.length; cy /= mine.length;
+      const [px, py0] = P(cx, cy, top + .2), txt = String(nm).slice(0, 12), w = 16 + [...txt].length * 11.5; let py = py0;
+      for (let k = 0; k < 4; k++) { const hit = placed.find(r => Math.abs(r.x - px) < (r.w + w) / 2 + 2 && Math.abs(r.y - py) < 21); if (!hit) break; py = hit.y - 22; } placed.push({x: px, y: py, w});
+      const col = it.t === 'buddy' ? '#22e4ff' : it.t === 'partner' ? '#ff6fb0' : '#ffc24d';
+      s += `<g class="ntag" pointer-events="none"><rect x="${(px - w / 2).toFixed(1)}" y="${(py - 22).toFixed(1)}" width="${w.toFixed(1)}" height="19" rx="9.5" fill="rgba(6,9,20,.86)" stroke="${col}"/><text x="${px.toFixed(1)}" y="${(py - 8.5).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="700" fill="#fff" font-family="'Zen Kaku Gothic New',sans-serif">${esc(txt)}</text></g>`; } }
   // night / lights
   if (LS0.shade > 0) {
     const hex = [P(-cap, -cap, WALL_H), P(N, -cap, WALL_H), P(N, 0, 0), P(N, N, 0), P(0, N, 0), P(-cap, N, WALL_H)];
@@ -3710,7 +4196,7 @@ const devView = () => {
     <section class="panel"><div class="ph"><div><span class="eyebrow">CHECK</span><h2>設定の確認</h2></div></div>
       <div class="list">${checks.map(([n, ok]) => `<div class="li"><span style="font-size:18px">${ok ? '✅' : '⚠️'}</span><div class="t"><b>${n}</b><span>${ok ? 'OK' : 'まだ使えません（SQLを実行してください）'}</span></div></div>`).join('')}</div></section>
     <section class="panel"><div class="ph"><div><span class="eyebrow">TEST</span><h2>テスト用</h2></div></div>
-      <div class="tplgrid"><button class="tplbtn" data-act="dev-ev">🎲 イベントを起こす</button><button class="tplbtn" data-act="dev-quiz">❓ クイズを出す</button><button class="tplbtn" data-act="dev-ring">⏰ 終了アラーム</button><button class="tplbtn" data-act="notif-test">🔔 通知テスト</button><button class="tplbtn" data-act="mini-open">🖥 全画面表示</button><button class="tplbtn" data-act="app-reload">🔄 再読み込み</button></div></section>
+      <div class="tplgrid"><button class="tplbtn" data-act="dev-ev">🎲 イベントを起こす</button><select id="dev-evsel" aria-label="起こすイベント" style="min-width:0"><option value="">（ランダム）</option>${EVENT_DEFS.map(d => `<option value="${d.id}">${esc(d.id)}</option>`).join('')}</select><button class="tplbtn" data-act="dev-quiz">❓ クイズを出す</button><button class="tplbtn" data-act="dev-ring">⏰ 終了アラーム</button><button class="tplbtn" data-act="notif-test">🔔 通知テスト</button><button class="tplbtn" data-act="mini-open">🖥 全画面表示</button><button class="tplbtn" data-act="app-reload">🔄 再読み込み</button></div></section>
   </div></div>
   <section class="panel"><div class="ph"><div><span class="eyebrow">LIST</span><h2>出したお知らせ</h2></div><span class="pill">${NEWS.list.length}件</span></div>
     ${NEWS.list.length ? `<div class="list">${NEWS.list.map(n => { const now = Date.now(), live = (!n.show_from || new Date(n.show_from).getTime() <= now) && (!n.show_until || new Date(n.show_until).getTime() >= now);
@@ -3925,22 +4411,24 @@ VIEWS.room = () => {
     if (d.person) { const info = personInfo(selIt), who = whoOfItem(selIt), role = selIt.t === 'buddy' ? 'ルームメイト' : selIt.t === 'partner' ? (st.family.partner && st.family.partner.role || 'パートナー') : KID_STAGE[info.stage || 0];
       bar = `<div class="roombar"><div class="rb-head"><b>${esc(info.name)}（${esc(role)}）</b></div>
       <div class="rb-tools"><button class="tool go" data-act="buddy-talk">${icon('chat')}話す</button><button class="tool" data-act="buddy-name">${icon('pen')}名前</button><button class="tool" data-act="wear-open" data-v="${esc(who)}">${icon('shirt')}着せ替え</button><button class="tool" data-act="rm-move">${icon('move')}移動</button><button class="tool" data-act="rm-rot">${icon('rotate')}向き</button><button class="tool" data-act="rm-store">${icon('box')}しまう</button><button class="tool" data-act="rm-sell-sel">${icon('coin')}売る</button><button class="tool" data-act="rm-desel">${icon('x')}閉じる</button></div></div>`; }
-    else bar = `<div class="roombar"><div class="rb-head"><b>${esc(d.n)}</b></div>
+    else bar = `<div class="roombar"><div class="rb-head"><b>${esc(d.doll ? (selIt.dn || 'フレンド') + 'の人形' : d.n)}</b></div>
       <div class="rb-tools"><button class="tool" data-act="rm-move">${icon('move')}移動</button>${!d.wall ? `<button class="tool" data-act="rm-rot">${icon('rotate')}回転</button>` : ''}<button class="tool ${UI.colorOpen ? 'on' : ''}" data-act="rm-color" aria-pressed="${!!UI.colorOpen}">${icon('palette')}色</button><button class="tool" data-act="rm-store">${icon('box')}しまう</button><button class="tool" data-act="rm-desel">${icon('x')}閉じる</button></div>
       ${UI.colorOpen ? `<div class="swatches" style="margin-top:8px;padding:0 2px">${d.colors.map((c, i) => `<button class="sw ${(selIt.c || 0) === i ? 'on' : ''}" style="--c:${c}" data-act="rm-setc" data-v="${i}" aria-label="色${i + 1}"></button>`).join('')}</div>` : ''}</div>`; }
-  const tabs = [['inv','持ち物'],['shop','家具ショップ'],['wear','着せ替え'],['deco','壁紙・床'],['log','記録・アルバム']];
+  const tabs = [['inv','持ち物'],['shop','家具ショップ'],['pets','ペット'],['wear','着せ替え'],['deco','壁紙・床'],['log','記録・アルバム']];
   let panel = '';
-  if (UI.roomTab === 'inv') { const ppl = unplacedPeople();
-    panel = (ppl.length ? `<h3 style="margin:0 0 8px;font-size:14px">家族・ルームメイト</h3><div class="shop" style="margin-bottom:16px">${ppl.map(p => `<div class="item"><div class="thumb">${personThumb(p.look, p.stage)}</div><b>${esc(p.name)}</b><div class="meta"><span>${esc(p.role)}</span></div><button class="btn sm primary" data-act="rm-place" data-v="${esc(p.key)}">この部屋に呼ぶ</button></div>`).join('')}</div>` : '')
+  if (UI.roomTab === 'inv') { const ppl = unplacedPeople(), dls = unplacedDolls();
+    panel = (dls.length ? `<h3 style="margin:0 0 8px;font-size:14px">フレンド人形</h3><div class="shop" style="margin-bottom:16px">${dls.map(d => `<div class="item"><div class="thumb">${personThumb(normLook(d.look))}</div><b>${esc(d.n)}の人形</b><div class="meta"><span>机や棚の上に置けます</span></div><div class="row" style="gap:6px"><button class="btn sm primary" data-act="rm-place" data-v="doll:${esc(d.id)}" style="flex:1">置く</button><button class="btn sm ghost" data-act="doll-del" data-v="${esc(d.id)}">手放す</button></div></div>`).join('')}</div>` : '') + (ppl.length ? `<h3 style="margin:0 0 8px;font-size:14px">家族・ルームメイト</h3><div class="shop" style="margin-bottom:16px">${ppl.map(p => `<div class="item"><div class="thumb">${personThumb(p.look, p.stage)}</div><b>${esc(p.name)}</b><div class="meta"><span>${esc(p.role)}</span></div><button class="btn sm primary" data-act="rm-place" data-v="${esc(p.key)}">この部屋に呼ぶ</button></div>`).join('')}</div>` : '')
       + (inv.length ? `<div class="shop">${inv.map(t => `<div class="item"><div class="thumb">${thumbSVG(t)}</div><b>${esc(F[t].n)}</b><div class="meta"><span>残り ${(st.owned[t] || 0) - placedCountG(t)}個</span></div><div class="row" style="gap:6px"><button class="btn sm primary" data-act="rm-place" data-v="${t}" style="flex:1">置く</button><button class="btn sm ghost" data-act="rm-sell" data-v="${t}" title="売る">${sellPrice(t) ? sellPrice(t) + 'cで売る' : '手放す'}</button></div></div>`).join('')}</div>`
       : `<div class="empty">しまってある家具はありません。<br>ショップで家具を手に入れるか、部屋の家具をタップして「しまう」とここに戻ります。<br>しまった家具や人は、別の部屋で置くこともできます。</div>`); }
   if (UI.roomTab === 'shop') panel = `<p class="note" style="margin:0 0 10px">勉強1分＝1コイン。レベルが上がると新しい家具が解放されます。所持コイン <b class="disp" style="color:var(--warn)">${Math.max(0, x.coins).toLocaleString()}</b></p>
       <div class="seg" style="margin-bottom:12px">${[['all','すべて'],['room','部屋の専用'],['floor','家具'],['light','照明'],['small','机の上の小物'],['wall','壁'],['rug','床']].map(([k, n]) => `<button data-act="shop-cat" data-v="${k}" class="${(UI.shopCat || 'all') === k ? 'on' : ''}">${n}</button>`).join('')}</div>
-      ${(() => { const n = F_ORDER.filter(t => x.level >= F[t].lv && roomUnlocked(t) && x.coins >= costOf(t)).length; return `<p class="note" style="margin:-4px 0 10px">${n ? `<b style="color:var(--good)">今買えるもの ${n}個</b>を上に並べています。` : 'いまのコインで買えるものはありません。勉強してコインを貯めよう！'}${S().ev && S().ev.sale && S().ev.sale.until > Date.now() ? ' 🏷 <b>タイムセール中（20%OFF）</b>' : ''}</p>`; })()}
-      <div class="shop">${F_ORDER.filter(t => { const c = UI.shopCat || 'all', d = F[t]; return c === 'all' || (c === 'room' ? d.room : c === 'light' ? (d.glow || t === 'garland') : c === 'wall' ? d.wall : c === 'small' ? d.small : c === 'rug' ? d.rug : !d.wall && !d.small && !d.rug); }).map(t => [t, shopRank(t, x, ent)]).sort((a, b) => a[1] - b[1]).map(([t]) => t).map(t => { const d = F[t], rlock = !roomUnlocked(t), lock = x.level < d.lv || rlock, own = st.owned[t] || 0;
+      ${(() => { const n = F_ORDER.filter(t => !F[t].noshop && x.level >= F[t].lv && roomUnlocked(t) && x.coins >= costOf(t)).length; return `<p class="note" style="margin:-4px 0 10px">${n ? `<b style="color:var(--good)">今買えるもの ${n}個</b>を上に並べています。` : 'いまのコインで買えるものはありません。勉強してコインを貯めよう！'}${S().ev && S().ev.sale && S().ev.sale.until > Date.now() ? ' 🏷 <b>タイムセール中（20%OFF）</b>' : ''}</p>`; })()}
+      ${dollShopHTML(x)}
+      <div class="shop">${F_ORDER.filter(t => { const c = UI.shopCat || 'all', d = F[t]; if (d.noshop) return false; return c === 'all' || (c === 'room' ? d.room : c === 'light' ? (d.glow || t === 'garland') : c === 'wall' ? d.wall : c === 'small' ? d.small : c === 'rug' ? d.rug : !d.wall && !d.small && !d.rug); }).map(t => [t, shopRank(t, x, ent)]).sort((a, b) => a[1] - b[1]).map(([t]) => t).map(t => { const d = F[t], rlock = !roomUnlocked(t), lock = x.level < d.lv || rlock, own = st.owned[t] || 0;
       return `<div class="item ${lock ? 'locked' : ''}"><div class="thumb">${lock ? icon('lock') : thumbSVG(t)}</div><b>${esc(d.n)}</b><div class="meta"><span>${rlock ? (d.champ ? '👑 ランキング1位で解放' : `${esc(ROOM_KINDS[d.room].n)}を建てると解放`) : lock ? `LV${d.lv}で解放` : own ? `所持 ${own}` : d.room ? `${esc(ROOM_KINDS[d.room].n)}の家具` : '未所持'}</span><span class="disp">${!d.cost ? '無料' : costOf(t) < d.cost ? `<s class="mute">${d.cost}</s> <b style="color:var(--warn)">${costOf(t)}c</b>` : d.cost + 'c'}</span></div>
         <button class="btn sm ${lock ? '' : 'primary'}" data-act="rm-buy" data-v="${t}" ${lock || x.coins < costOf(t) ? 'disabled' : ''}>${lock ? 'ロック中' : x.coins < costOf(t) ? 'コイン不足' : own ? 'もう1つ買う' : '購入する'}</button></div>`; }).join('')}</div>`;
   if (UI.roomTab === 'wear') panel = wearPanel();
+  if (UI.roomTab === 'pets') panel = petPanel(rid);
   if (UI.roomTab === 'deco') panel = `<h3 style="margin:0 0 8px;font-size:14px">壁紙</h3><div class="themes">${Object.entries(WALLS).map(([k, w]) => `<button class="theme ${room.wall === k ? 'on' : ''}" data-act="rm-wall" data-v="${k}" ${x.level < w.lv ? 'disabled' : ''}><i style="--c:${k === 'aurora' ? 'linear-gradient(135deg,#1d2a6b,#3b1f6e,#0f3a4a)' : k === 'sakura' ? 'radial-gradient(circle at 30% 40%,#ffb7d0 0 6%,transparent 7%),radial-gradient(circle at 70% 60%,#ff8fb8 0 5%,transparent 6%),#3a2033' : k === 'space' ? 'radial-gradient(circle at 70% 40%,#a46bff 0 12%,transparent 13%),radial-gradient(circle at 20% 30%,#fff 0 2%,transparent 3%),#05061a' : k === 'gold' ? 'repeating-linear-gradient(90deg,#2a2412 0 10px,#d6b25e55 10px 11px)' : k === 'garden' ? 'linear-gradient(#7cc4ff 0 45%,#24553a 45%)' : w.c}"></i>${esc(w.n)}${x.level < w.lv ? ` · LV${w.lv}` : ''}</button>`).join('')}</div>
       <h3 style="margin:16px 0 8px;font-size:14px">床</h3><div class="themes">${Object.entries(FLOORS).map(([k, f]) => `<button class="theme ${room.floor === k ? 'on' : ''}" data-act="rm-floor" data-v="${k}" ${x.level < f.lv ? 'disabled' : ''}><i style="--c:${k === 'checker' ? 'repeating-conic-gradient(#2a2f45 0 25%,#e9ecf3 0 50%) 0 0/16px 16px' : k === 'goldfloor' ? 'repeating-linear-gradient(45deg,#5a4a1e 0 10px,#4a3c16 10px 20px)' : k === 'stars' ? 'radial-gradient(circle at 30% 50%,#fff 0 3%,transparent 4%),radial-gradient(circle at 70% 30%,#bcd4ff 0 3%,transparent 4%),#060818' : k === 'herringbone' ? 'repeating-linear-gradient(45deg,#8a6240 0 6px,#6e4b30 6px 7px),#8a6240' : k === 'pinktile' ? 'repeating-conic-gradient(#e8a6b8 0 25%,#f2bccb 0 50%) 0 0/14px 14px' : k === 'cloud' ? 'radial-gradient(circle at 35% 45%,#fff 0 18%,transparent 19%),radial-gradient(circle at 65% 55%,#fff 0 14%,transparent 15%),#9fd0ff' : k === 'water' ? 'repeating-linear-gradient(170deg,#1f6fa8 0 6px,#2f86c4 6px 8px)' : k === 'stone' ? 'repeating-linear-gradient(0deg,#55524b 0 1px,transparent 1px 10px),repeating-linear-gradient(90deg,#8a867d 0 14px,#55524b 14px 15px)' : f.c}"></i>${esc(f.n)}${x.level < f.lv ? ` · LV${f.lv}` : ''}</button>`).join('')}</div>
       ${ent ? `<h3 style="margin:16px 0 8px;font-size:14px">この部屋</h3><div class="row wrap" style="gap:8px"><button class="btn sm" data-act="room-rename">${icon('pen')}名前を変える</button><button class="btn sm danger" data-act="room-demolish">${icon('trash')}この部屋をこわす</button></div><p class="note">こわしても家具と家族は「持ち物」に戻ります。建てたときのコインは戻りません。</p>` : ''}`;
@@ -4210,6 +4698,10 @@ const HELP = [
   ['イベント', 'home', [
     ['不定期イベント', 'アプリを開いていると、ときどきイベントが起きます（1日最大6回）。落とし物・流れ星・宅配便・おみくじ・1問クイズなど。', ''],
     ['ラッキータイム・チャレンジ・セール', 'ラッキータイムは1時間コイン1.5倍。集中チャレンジは時間内に決められた分数を勉強するとボーナス。セールは家具が20%OFF。発動中はホームに表示されます。', 'home'],
+    ['ペット', '部屋の「ペット」タブで、いぬ・ねこからゾウ・ライオン、カッパ・ドラゴン・おばけまで21種類をお迎えできます。部屋の中を歩き回り、夜は寝ます。毎日えさをあげると成長して（赤ちゃん→子ども→おとな）、大好物だと早く育ちます。えさをあげないと、おなかがへって最後には死んでしまうので注意！ 来られない日は「ペットホテル」へ。なかよしのおとなは、ときどきおみやげ（コイン）を持ってきます。', 'room'],
+    ['フレンド人形', '家具ショップの上の「フレンド人形」から、お互いにフォローしているフレンドのキャラクターの小さなフィギュアを作れます（150コイン）。机や棚の上に飾れます。', 'room'],
+    ['ご近所イベント', 'ランキングにいる人（フレンド多め）の家とつながるイベントです。おすそわけ・合同勉強会・ガレージセール（その人の部屋の家具を半額で買える）・秘密の通路などのいいことも、騒音・ボール・泥棒などのわるいこともあります。選択肢によって結果が変わります。', ''],
+    ['泥棒チャンス', 'ご近所さんの家が留守のとき、部屋の家具を1つこっそり持って帰れるチャンス。小さくて安い物ほど成功しやすく、失敗すると罰金。成功しても、あとで相手にバレて仕返しされることも…。ゲームの中だけのお楽しみで、相手の部屋の家具は本当には減りません。', ''],
     ['行事', 'お正月・七夕・ハロウィン・クリスマスなどの日や、入試の「あと100日・30日・7日・1日」にも特別なイベントがあります。', 'exams']]],
   ['ランキング・フォロー・グループ', 'rank', [
     ['ランキング', '今日・今週・今月・累計で並べかえられます。「友達／グループ／全員」で範囲を切りかえます。', 'rank'],
@@ -4297,6 +4789,9 @@ const mockTotal = m => { let g = 0, mx = 0; for (const r of m.rows) if (rowRate(
 const mocksAsc = kind => PL().mocks.filter(m => !kind || kind === 'all' || (m.kind || 'k') === kind).sort((a, b) => a.date.localeCompare(b.date));
 function latestOf(sub, kind){ for (const pass of kind ? [kind, null] : [null]) for (const m of mocksAsc(pass).reverse()) { const r = mockRow(m, sub), rate = rowRate(r); if (rate != null) return {rate, dev: numOr(r.dev), g: +r.g, m: +r.m, date: m.date, kind: m.kind || 'k'}; } return null; }
 const subPts = sub => +sub.pts || 0;
+// 合格プランの1科目に、タイマーの科目をいくつでもつなげる（例：「理科」に物理と化学）
+const tsOf = sub => { const a = Array.isArray(sub && sub.tsids) ? sub.tsids.filter(Boolean) : []; return a.length ? a : [(sub && sub.tsid) || 'ot']; };
+const tsNames = sub => tsOf(sub).map(id => subjOf(id).name).join('・');
 const phPts = sub => +sub.pts || 0;
 const phGoal = sub => +sub.goal || 0;
 function subGoalRate(inf, sub, ph){ const pts = +sub.pts || 0, gp = +sub.goal || 0; return gp > 0 && pts > 0 ? clamp(gp / pts, 0, 1) : ((ph === 'n' ? inf.goalN : inf.goalK) || 70) / 100; }
@@ -4311,9 +4806,9 @@ function planAlloc(inf, goal){
     return {sub, L, rate, pts, gr, pref, w: pts * need * pref, fixed: numOr(sub.fix) != null}; });
   const fixedSum = rows.filter(r => r.fixed).reduce((a, r) => a + numOr(r.sub.fix, 0), 0), rest = Math.max(0, goal - fixedSum), wsum = rows.filter(r => !r.fixed).reduce((a, r) => a + r.w, 0) || 1;
   const all7 = Object.values(done).reduce((a, b) => a + b, 0);
-  const sameT = {}; for (const r of rows) sameT[r.sub.tsid] = (sameT[r.sub.tsid] || 0) + 1;
-  return rows.map(r => { const min = r.fixed ? numOr(r.sub.fix, 0) : (r.pref ? Math.round(rest * r.w / wsum / 5) * 5 : 0);
-    return {...r, min, share: goal ? min / goal : 0, did7: done[r.sub.tsid] || 0, didShare: all7 ? (done[r.sub.tsid] || 0) / all7 : 0, shared: sameT[r.sub.tsid] > 1}; }).sort((a, b) => b.min - a.min);
+  const sameT = {}; for (const r of rows) for (const t of tsOf(r.sub)) sameT[t] = (sameT[t] || 0) + 1;
+  return rows.map(r => { const min = r.fixed ? numOr(r.sub.fix, 0) : (r.pref ? Math.round(rest * r.w / wsum / 5) * 5 : 0), ts = tsOf(r.sub), did7 = ts.reduce((a, t) => a + (done[t] || 0), 0);
+    return {...r, min, share: goal ? min / goal : 0, did7, didShare: all7 ? did7 / all7 : 0, shared: ts.some(t => sameT[t] > 1), multi: ts.length > 1}; }).sort((a, b) => b.min - a.min);
 }
 function mockChart(inf){
   const metric = UI.mockMetric || 'rate', sid = UI.mockSub || 'total', dev = metric === 'dev';
@@ -4334,9 +4829,10 @@ function subsEditor(){
   const D = UI.subsDraft;
   return `<p class="note" style="margin:0 0 8px"><b style="color:var(--cyan)">${PH[UI.subsPh || 'k']}</b>の科目を編集しています。</p><div class="subed">${D.map((x, i) => `<div class="subrow"><div class="row" style="gap:6px"><span class="dot" style="--c:${x.color};flex:none"></span><input type="text" maxlength="16" value="${esc(x.name)}" data-sf="${i}:name" placeholder="科目名（例：英語リスニング）" aria-label="科目名" style="flex:1;min-width:0">
 <button type="button" class="btn sm ghost" data-act="sub-del" data-v="${i}" aria-label="この科目を消す">${icon('x')}</button></div>
-    <div class="subnums three"><label>配点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.pts ?? ''}" data-sf="${i}:pts" placeholder="0"></label><label>目標点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.goal ?? ''}" data-sf="${i}:goal" placeholder="—"></label><label>⏱ タイマー科目<select data-sf="${i}:tsid" aria-label="タイマーの科目">${tsOpts(x.tsid)}</select></label></div></div>`).join('')}</div>
+    <div class="subnums two"><label>配点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.pts ?? ''}" data-sf="${i}:pts" placeholder="0"></label><label>目標点<input type="number" min="0" max="1000" inputmode="numeric" value="${x.goal ?? ''}" data-sf="${i}:goal" placeholder="—"></label></div>
+    <div class="tspick"><small>⏱ タイマー科目（いくつでも選べます）</small><div class="tschips" role="group" aria-label="タイマーの科目">${S().subjects.filter(sj => !sj.hidden || tsOf(x).includes(sj.id)).map(sj => { const on = tsOf(x).includes(sj.id); return `<button type="button" class="tschip ${on ? 'on' : ''}" data-act="sub-ts" data-v="${i}:${sj.id}" aria-pressed="${on}" style="--c:${sj.color}">${on ? '✓ ' : ''}${esc(sj.name)}</button>`; }).join('')}</div></div></div>`).join('')}</div>
     <div class="row wrap" style="gap:8px;margin-top:10px"><button type="button" class="btn sm" data-act="sub-add">${icon('plus')}科目を追加</button><span class="sp"></span><button type="button" class="btn sm ghost" data-act="sub-cancel">やめる</button><button type="button" class="btn sm primary" data-act="sub-save">${icon('check')}保存</button></div>
-    <p class="note" style="margin:8px 0 0">「⏱ タイマー科目」は、タイマーで記録するときの科目です（勉強時間を数えるのに使います）。数学ⅠAと数学ⅡBCのように、同じ科目に2つ以上つないでもOK。</p>`;
+    <p class="note" style="margin:8px 0 0">「⏱ タイマー科目」は、タイマーで記録するときの科目です（勉強時間を数えるのに使います）。「理科」に物理と化学のように1つの科目に何個でもつなげられるし、数学ⅠAと数学ⅡBCのように、同じタイマー科目を2つの科目につないでもOK。</p>`;
 }
 function mockEditor(inf){
   const D = UI.mockDraft, judges = ['', 'A', 'B', 'C', 'D', 'E'];
@@ -4384,7 +4880,7 @@ VIEWS.plan = () => {
     <div class="seg" style="margin-bottom:10px">${[['gap', '目標との差'], ['weak', '苦手を重視'], ['pts', '配点どおり']].map(([k, n]) => `<button data-act="alloc-mode" data-v="${k}" class="${inf.mode === k ? 'on' : ''}">${n}</button>`).join('')}</div>
     ${alloc.length ? `<div class="stack" style="gap:12px">${alloc.map(a => `<div class="allocrow"><div class="row" style="justify-content:space-between;font-size:13px;gap:6px"><span style="min-width:0"><span class="dot" style="--c:${a.sub.color};display:inline-block;margin-right:6px"></span><b>${esc(a.sub.name)}</b>${a.fixed ? ' <span class="pill" style="font-size:10px;padding:1px 6px">固定</span>' : ''}</span><b class="disp">${fmtHM(a.min)}</b></div>
       <div class="bar" style="margin-top:4px"><i style="width:${(clamp(a.share, 0, 1) * 100).toFixed(1)}%;background:${a.sub.color}"></i></div>
-      <div class="note" style="margin-top:2px">${+a.sub.pts ? `配点${a.sub.pts}` : '配点なし'}${+a.sub.goal ? ` · 目標${a.sub.goal}点` : ''}${a.L ? ` · 最新 ${a.L.g}/${a.L.m}${a.L.dev ? `（偏差値${a.L.dev}）` : ''}` : ''} · 最近7日 ${fmtHM(a.did7)}${a.shared ? '（同じ科目の合計）' : ''}${!a.fixed && a.didShare + .08 < a.share ? ' <b style="color:#ffc24d">← もっと時間を</b>' : ''}</div>
+      <div class="note" style="margin-top:2px">${+a.sub.pts ? `配点${a.sub.pts}` : '配点なし'}${+a.sub.goal ? ` · 目標${a.sub.goal}点` : ''}${a.L ? ` · 最新 ${a.L.g}/${a.L.m}${a.L.dev ? `（偏差値${a.L.dev}）` : ''}` : ''} · 最近7日 ${fmtHM(a.did7)}${a.multi ? `（${esc(tsNames(a.sub))}の合計）` : a.shared ? '（同じ科目の合計）' : ''}${!a.fixed && a.didShare + .08 < a.share ? ' <b style="color:#ffc24d">← もっと時間を</b>' : ''}</div>
       ${UI.allocEdit ? `<div class="row wrap" style="gap:6px;margin-top:6px;align-items:center"><div class="seg prefseg">${PREFS.map(([v, n]) => `<button data-act="alloc-pref" data-v="${a.sub.id}" data-p="${v}" class="${(a.sub.pref ?? 1) === v ? 'on' : ''}">${n}</button>`).join('')}</div>
         <label class="row fixlbl" style="gap:4px;font-size:12px;color:var(--mute)">時間を自分で決める<input type="number" min="0" max="600" step="5" inputmode="numeric" data-fix="${a.sub.id}" value="${numOr(a.sub.fix) ?? ''}" placeholder="自動" style="width:72px">分</label></div>` : ''}</div>`).join('')}</div>
       <p class="note" style="margin:10px 0 0">合計 ${fmtHM(allocSum)}${allocSum > goal + 4 ? `（1日の目標 ${fmtHM(goal)} をこえています）` : ` / 1日の目標 ${fmtHM(goal)}`}。${inf.mode === 'gap' ? '目標点との差が大きい科目ほど多めにしています。' : inf.mode === 'weak' ? '模試の点が低い科目ほど多めにしています。' : '配点の大きさどおりに分けています。'}「調整する」で、科目ごとに多め・少なめや、時間を自分で決められます。</p>
@@ -4396,7 +4892,7 @@ VIEWS.plan = () => {
     ${UI.subsDraft ? '' : `<div class="subtools"><button class="btn sm primary" data-act="sub-edit">${icon('pen')}編集する</button><button class="btn sm ghost" data-act="sub-reset" ${subs.length || (ph === 'k' ? inf.goalK !== 75 : inf.goalN !== 65) ? '' : 'disabled'}>${icon('rotate')}リセット</button></div>`}
     <div class="tplbox"><span class="note">テンプレート（例）から入れる（共通テスト・二次試験の両方に入ります）</span><div class="tplgrid">${Object.entries(PLAN_TPL).map(([k, [n]]) => `<button class="tplbtn" data-act="pl-tpl" data-v="${k}">${esc(n.replace('の例', ''))}</button>`).join('')}</div></div>
     ${UI.subsDraft ? subsEditor() : subs.length ? `<div class="stcards">${subs.map(x => { const L = latestOf(x, ph), mine = L && L.kind === ph ? L : null;
-      return `<div class="stcard"><div class="sthead"><span class="dot" style="--c:${x.color}"></span><b>${esc(x.name)}</b><span class="note" style="margin-left:auto">⏱ ${esc(subjOf(x.tsid).name)}</span></div>
+      return `<div class="stcard"><div class="sthead"><span class="dot" style="--c:${x.color}"></span><b>${esc(x.name)}</b><span class="note tsn" style="margin-left:auto">⏱ ${esc(tsNames(x))}</span></div>
         <div class="stcols three"><div class="stc"><small>配点</small><b>${+x.pts ? x.pts + '<i>点</i>' : '—'}</b></div><div class="stc"><small>目標点</small><b>${+x.goal ? x.goal + '<i>点</i>' : '—'}</b>${+x.goal && +x.pts ? `<span>${Math.round(x.goal / x.pts * 100)}%</span>` : ''}</div><div class="stc"><small>最新の模試</small><b>${mine ? mine.g + '<i>/' + mine.m + '</i>' : '—'}</b>${mine && mine.dev ? `<span class="lt">偏差値 ${mine.dev}</span>` : ''}</div></div></div>`; }).join('')}
       <div class="stcard total"><div class="sthead"><b>${PH[ph]}の合計</b></div><div class="stcols three"><div class="stc"><small>配点</small><b>${sumP}<i>点</i></b></div><div class="stc"><small>目標点</small><b>${sumG ? sumG + '<i>点</i>' : '—'}</b>${sumG && sumP ? `<span>${Math.round(sumG / sumP * 100)}%</span>` : ''}</div><div class="stc"><small>目標%</small><b>${Math.round(planGoalRate(inf, ph) * 100)}<i>%</i></b></div></div></div></div>`
       : `<div class="empty" style="padding:14px">${PH[ph]}の科目がまだありません。上のテンプレートを使うか「編集する」から追加してね。${ph === 'n' ? '<br>（私立の個別試験も、こちらの「二次試験」に入れてね）' : ''}</div>`}
@@ -4926,12 +5422,15 @@ const ACT = {
   'spin-pose'(b){ UI.spinPose = b.dataset.v; b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); spinPaint(); spinStart(); },
   'pl-main'(b){ PL().main = b.dataset.v; queueWrite('state'); render(); },
   'pl-tpl'(b){ const [n, tpl] = PLAN_TPL[b.dataset.v]; confirmBox(`「${n}」を入れますか？`, '共通テストと二次試験、両方の科目と配点が入れかわります（模試の記録は消えません）。あとで大学の募集要項を見て、正しい数字に直してね。', '入れる', () => {
-    const inf = planInfo(PL().main), mk = list => list.map(([name, tsid, pts], i) => ({id: 'p' + uid6(), name, tsid: S().subjects.some(x => x.id === tsid) ? tsid : 'ot', color: SUB_COLORS[i % SUB_COLORS.length], pts, goal: null, pref: 1, fix: null}));
+    const inf = planInfo(PL().main), mk = list => list.map(([name, tsid, pts], i) => ({id: 'p' + uid6(), name, tsid: S().subjects.some(x => x.id === tsid) ? tsid : 'ot', tsids: [S().subjects.some(x => x.id === tsid) ? tsid : 'ot'], color: SUB_COLORS[i % SUB_COLORS.length], pts, goal: null, pref: 1, fix: null}));
     inf.sets = {k: mk(tpl.k), n: mk(tpl.n)}; UI.subsDraft = null; queueWrite('state'); render(); }); },
   'sub-reset'(){ const inf = planInfo(PL().main), ph = curPhase(inf), t = S().targets.find(x => x.id === PL().main);
     confirmBox(`${t ? t.univ + 'の' : ''}${PH[ph]}の科目・配点・目標をリセットしますか？`, `${PH[ph]}の科目・配点・目標点と目標%（${ph === 'k' ? '75' : '65'}%にもどります）、おすすめ配分の調整が消えます。${PH[ph === 'k' ? 'n' : 'k']}の科目、模試の記録、試験日はそのまま残ります。`, 'リセットする', () => {
       inf.sets[ph] = []; if (ph === 'k') inf.goalK = 75; else inf.goalN = 65; UI.subsDraft = null; UI.allocEdit = false; UI.mockSub = 'total'; queueWrite('state'); render(); toast(`${PH[ph]}の科目・配点・目標をリセットしました。`, 'rotate', 4000); }, true); },
   'sub-edit'(){ const inf = planInfo(PL().main); UI.subsPh = curPhase(inf); UI.subsDraft = JSON.parse(JSON.stringify(inf.sets[UI.subsPh])); render(); },
+  'sub-ts'(b){ const D = UI.subsDraft; if (!D) return; const [i, sid] = b.dataset.v.split(':'), x = D[+i]; if (!x) return; const cur = tsOf(x).slice(), k = cur.indexOf(sid);
+    if (k >= 0) { if (cur.length === 1) { toast('タイマー科目は1つ以上えらんでね。', 'x', 2500); return; } cur.splice(k, 1); } else cur.push(sid);
+    x.tsids = cur; x.tsid = cur[0]; render(); },
   'sub-add'(){ const D = UI.subsDraft; if (!D) return; D.push({id: 'p' + uid6(), name: '', tsid: 'ot', color: SUB_COLORS[D.length % SUB_COLORS.length], pts: null, goal: null, pref: 1, fix: null}); render(); setTimeout(() => { const el = $(`[data-sf="${D.length - 1}:name"]`); if (el) el.focus(); }, 30); },
   'sub-del'(b){ const D = UI.subsDraft; if (!D) return; D.splice(+b.dataset.v, 1); render(); },
   'sub-cancel'(){ UI.subsDraft = null; render(); },
@@ -5027,7 +5526,7 @@ const ACT = {
   'rm-tab'(b){ UI.roomTab = b.dataset.v; render(); },
   'rm-desel'(){ UI.sel = null; UI.colorOpen = false; render(); },
   'rm-cancel'(){ UI.place = null; render(); },
-  'rm-place'(b){ const v = b.dataset.v; if (v.startsWith('kid:')) { UI.place = initPlace('kid'); UI.place.kid = v.slice(4); } else UI.place = initPlace(v); UI.sel = null; render(); $('#roomstage')?.scrollIntoView({behavior: 'smooth', block: 'center'}); },
+  'rm-place'(b){ const v = b.dataset.v; if (v.startsWith('doll:')) { UI.place = initPlace('fdoll'); UI.place.doll = v.slice(5); } else if (v.startsWith('kid:')) { UI.place = initPlace('kid'); UI.place.kid = v.slice(4); } else UI.place = initPlace(v); UI.sel = null; render(); $('#roomstage')?.scrollIntoView({behavior: 'smooth', block: 'center'}); },
   'rm-rot-place'(){ const pl = UI.place; pl.r = ((pl.r || 0) + 1) % 4; clampPlace(pl); render(); },
   'rm-nudge'(b){ nudgePlace(b.dataset.v); },
   'rm-ok'(){ commitPlace(); },
@@ -5043,7 +5542,7 @@ const ACT = {
   'dev-login'(){ devPrompt(); },
   'dev-lock'(){ confirmBox('開発者をやめますか？', 'もう一度開くには、またパスワードが必要です。', 'やめる', async () => { try { await SB.rpc('dev_lock'); } catch {} NEWS.admin = false; location.hash = '#prefs'; toast('開発者をやめました。', 'lock'); }, true); },
   'dev-refresh'(){ NEWS.at = 0; refreshPub(true).then(() => loadNews(true)).then(() => render()); },
-  'dev-ev'(){ EVS().last = 0; eventTick(true); },
+  'dev-ev'(){ const id = ($('#dev-evsel') || {}).value, def = id && EVENT_DEFS.find(d => d.id === id); if (def) { if (!fireEvent(def, EVS())) toast('今はこのイベントを起こせません（ご近所さんのデータがないなど）。', 'x', 3500); return; } EVS().last = 0; eventTick(true); },
   'dev-quiz'(){ quizModal(); },
   'dev-ring'(){ startRing('テストのアラーム', '「止める」で止まります。'); },
   'app-reload'(){ location.reload(); },
@@ -5070,6 +5569,36 @@ const ACT = {
   'rm-store'(){ const it = selectedItem(); if (!it) return; const items = CR().items;
     if (F[it.t].surf && smallsOn(items, it).length) { toast('上に置いてある小物を先にしまってください。', 'box'); return; }
     if (F[it.t].person) { for (const r of allRooms()) r.items = r.items.filter(i => i.id !== it.id); delete SIM.p[it.id]; } else CR().items = items.filter(i => i.id !== it.id); UI.sel = null; UI.colorOpen = false; queueWrite('state'); publishPub(); toast(F[it.t].person ? `${personInfo(it).name}は「持ち物」で待っています。別の部屋に呼ぶこともできます。` : `${F[it.t].n}を持ち物にしまいました。`, 'box'); render(); },
+  'pet-tab'(b){ UI.petTab = b.dataset.v; render(); },
+  'pet-feed'(b){ feedPet(b.dataset.v, b.dataset.f); render(); refreshPetModal(); },
+  'pet-pat'(b){ petPat(b.dataset.v); render(); refreshPetModal(); },
+  'pet-name'(b){ const p = petById(b.dataset.v); if (!p) return; closeModal();
+    showModal(`<h3>名前を変える</h3><label class="fld">${PK[p.k].e} ${esc(PK[p.k].n)}の名前<input type="text" id="petnm" maxlength="12" value="${esc(p.name)}"></label><div class="acts"><button class="btn ghost" data-act="modal-close">やめる</button><button class="btn primary" id="petnm-ok">決定</button></div>`,
+      {mount: m => { const i = m.querySelector('#petnm'); setTimeout(() => i.focus(), 30); const ok = () => { const v = i.value.trim().slice(0, 12); if (!v) return; p.name = v; queueWrite('state'); publishPub(); closeModal(); render(); toast(`名前を「${v}」にしました。`, 'check'); }; m.querySelector('#petnm-ok').addEventListener('click', ok); i.addEventListener('keydown', e => { if (e.key === 'Enter') ok(); }); }}); },
+  'pet-call'(b){ const p = petById(b.dataset.v); if (!p) return; p.rid = ridOf(curEntry()); delete PSIM[p.id]; queueWrite('state'); publishPub(); toast(`${p.name}がこの部屋にやってきた！`, 'check'); render(); refreshPetModal(); },
+  'pet-hotel'(b){ const p = petById(b.dataset.v); if (!p) return; const now = Date.now();
+    if (p.hotel) { const days = Math.max(1, Math.ceil((now - (p.hotel.at || now)) / 86400e3)), cost = loseCoins(days * 10); p.hotel = null; p.satAt = now; delete PSIM[p.id]; queueWrite('state'); toast(`${p.name}を迎えに行った！ ホテル代 ${cost}コイン（${days}日分）。`, 'check', 4000); render(); refreshPetModal(); return; }
+    const n = petNow(p, now); confirmBox(`${p.name}をペットホテルに預ける？`, `預けているあいだは、おなかがへらず、死んでしまうこともありません。迎えに行くときに1日10コインはらいます。テスト期間や旅行のときにどうぞ。`, '預ける', () => {
+      p.sat = Math.max(n.sat, 60); p.satAt = now; p.hotel = {at: now}; delete PSIM[p.id]; queueWrite('state'); publishPub(); render(); toast(`${p.name}をホテルに預けました。`, 'check'); }); },
+  'pet-bye'(b){ const p = petById(b.dataset.v); if (!p) return; confirmBox(`${p.name}を里親に出す？`, 'やさしい家族のところへ行きます。この子とはお別れになります（コインは戻りません）。', '里親に出す', () => {
+      S().pets = petsAll().filter(x => x.id !== p.id); delete PSIM[p.id]; queueWrite('state'); publishPub(); render(); toast(`${p.name}は新しい家族のところへ行きました。元気でね！`, 'heart', 4000); }, true); },
+  'pet-buy'(b){ const k = b.dataset.v, K = PK[k], x = stats(); if (!K) return; if (x.level < K.lv) return; if (petsAlive().length >= PET_MAX) { toast(`ペットは${PET_MAX}匹までです。`, 'x'); return; } if (x.coins < K.cost) { toast('コインが足りません。', 'x'); return; }
+    confirmBox(`${K.e} ${K.n}をお迎えする？`, `${K.cost}コインです。毎日えさをあげないと、おなかがへって…最後には死んでしまいます（腹ぺこのまま約${Math.round(K.grace / 24 * 10) / 10}日）。大好物は${PET_FOOD[K.like].n}。`, `${K.cost}cでお迎え`, () => {
+      const st = S(); if (stats().coins < K.cost) return; st.spent = (st.spent || 0) + K.cost; const p = newPet(k, ridOf(curEntry())); st.pets.push(p); const fd = petFood(); fd.kibble = (fd.kibble || 0) + 3;
+      queueWrite('state'); publishPub(); UI.petTab = 'mine'; render(); $('#roomstage')?.scrollIntoView({behavior: 'smooth', block: 'center'});
+      showModal(`<div class="celebrate">${burst()}<div class="eyebrow">NEW FAMILY</div><div class="thumb" style="width:120px;height:92px;margin:6px auto 0">${petThumb(k, 0)}</div><h3 style="margin:6px 0">${K.e} ${esc(K.n)}の赤ちゃんがやってきた！</h3><p class="mute" style="margin:0 0 10px;font-size:14px">名前は「${esc(p.name)}」。「なんでもフード」を3つもらったよ。毎日ごはんをあげて、なでてあげてね。</p><div class="acts" style="justify-content:center"><button class="btn" data-act="pet-name" data-v="${p.id}">${icon('pen')}名前を変える</button><button class="btn primary" data-act="modal-close">よろしくね！</button></div></div>`); }); },
+  'food-buy'(b){ const k = b.dataset.v, f = PET_FOOD[k], n = +b.dataset.n || 1, st = S(); if (!f) return; if (stats().coins < f.cost * n) { toast('コインが足りません。', 'x'); return; }
+    st.spent = (st.spent || 0) + f.cost * n; const fd = petFood(); fd[k] = (fd[k] || 0) + n; queueWrite('state'); render(); toast(`${f.e} ${f.n}を${n}つ買いました。`, 'check', 2500); },
+  'pet-revive'(b){ const p = petById(b.dataset.v); if (!p || !p.dead) return; if (stats().coins < PET_REVIVE) { toast('コインが足りません。', 'x'); return; }
+    confirmBox(`${p.name}を生き返らせる？`, `復活の羽（${PET_REVIVE}コイン）を使います。今度はちゃんとごはんをあげてね。`, '生き返らせる', () => { const st = S(); st.spent = (st.spent || 0) + PET_REVIVE; p.dead = null; p.sat = 60; p.satAt = Date.now(); p.ns = null; p.nh = null; p.rid = ridOf(curEntry()); queueWrite('state'); publishPub(); render(); toast(`🪶 ${p.name}が生き返った！ おかえり！`, 'heart', 5000); }); },
+  'pet-forget'(b){ const p = petById(b.dataset.v); if (!p) return; confirmBox(`${p.name}の思い出を消す？`, '思い出の一覧から消えます（復活もできなくなります）。', '消す', () => { S().pets = petsAll().filter(x => x.id !== p.id); queueWrite('state'); render(); }, true); },
+  'doll-buy'(b){ const d = pubDocs.find(x => x.code === b.dataset.v); if (!d) return; if (stats().coins < DOLL_COST) { toast('コインが足りません。', 'x'); return; }
+    confirmBox(`${d.nick}の人形を作る？`, `${DOLL_COST}コインです。${d.nick}のキャラクターの小さなフィギュアができます。机や棚の上に飾れます。`, `${DOLL_COST}cで作る`, () => { const st = S(); st.spent = (st.spent || 0) + DOLL_COST; const dl = {id: 'dl' + uid6(), c: d.code, n: String(d.nick).slice(0, 20), look: friendLook(d)}; dollsAll().push(dl);
+      queueWrite('state'); UI.roomTab = 'inv'; UI.place = initPlace('fdoll'); UI.place.doll = dl.id; render(); $('#roomstage')?.scrollIntoView({behavior: 'smooth', block: 'center'}); toast(`${dl.n}の人形ができた！ 置きたい場所をえらんでね。`, 'box', 4500); }); },
+  'doll-del'(b){ const dl = dollsAll().find(x => x.id === b.dataset.v); if (!dl) return; confirmBox(`${dl.n}の人形を手放す？`, 'コインは戻りません。', '手放す', () => { S().dolls = dollsAll().filter(x => x.id !== dl.id); queueWrite('state'); render(); }, true); },
+  'ev-choice'(b){ const e = UI.evChoice; if (!e) return; const c = e.choices[+b.dataset.v]; if (!c || c.disabled) return; UI.evChoice = null;
+    let r = null; try { r = c.run(); } catch (er) { console.warn(er); } dataV++;
+    queueWrite('state'); if (r) eventModal({...r, after: true}); else closeModal(); },
   'ev-rain'(){ closeModal(); AudioEng.ensure(); if (!AudioEng.ch.has('rain')) AudioEng.play('rain'); try { renderSoundBtns(); } catch {} toast('雨音を流しています。止めるときはタイマー画面の環境音から。', 'timer', 4000); },
   'ev-shop'(){ closeModal(); UI.roomId = 'study'; UI.roomTab = 'shop'; location.hash = '#room'; render(); },
   'ev-quiz'(b){ const z = UI.quiz; if (!z || z.done) return; z.done = true; const ok = +b.dataset.v === 0, q = z.q; if (ok) addCoins(20);
@@ -5181,7 +5710,7 @@ const ACT = {
     if (st.friends.includes(c)) { toast(`${d.nick || 'ななしの受験生'}さんのフォローを承認しました。`, 'users', 4000); return; }
     askFollowBack(d); },
   'see-room'(b){ const d = pubDocs.find(p => p.uid === b.dataset.v); if (!d || !d.room) return;
-    showModal(`<div class="ph"><div><span class="eyebrow">ROOM LEVEL ${(d.room.stage || 0) + 1}</span><h3>${esc(d.nick || 'ななしの受験生')}の部屋</h3></div><button class="btn sm ghost" data-act="modal-close" aria-label="閉じる">${icon('x')}</button></div><div class="roomstage">${roomSVG({...d.room, people: d.room.people || {}}, d.room.size || 5, {})}</div><p class="note">LV${d.lv} · ${esc(titleFor(d.lv))} · 累計 ${fmtHM(d.tot)}</p>`); },
+    showModal(`<div class="ph"><div><span class="eyebrow">ROOM LEVEL ${(d.room.stage || 0) + 1}</span><h3>${esc(d.nick || 'ななしの受験生')}の部屋</h3></div><button class="btn sm ghost" data-act="modal-close" aria-label="閉じる">${icon('x')}</button></div><div class="roomstage">${roomSVG({...d.room, people: d.room.people || {}}, d.room.size || 5, {names: true})}</div>${nbPeople(d).length ? `<p class="note" style="margin:8px 0 4px">この部屋に住んでいる人</p>${pplChips(nbPeople(d))}` : ''}<p class="note">LV${d.lv} · ${esc(titleFor(d.lv))} · 累計 ${fmtHM(d.tot)}</p>`); },
   // exams
   'exam-pin'(b){ const st = S(); st.pinnedExam = st.pinnedExam === b.dataset.v ? null : b.dataset.v; queueWrite('state'); render(); },
   'exam-edit'(b){ UI.editExam = b.dataset.v; render(); },
@@ -5366,8 +5895,8 @@ function commitPlace(){
     if (!it && d.person) { it = allItems().find(i => i.id === pl.moveId); if (it) { for (const r of allRooms()) r.items = r.items.filter(i => i.id !== it.id); CR().items.push(it); } }   // they live here now
     if (it) Object.assign(it, d.wall ? {side: pl.side, x: pl.x} : {x: pl.x, y: pl.y, r: pl.r || 0});
     if (d.person) SIM.p[pl.moveId] = {room: ridOf(curEntry()), x: pl.x, y: pl.y, r: pl.r || 0, path: [], act: null, target: null, wait: Date.now() + 6000, step: 0}; }
-  else CR().items.push(d.wall ? {id: uid6(), t: pl.t, side: pl.side, x: pl.x, y: 0, r: 0, c: 0} : Object.assign({id: pl.t === 'buddy' ? 'buddy' : uid6(), t: pl.t, x: pl.x, y: pl.y, r: pl.r || 0, c: 0}, pl.kid ? {kid: pl.kid} : {}));
-  const moved = !!pl.moveId, nm = d.person ? personInfo(pl).name : d.n; UI.place = null; UI.sel = null;
+  else CR().items.push(d.wall ? {id: uid6(), t: pl.t, side: pl.side, x: pl.x, y: 0, r: 0, c: 0} : Object.assign({id: pl.t === 'buddy' ? 'buddy' : uid6(), t: pl.t, x: pl.x, y: pl.y, r: pl.r || 0, c: 0}, pl.kid ? {kid: pl.kid} : {}, pl.doll ? (dl => dl ? {doll: dl.id, dn: dl.n, dlook: dl.look} : {})(dollsAll().find(x => x.id === pl.doll)) : {}));
+  const moved = !!pl.moveId, dl = pl.doll && dollsAll().find(x => x.id === pl.doll), nm = d.person ? personInfo(pl).name : dl ? dl.n + 'の人形' : d.n; UI.place = null; UI.sel = null;
   queueWrite('state', 0); render();
   toast(moved ? `${nm}を移動しました。` : d.person ? `${nm}がこの部屋に来ました。` : `${nm}を置きました。`, 'check', 2600);
   try { publishPub(); checkBadges(false); } catch {}
@@ -5424,6 +5953,7 @@ function roomTap(e, rs){
   const svg = rs.querySelector('svg.roomsvg'); if (!svg) return false;
   if (UI.place) { const p = svgPoint(svg, e.clientX, e.clientY); if (p && candidateFromPoint(p.x, p.y)) render(); return true; }
   const it = e.target.closest('[data-i]');
+  if (it && it.dataset.i.startsWith('pet:')) { petModal(it.dataset.i.slice(4)); return true; }
   const isBuddy = it && viewItems(CR(), ridOf(curEntry())).some(i => i.id === it.dataset.i && F[i.t] && F[i.t].person);
   if (isBuddy) { if (UI.sel === it.dataset.i) UI.buddyIdx = (UI.buddyIdx || 0) + 1; UI.sel = it.dataset.i; talkNow(it.dataset.i); }
   else if (it) UI.sel = UI.sel === it.dataset.i ? null : it.dataset.i;
