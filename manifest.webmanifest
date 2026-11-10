@@ -36,8 +36,8 @@
       ]
     },
     {
-      "name": "全画面表示（タイマー）",
-      "short_name": "全画面表示",
+      "name": "ミニ表示（ウィジェット）",
+      "short_name": "ミニ表示",
       "url": "./?mini=1#timer",
       "icons": [
         {
