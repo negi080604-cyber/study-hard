@@ -3100,7 +3100,7 @@ function burst(){
 function badgeToast(b){ toast(`実績解除「${b.n}」 ${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'medal', 5000); notify(`🏅 実績解除「${b.n}」`, `${b.d}　+${BADGE_R[b.id] || 50}コイン`, 'badge'); }
 
 /* ================= router & render ================= */
-const APP_VERSION = '2026.11.05.2';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
+const APP_VERSION = '2026.11.12.1';   // アプリを更新したら、ここの数字も新しくする（開発者ページで全員に知らせられます）
 const HIDDEN_ROUTES = ['dev'];
 const ROUTES = {
   home:['ホーム','home'], timer:['タイマー','timer'], stats:['記録・分析','chart'], room:['勉強部屋','room'],
@@ -3458,7 +3458,7 @@ function roomSVG(room, N, opts = {}){
   s += `<g transform="${mF}"><clipPath id="${pfx}fc"><rect x="0" y="0" width="${N}" height="${N}"/></clipPath><g clip-path="url(#${pfx}fc)">${floorPattern(room.floor, N, pfx)}`;
   for (const it of items.filter(i => F[i.t].rug)) { const [w, dd] = footprint(it), c = F[it.t].colors[(it.c || 0) % F[it.t].colors.length];
     s += `<g data-i="${it.id}" class="${sel === it.id ? 'sel' : ''}${gcls(it.id)}">${rugInner(F[it.t], c, it.x, it.y, w, dd, sel === it.id)}</g>`; }
-  s += `<rect x="0" y="0" width="${N}" height="${N}" fill="url(#${pfx}shade)"/></g></g>`;
+  s += `<rect x="0" y="0" width="${N}" height="${N}" fill="url(#${pfx}shade)" pointer-events="none"/></g></g>`;   // 明るさの板はタップを通す（マットを選べるように）
   // light pools
   const LS0 = lightState(room), poolsOn = LS0.lit;
   if (poolsOn) for (const it of items.filter(i => F[i.t].glow)) { const [w, dd] = footprint(it); const [cx, cy] = P(it.x + w / 2, it.y + dd / 2, 0); const big = F[it.t].hang ? 1.5 : 1;
@@ -6012,16 +6012,29 @@ function roomTap(e, rs){
   if (e.target.closest('[data-act]') || e.target.closest('.roombar')) return false;
   const svg = rs.querySelector('svg.roomsvg'); if (!svg) return false;
   if (UI.place) { const p = svgPoint(svg, e.clientX, e.clientY); if (p && candidateFromPoint(p.x, p.y)) render(); return true; }
-  const it = e.target.closest('[data-i]');
+  let it = e.target.closest('[data-i]');
   if (it && it.dataset.i.startsWith('pet:')) { petModal(it.dataset.i.slice(4)); return true; }
+  // 家具の上ではない床をタップしたとき：そこに敷いてあるマット・ラグを選ぶ（家具の下にかくれ気味のマットも選べるように）
+  if (!it) { const p = svgPoint(svg, e.clientX, e.clientY);
+    if (p) { const fx = (p.x / TW + p.y / TH) / 2, fy = (p.y / TH - p.x / TW) / 2;
+      const rug = CR().items.filter(i => F[i.t] && F[i.t].rug).reverse().find(i => { const [w, dd] = footprint(i); return fx >= i.x && fx <= i.x + w && fy >= i.y && fy <= i.y + dd; });
+      if (rug) it = {dataset: {i: rug.id}}; } }
   const isBuddy = it && viewItems(CR(), ridOf(curEntry())).some(i => i.id === it.dataset.i && F[i.t] && F[i.t].person);
   if (isBuddy) { if (UI.sel === it.dataset.i) UI.buddyIdx = (UI.buddyIdx || 0) + 1; UI.sel = it.dataset.i; talkNow(it.dataset.i); }
-  else if (it) UI.sel = UI.sel === it.dataset.i ? null : it.dataset.i;
+  else if (it) {
+    // 選んでいる家具をもう一度タップしたら、その下に敷いてあるマット・ラグに切りかえる（家具にかくれたマットも動かせるように）
+    const cur = UI.sel === it.dataset.i ? CR().items.find(i => i.id === it.dataset.i) : null;
+    const under = cur && F[cur.t] && !F[cur.t].rug ? (([ax, ay, aw, ad]) => CR().items.find(r => F[r.t] && F[r.t].rug && (([rw, rd]) => r.x < ax + aw && ax < r.x + rw && r.y < ay + ad && ay < r.y + rd)(footprint(r))))([cur.x, cur.y, ...footprint(cur)]) : null;
+    UI.sel = under ? under.id : UI.sel === it.dataset.i ? null : it.dataset.i;
+    if (under) toast(`下に敷いてある「${F[under.t].n}」を選びました。`, 'box', 2200); }
   else if (UI.sel) UI.sel = null;
   else return false;
   UI.colorOpen = false; render(); return true;
 }
 function wireRoom(rs){
+  // 画面を描き直しても部屋の枠（#roomstage）は使い回されるので、タップの受け取りは1回だけ付ける
+  // （何回も付くと、1回のタップが2回処理されて「選んだのにすぐ外れる」ことがあった）
+  if (rs.__wired) return; rs.__wired = true;
   let down = null;
   rs.addEventListener('pointerdown', e => { down = {x: e.clientX, y: e.clientY, t: Date.now()}; });
   rs.addEventListener('pointerup', e => {
